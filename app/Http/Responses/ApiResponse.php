@@ -29,13 +29,16 @@ class ApiResponse
 
     public static function pagination(
         LengthAwarePaginator $paginator,
-        string $message = 'Success.'
+        string $message = 'Success.',
+        string $dataKey = 'items'
     ): JsonResponse {
         return response()->json([
             'success' => true,
             'status_code' => 200,
             'message' => $message,
-            'data' => $paginator->items(),
+            'data' => [
+                $dataKey => $paginator->items(),
+            ],
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),

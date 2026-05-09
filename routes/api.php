@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CarController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -14,4 +15,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/refresh-token', [AuthController::class, 'refreshToken'])->middleware('throttle:auth-refresh');
         });
     });
+
+    Route::apiResource('car', CarController::class);
 });
