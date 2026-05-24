@@ -15,31 +15,7 @@
 </head>
 <body class="bg-white text-gray-900">
     <!-- Header -->
-    <header class="sticky top-0 z-50 bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center gap-2">
-                <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
-            </div>
-
-            <!-- Navigation - Hidden on mobile -->
-            <nav class="hidden lg:flex items-center gap-8">
-                <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
-                <a href="#harga" class="text-gray-700 hover:text-blue-600 transition">Harga</a>
-                <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni Kami</a>
-            </nav>
-
-            <!-- Auth Buttons -->
-            <div class="flex items-center gap-3">
-                <a href="{{ route('login') }}" class="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium">
-                    Masuk
-                </a>
-                <a href="{{ route('register') }}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium">
-                    Daftar
-                </a>
-            </div>
-        </div>
-    </header>
+    <x-navbar-non-login />
 
     <!-- Hero Section -->
     <section class="bg-gradient-to-r from-blue-50 to-blue-100 py-12 lg:py-24">
@@ -255,63 +231,6 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300 py-12">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <!-- Company Info -->
-                <div>
-                    <h3 class="text-white font-bold text-lg mb-4">HD RENTAL CAR</h3>
-                    <p class="text-sm text-gray-400">
-                        Penyewaan mobil terpercaya dengan armada terlengkap dan harga terjangkau.
-                    </p>
-                </div>
-
-                <!-- Rental Models -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Model Rental</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Harian</a></li>
-                        <li><a href="#" class="hover:text-white transition">Mingguan</a></li>
-                        <li><a href="#" class="hover:text-white transition">Bulanan</a></li>
-                        <li><a href="#" class="hover:text-white transition">Long-term</a></li>
-                    </ul>
-                </div>
-
-                <!-- Services -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Layanan</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Penjemput Bandara</a></li>
-                        <li><a href="#" class="hover:text-white transition">Sopir Profesional</a></li>
-                        <li><a href="#" class="hover:text-white transition">Asuransi Komprehensif</a></li>
-                        <li><a href="#" class="hover:text-white transition">24/7 Support</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact Info -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Hubungi Kami</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="tel:+62212345678" class="hover:text-white transition">+62 (21) 2345678</a></li>
-                        <li><a href="mailto:info@hdrentalcar.com" class="hover:text-white transition">info@hdrentalcar.com</a></li>
-                        <li><p>Jakarta, Indonesia</p></li>
-                        <li><p>Jam Operasional: 24/7</p></li>
-                    </ul>
-                </div>
-            </div>
-
-            <hr class="border-gray-700 mb-8">
-
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">&copy; 2024 HD Rental Car. All rights reserved.</p>
-                <div class="flex gap-4 mt-4 md:mt-0">
-                    <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">Contact Us</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <x-footer />
 </body>
 </html>

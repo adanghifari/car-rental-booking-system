@@ -27,3 +27,5 @@ Route::get('/beranda-non-login', function () {
 Route::view('/welcome', 'welcome');
 Route::view('/login', 'auth.login')->name('login');
 Route::view('/register', 'auth.register')->name('register');
+Route::view('/search-result', 'search-result')->name('search-result');
+Route::view('/car-detail', 'car-detail')->name('car-detail');
