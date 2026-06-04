@@ -44,11 +44,11 @@
                 <!-- User Menu -->
                 <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
                     <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'User' }}</p>
+                        <p class="text-sm font-semibold text-gray-900">{{ $user->name ?? 'User' }}</p>
                         <p class="text-xs text-gray-500">Member</p>
                     </div>
                     <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
+                        {{ substr($user->name ?? 'U', 0, 1) }}
                     </div>
 
                     <!-- Dropdown Menu -->
@@ -85,7 +85,7 @@
     <section class="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                Selamat datang kembali, {{ auth()->user()->name ?? 'User' }}! 👋
+                Selamat datang kembali, {{ $user->name ?? 'User' }}! 👋
             </h1>
             <p class="text-gray-600">
                 Lanjutkan perjalanan Anda dengan HD Rental Car. Nikmati pengalaman berkendara yang luar biasa.

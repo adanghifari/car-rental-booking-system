@@ -98,25 +98,31 @@
 
                 <div id="feedback" class="feedback"></div>
 
-                <form id="registerForm">
+                <form id="registerForm" autocomplete="off">
+                    <input id="redirect" name="redirect" type="hidden" value="{{ request('redirect') }}">
                     <div class="field">
                         <label for="name">Nama Lengkap</label>
-                        <input id="name" name="name" type="text" placeholder="Masukkan nama sesuai KTP" required>
+                        <input id="name" name="name" type="text" placeholder="Masukkan nama lengkap" autocomplete="name" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="username">Username</label>
+                        <input id="username" name="username" type="text" placeholder="Pilih username" autocomplete="off" autocapitalize="none" spellcheck="false" required minlength="3">
                     </div>
 
                     <div class="field">
                         <label for="email">Alamat Email</label>
-                        <input id="email" name="email" type="email" placeholder="contoh@domain.com" required>
+                        <input id="email" name="email" type="email" placeholder="Masukkan alamat email" autocomplete="email" autocapitalize="none" spellcheck="false" required>
                     </div>
 
                     <div class="field">
                         <label for="password">Kata Sandi</label>
-                        <input id="password" name="password" type="password" placeholder="Min. 8 karakter" required minlength="8">
+                        <input id="password" name="password" type="password" placeholder="Buat kata sandi" autocomplete="new-password" required minlength="8">
                     </div>
 
                     <div class="field">
                         <label for="password_confirmation">Konfirmasi Kata Sandi</label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Ulangi kata sandi" required minlength="8">
+                        <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Ulangi kata sandi" autocomplete="new-password" required minlength="8">
                     </div>
 
                     <label class="tos">
@@ -126,13 +132,6 @@
 
                     <button id="submitBtn" type="submit" class="submit-btn">Daftar Sekarang</button>
                 </form>
-
-                <div class="divider">Atau daftar dengan</div>
-
-                <div class="socials">
-                    <button class="social" type="button">Google</button>
-                    <button class="social apple" type="button">Apple</button>
-                </div>
 
                 <p class="switch-link">Sudah memiliki akun? <a href="{{ route('login') }}">Masuk Sekarang</a></p>
             </section>
@@ -160,9 +159,11 @@
             feedback.textContent = '';
 
             const name = document.getElementById('name').value.trim();
+            const username = document.getElementById('username').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const passwordConfirmation = document.getElementById('password_confirmation').value;
+            const redirect = document.getElementById('redirect').value.trim();
 
             try {
                 const response = await fetch('/api/v1/auth/register', {
@@ -173,11 +174,13 @@
                     },
                     body: JSON.stringify({
                         name,
+                        username,
                         email,
                         password,
                         password_confirmation: passwordConfirmation,
+                        redirect,
                     }),
-                    credentials: 'same-origin',
+                    credentials: 'include',
                 });
 
                 const raw = await response.text();
@@ -204,8 +207,10 @@
                     return;
                 }
 
-                setFeedback('success', 'Registrasi berhasil. Mengarahkan ke halaman utama...');
-                setTimeout(() => { window.location.href = '/'; }, 900);
+                const nextUrl = result?.data?.redirect_to || '/login';
+
+                setFeedback('success', 'Registrasi berhasil. Mengarahkan ke halaman login...');
+                setTimeout(() => { window.location.replace(nextUrl); }, 900);
             } catch (error) {
                 setFeedback('error', 'Tidak bisa menghubungi server. Coba lagi.');
             } finally {

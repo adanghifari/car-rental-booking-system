@@ -296,12 +296,15 @@
 
                 <div id="feedback" class="feedback"></div>
 
-                <form id="loginForm">
+                <form id="loginForm" autocomplete="off">
+                    <input id="redirect" name="redirect" type="hidden" value="{{ request('redirect') }}">
+                    <input type="text" name="fake_username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
+                    <input type="password" name="fake_password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
                     <div class="field">
                         <div class="field-row">
-                            <label for="email">Email</label>
+                            <label for="login">Username atau Email</label>
                         </div>
-                        <input id="email" name="email" type="email" placeholder="nama@email.com" required>
+                        <input id="login" name="account_login" type="text" placeholder="Masukkan username atau email" autocomplete="off" autocapitalize="none" spellcheck="false" required>
                     </div>
 
                     <div class="field">
@@ -309,18 +312,11 @@
                             <label for="password">Kata Sandi</label>
                             <a href="#" onclick="return false;">Lupa Kata Sandi?</a>
                         </div>
-                        <input id="password" name="password" type="password" placeholder="********" required>
+                        <input id="password" name="account_password" type="password" placeholder="Masukkan kata sandi" autocomplete="off" required>
                     </div>
 
                     <button id="submitBtn" type="submit" class="submit-btn">Masuk</button>
                 </form>
-
-                <div class="divider">Atau masuk dengan</div>
-
-                <div class="socials">
-                    <button class="social" type="button">Google</button>
-                    <button class="social" type="button">Apple</button>
-                </div>
 
                 <p class="register-link">Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a></p>
             </section>
@@ -356,8 +352,9 @@
             feedback.className = 'feedback';
             feedback.textContent = '';
 
-            const email = document.getElementById('email').value.trim();
+            const login = document.getElementById('login').value.trim();
             const password = document.getElementById('password').value;
+            const redirect = document.getElementById('redirect').value.trim();
 
             try {
                 const response = await fetch('/api/v1/auth/login', {
@@ -366,8 +363,8 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ email, password }),
-                    credentials: 'same-origin',
+                    body: JSON.stringify({ login, password, redirect }),
+                    credentials: 'include',
                 });
 
                 const raw = await response.text();
@@ -396,8 +393,10 @@
 
                 setFeedback('success', 'Login berhasil. Mengarahkan...');
 
+                const nextUrl = result?.data?.redirect_to || (result?.data?.user?.role === 'admin' ? '/dashboard' : '/frontliner');
+
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.replace(nextUrl);
                 }, 700);
             } catch (error) {
                 setFeedback('error', 'Tidak bisa menghubungi server. Coba lagi.');
