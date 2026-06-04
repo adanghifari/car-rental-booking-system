@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Rental;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+
+class MidtransService
+{
+    public function createTransaction(Rental $rental, string $orderId): array
+    {
+        $serverKey = (string) config('services.midtrans.server_key');
+        $isProduction = (bool) config('services.midtrans.is_production', false);
+
+        if ($serverKey === '') {
+            throw new RuntimeException('Midtrans server key is not configured.');
+        }
+
+        $endpoint = $isProduction
+            ? 'https://app.midtrans.com/snap/v1/transactions'
+            : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+
+        $payload = [
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => $rental->total_price,
+            ],
+            'customer_details' => [
+                'first_name' => $rental->user->name ?? 'Customer',
+                'email' => $rental->user->email ?? null,
+            ],
+            'item_details' => [
+                [
+                    'id' => 'rental-'.$rental->id,
+                    'price' => $rental->total_price,
+                    'quantity' => 1,
+                    'name' => 'Car rental '.$rental->car->name,
+                ],
+            ],
+        ];
+
+        $response = Http::acceptJson()
+            ->withBasicAuth($serverKey, '')
+            ->post($endpoint, $payload);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Midtrans transaction failed.');
+        }
+
+        return $response->json();
+    }
+
+    public function verifySignature(array $payload): bool
+    {
+        $serverKey = (string) config('services.midtrans.server_key');
+
+        if ($serverKey === '') {
+            return false;
+        }
+
+        $orderId = (string) ($payload['order_id'] ?? '');
+        $statusCode = (string) ($payload['status_code'] ?? '');
+        $grossAmount = (string) ($payload['gross_amount'] ?? '');
+        $signatureKey = (string) ($payload['signature_key'] ?? '');
+
+        $expected = hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
+
+        return hash_equals($expected, $signatureKey);
+    }
+}

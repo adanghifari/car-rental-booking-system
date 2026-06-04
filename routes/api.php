@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CarController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RentalController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -17,4 +19,12 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::apiResource('car', CarController::class);
+
+    Route::middleware(['token.cookie', 'auth:sanctum'])->group(function () {
+        Route::post('/rentals', [RentalController::class, 'store']);
+        Route::post('/rentals/{rental}/return', [RentalController::class, 'markReturned']);
+        Route::post('/payment', [PaymentController::class, 'create']);
+    });
+
+    Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
 });

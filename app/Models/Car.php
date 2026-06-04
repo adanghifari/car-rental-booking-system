@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CarStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Car extends Model
 {
@@ -39,4 +40,9 @@ class Car extends Model
         'rating' => 'float',
         'status' => CarStatus::class,
     ];
+
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class);
+    }
 }
