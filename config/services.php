@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY', ''),
+        'client_key' => env('MIDTRANS_CLIENT_KEY', ''),
+        'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+    ],
+
+    'face_verify' => [
+        'base_url' => env('FACE_VERIFY_BASE_URL', 'http://127.0.0.1:3000'),
+        'timeout' => env('FACE_VERIFY_TIMEOUT', 60),
+    ],
+
 ];
