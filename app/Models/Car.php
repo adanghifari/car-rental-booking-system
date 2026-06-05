@@ -17,16 +17,20 @@ class Car extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'brand',
         'name',
         'description',
         'transmission',
         'seat',
+        'year',
+        'cc',
         'type',
         'color',
         'rental_fee',
         'license_plate',
         'status',
         'image',
+        'gallery_images',
         'rating',
     ];
 
@@ -37,7 +41,10 @@ class Car extends Model
      */
     protected $casts = [
         'seat' => 'integer',
+        'year' => 'integer',
+        'cc' => 'integer',
         'rating' => 'float',
+        'gallery_images' => 'array',
         'status' => CarStatus::class,
     ];
 

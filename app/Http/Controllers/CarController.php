@@ -32,10 +32,13 @@ class CarController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'transmission' => ['required', 'string', 'max:50'],
             'seat' => ['required', 'integer', 'min:1'],
+            'year' => ['sometimes', 'required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
+            'cc' => ['sometimes', 'required', 'integer', 'min:1', 'max:99999'],
             'type' => ['required', 'string', 'max:100'],
             'color' => ['required', 'string', 'max:50'],
             'rental_fee' => ['required', 'integer', 'min:0'],
@@ -59,10 +62,13 @@ class CarController extends Controller
     public function update(Request $request, Car $car): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+            'brand' => ['sometimes', 'required', 'string', 'max:100'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'required', 'string'],
             'transmission' => ['sometimes', 'required', 'string', 'max:50'],
             'seat' => ['sometimes', 'required', 'integer', 'min:1'],
+            'year' => ['sometimes', 'required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
+            'cc' => ['sometimes', 'required', 'integer', 'min:1', 'max:99999'],
             'type' => ['sometimes', 'required', 'string', 'max:100'],
             'color' => ['sometimes', 'required', 'string', 'max:50'],
             'rental_fee' => ['sometimes', 'required', 'integer', 'min:0'],

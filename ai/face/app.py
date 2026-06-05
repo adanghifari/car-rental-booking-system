@@ -4,8 +4,12 @@ from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
 import re
+import sys
 import uuid
 import os
+
+if sys.version_info < (3, 10) or sys.version_info >= (3, 12):
+    raise RuntimeError("This service requires Python 3.10 or 3.11.")
 
 app = Flask(__name__)
 

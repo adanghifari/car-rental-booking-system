@@ -11,7 +11,10 @@ use App\Models\Rental;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class BackofficeController extends Controller
 {
@@ -102,7 +105,7 @@ class BackofficeController extends Controller
             'chartRevenue' => $chartRevenue,
             'recentActivities' => $recentRentals,
             'featuredCar' => [
-                'name' => $topCar?->name ?? 'Belum ada armada unggulan',
+                'name' => trim(($topCar?->brand ?? '').' '.($topCar?->name ?? '')) ?: 'Belum ada armada unggulan',
                 'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
                 'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
                 'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
@@ -161,7 +164,7 @@ class BackofficeController extends Controller
         ]);
     }
 
-    public function cars(): View
+    public function cars(Request $request): View
     {
         $activeRentalCarIds = Rental::query()
             ->whereIn('status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
@@ -170,55 +173,90 @@ class BackofficeController extends Controller
             ->unique()
             ->values();
 
+        $filters = [
+            'search' => trim((string) $request->query('search', '')),
+            'status' => (string) $request->query('status', ''),
+            'type' => (string) $request->query('type', ''),
+            'transmission' => (string) $request->query('transmission', ''),
+        ];
+
         $totalCars = Car::count();
         $availableCars = Car::where('status', CarStatus::AVAILABLE)->count();
         $unavailableCars = Car::where('status', CarStatus::UNAVAILABLE)->count();
         $rentedCars = Car::query()->whereIn('id', $activeRentalCarIds)->count();
         $maintenanceCars = max($unavailableCars - $rentedCars, 0);
 
-        $cars = Car::query()
+        $carsQuery = Car::query()
             ->with(['rentals' => fn ($query) => $query->latest()])
-            ->latest()
-            ->take(4)
-            ->get()
-            ->map(function (Car $car) use ($activeRentalCarIds) {
-                [$brand, $model] = $this->splitCarName($car->name);
+            ->when($filters['search'] !== '', function ($query) use ($filters) {
+                $query->where(function ($searchQuery) use ($filters) {
+                    $searchQuery
+                        ->where('name', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('brand', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('license_plate', 'like', '%'.$filters['search'].'%')
+                        ->orWhere('type', 'like', '%'.$filters['search'].'%');
+                });
+            })
+            ->when($filters['type'] !== '', fn ($query) => $query->where('type', $filters['type']))
+            ->when($filters['transmission'] !== '', fn ($query) => $query->where('transmission', $filters['transmission']))
+            ->when($filters['status'] !== '', function ($query) use ($filters, $activeRentalCarIds) {
+                if ($filters['status'] === 'available') {
+                    $query->where('status', CarStatus::AVAILABLE);
+                }
+
+                if ($filters['status'] === 'rented') {
+                    $query->whereIn('id', $activeRentalCarIds);
+                }
+
+                if ($filters['status'] === 'maintenance') {
+                    $query
+                        ->where('status', CarStatus::UNAVAILABLE)
+                        ->whereNotIn('id', $activeRentalCarIds);
+                }
+            })
+            ->latest();
+
+        $cars = $carsQuery
+            ->paginate(6)
+            ->withQueryString()
+            ->through(function (Car $car) use ($activeRentalCarIds) {
                 $status = $this->carStatusMeta($car, $activeRentalCarIds->contains($car->id));
 
                 return [
-                    'brand' => $brand,
-                    'model' => $model,
+                    'id' => $car->id,
+                    'brand' => $car->brand ?? '-',
+                    'model' => $car->name,
+                    'description' => $car->description ?? '-',
+                    'color' => $car->color ?? '-',
+                    'status_raw' => $car->status instanceof CarStatus ? $car->status->value : (string) $car->status,
                     'price' => (int) $car->rental_fee,
                     'price_label' => number_format((int) $car->rental_fee, 0, ',', '.'),
+                    'price_raw' => (int) $car->rental_fee,
                     'rating' => number_format($car->rating ?: 5, 1),
+                    'rating_raw' => (float) ($car->rating ?: 5),
                     'status' => $status['label'],
                     'status_tone' => $status['tone'],
                     'status_note' => $status['note'],
                     'transmission' => str($car->transmission)->headline()->value(),
+                    'transmission_raw' => $car->transmission,
                     'seat' => $car->seat.' Kursi',
+                    'seat_raw' => (int) $car->seat,
+                    'year' => $car->year ? (string) $car->year : 'Tahun belum diisi',
+                    'year_raw' => $car->year,
+                    'cc' => $car->cc ? number_format($car->cc, 0, ',', '.').' CC' : 'CC belum diisi',
+                    'cc_raw' => (int) $car->cc,
                     'type' => str($car->type)->headline()->value(),
+                    'type_raw' => $car->type,
                     'plate' => strtoupper($car->license_plate),
+                    'plate_raw' => $car->license_plate,
                     'image_url' => $this->resolveCarImageUrl($car->image),
-                ];
-            });
-
-        $maintenanceRows = Car::query()
-            ->with(['rentals' => fn ($query) => $query->latest()])
-            ->latest()
-            ->take(3)
-            ->get()
-            ->map(function (Car $car) use ($activeRentalCarIds) {
-                $isRented = $activeRentalCarIds->contains($car->id);
-                $isMaintenance = $car->status === CarStatus::UNAVAILABLE && ! $isRented;
-                $latestRental = $car->rentals->first();
-
-                return [
-                    'name' => $car->name,
-                    'plate' => strtoupper($car->license_plate),
-                    'status' => $isMaintenance ? 'MENUNGGU' : ($isRented ? 'TERJADWAL' : 'SELESAI'),
-                    'status_tone' => $isMaintenance ? 'amber' : ($isRented ? 'blue' : 'green'),
-                    'last_service' => optional($latestRental?->created_at ?? $car->updated_at)->translatedFormat('d M Y'),
-                    'mileage' => '—',
+                    'gallery_urls' => collect($car->gallery_images ?? [])
+                        ->map(fn ($path) => $this->resolveCarImageUrl($path))
+                        ->filter()
+                        ->values()
+                        ->all(),
+                    'gallery_paths' => array_values(array_filter(is_array($car->gallery_images) ? $car->gallery_images : [])),
+                    'image_raw' => $car->image,
                 ];
             });
 
@@ -231,9 +269,138 @@ class BackofficeController extends Controller
                 'maintenance' => $maintenanceCars,
                 'occupancy_rate' => $totalCars > 0 ? (int) round(($rentedCars / $totalCars) * 100) : 0,
             ],
+            'filters' => $filters,
             'cars' => $cars,
-            'maintenanceRows' => $maintenanceRows,
+            'typeOptions' => Car::query()
+                ->whereNotNull('type')
+                ->where('type', '!=', '')
+                ->distinct()
+                ->orderBy('type')
+                ->pluck('type'),
+            'transmissionOptions' => Car::query()
+                ->whereNotNull('transmission')
+                ->where('transmission', '!=', '')
+                ->distinct()
+                ->orderBy('transmission')
+                ->pluck('transmission'),
+            'pagination' => $this->paginationWindow($cars->currentPage(), $cars->lastPage()),
         ]);
+    }
+
+    public function storeCar(Request $request): RedirectResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'brand' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'transmission' => ['required', 'string', 'max:50'],
+            'seat' => ['required', 'integer', 'min:1', 'max:99'],
+            'year' => ['required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
+            'cc' => ['required', 'integer', 'min:1', 'max:99999'],
+            'type' => ['required', 'string', 'max:100'],
+            'color' => ['required', 'string', 'max:50'],
+            'rental_fee' => ['required', 'integer', 'min:0'],
+            'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate'],
+            'image' => ['required', 'file', 'image', 'max:5120'],
+            'gallery_images' => ['nullable', 'array', 'max:8'],
+            'gallery_images.*' => ['file', 'image', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        $validated['image'] = $request->file('image')->store('cars/main', 'public');
+        $validated['gallery_images'] = collect($request->file('gallery_images', []))
+            ->map(fn ($file) => $file->store('cars/gallery', 'public'))
+            ->values()
+            ->all();
+
+        $validated['status'] = CarStatus::AVAILABLE;
+
+        Car::create($validated);
+
+        return redirect()
+            ->route('backoffice.cars')
+            ->with('success', 'Mobil baru berhasil ditambahkan.');
+    }
+
+    public function updateCar(Request $request, Car $car): RedirectResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'brand' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'transmission' => ['required', 'string', 'max:50'],
+            'seat' => ['required', 'integer', 'min:1', 'max:99'],
+            'year' => ['required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
+            'cc' => ['required', 'integer', 'min:1', 'max:99999'],
+            'type' => ['required', 'string', 'max:100'],
+            'color' => ['required', 'string', 'max:50'],
+            'rental_fee' => ['required', 'integer', 'min:0'],
+            'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate,' . $car->id],
+            'image' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_image' => ['nullable', 'boolean'],
+            'remove_gallery_images' => ['nullable', 'string'],
+            'gallery_images' => ['nullable', 'array', 'max:8'],
+            'gallery_images.*' => ['file', 'image', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
+
+        $removeImage = $request->boolean('remove_image');
+        $removedGalleryImages = json_decode((string) $request->input('remove_gallery_images', '[]'), true);
+        $removedGalleryImages = is_array($removedGalleryImages) ? array_values(array_filter($removedGalleryImages, 'is_string')) : [];
+        $existingGalleryImages = array_values(array_filter(is_array($car->gallery_images) ? $car->gallery_images : []));
+        $remainingGalleryImages = array_values(array_diff($existingGalleryImages, $removedGalleryImages));
+
+        if ($request->hasFile('image')) {
+            $this->deleteStoredCarMedia($car, false);
+            $validated['image'] = $request->file('image')->store('cars/main', 'public');
+        } elseif ($removeImage) {
+            $this->deleteStoredCarMedia($car, false);
+            $validated['image'] = null;
+        } else {
+            unset($validated['image']);
+        }
+
+        if ($request->hasFile('gallery_images')) {
+            $this->deleteStoredGalleryMedia($car, false, $removedGalleryImages);
+            $validated['gallery_images'] = collect($request->file('gallery_images', []))
+                ->map(fn ($file) => $file->store('cars/gallery', 'public'))
+                ->values()
+                ->pipe(fn ($items) => array_values(array_merge($remainingGalleryImages, $items->all())));
+        } else {
+            if ($removedGalleryImages !== []) {
+                $this->deleteStoredGalleryMedia($car, false, $removedGalleryImages);
+                $validated['gallery_images'] = $remainingGalleryImages;
+            } else {
+                unset($validated['gallery_images']);
+            }
+        }
+
+        $car->fill($validated);
+        $car->save();
+
+        return redirect()
+            ->route('backoffice.cars')
+            ->with('success', 'Mobil berhasil diperbarui.');
+    }
+
+    public function deleteCar(Car $car): RedirectResponse
+    {
+        $this->deleteStoredCarMedia($car);
+        $car->delete();
+
+        return redirect()
+            ->route('backoffice.cars')
+            ->with('success', 'Mobil berhasil dihapus.');
     }
 
     private function paginationWindow(int $currentPage, int $lastPage): array
@@ -243,16 +410,6 @@ class BackofficeController extends Controller
         }
 
         return [1, 2, 3, '...', $lastPage];
-    }
-
-    private function splitCarName(string $name): array
-    {
-        $segments = preg_split('/\s+/', trim($name), 2) ?: [];
-
-        return [
-            strtoupper($segments[0] ?? $name),
-            $segments[1] ?? $name,
-        ];
     }
 
     private function carStatusMeta(Car $car, bool $isRented): array
@@ -283,5 +440,46 @@ class BackofficeController extends Controller
         }
 
         return asset($image);
+    }
+
+    private function deleteStoredCarMedia(Car $car, bool $includeGallery = true): void
+    {
+        $paths = [$car->image];
+
+        if ($includeGallery) {
+            $paths = array_merge($paths, is_array($car->gallery_images) ? $car->gallery_images : []);
+        }
+
+        foreach (array_filter($paths) as $path) {
+            if (! is_string($path)) {
+                continue;
+            }
+
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+                continue;
+            }
+
+            Storage::disk('public')->delete($path);
+        }
+    }
+
+    private function deleteStoredGalleryMedia(Car $car, bool $includeImage = true, array $specificGalleryPaths = []): void
+    {
+        $galleryPaths = is_array($car->gallery_images) ? $car->gallery_images : [];
+        $paths = $specificGalleryPaths !== []
+            ? $specificGalleryPaths
+            : ($includeImage ? array_merge([$car->image], $galleryPaths) : []);
+
+        foreach (array_filter($paths) as $path) {
+            if (! is_string($path)) {
+                continue;
+            }
+
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+                continue;
+            }
+
+            Storage::disk('public')->delete($path);
+        }
     }
 }
