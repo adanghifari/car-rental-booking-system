@@ -78,6 +78,18 @@ Route::get('/dashboard/cars', [BackofficeController::class, 'cars'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars');
 
+Route::post('/dashboard/cars', [BackofficeController::class, 'storeCar'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.cars.store');
+
+Route::put('/dashboard/cars/{car}', [BackofficeController::class, 'updateCar'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.cars.update');
+
+Route::delete('/dashboard/cars/{car}', [BackofficeController::class, 'deleteCar'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.cars.destroy');
+
 Route::post('/logout', function (Request $request): RedirectResponse {
     $user = $request->user();
 

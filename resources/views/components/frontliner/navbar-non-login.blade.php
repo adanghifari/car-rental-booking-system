@@ -2,13 +2,13 @@
         <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
             <!-- Logo -->
             <div class="flex items-center gap-2">
-                <span class="text-2xl font-bold text-blue-600">MD RENTAL CAR</span>
+                <span class="text-2xl font-bold text-blue-600">MD CAR RENTAL</span>
             </div>
 
             <!-- Navigation - Hidden on mobile -->
             <nav class="hidden lg:flex items-center gap-8">
+                <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
                 <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
-                <a href="#harga" class="text-gray-700 hover:text-blue-600 transition">Harga</a>
                 <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni Kami</a>
             </nav>
 

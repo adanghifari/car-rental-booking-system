@@ -35,7 +35,7 @@ class MidtransService
                     'id' => 'rental-'.$rental->id,
                     'price' => $rental->total_price,
                     'quantity' => 1,
-                    'name' => 'Car rental '.$rental->car->name,
+                    'name' => trim(($rental->car->brand ?? '').' '.($rental->car->name ?? '')),
                 ],
             ],
         ];
