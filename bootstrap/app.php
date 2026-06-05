@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Responses\ApiResponse;
 use App\Http\Middleware\AttachSanctumTokenFromCookie;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\QueryException;
@@ -22,8 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->encryptCookies(except: [
+            'access_token',
+        ]);
+
         $middleware->alias([
             'token.cookie' => AttachSanctumTokenFromCookie::class,
+            'admin' => EnsureUserIsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

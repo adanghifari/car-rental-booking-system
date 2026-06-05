@@ -12,7 +12,7 @@
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
-    <x-navbar-non-login />
+    <x-frontliner.navbar-non-login />
 
     <main class="max-w-7xl mx-auto px-4 md:px-6 py-10 w-full flex-grow">
         
@@ -76,7 +76,7 @@
                     <span class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Tersedia</span>
                 </div>
 
-                <form action="#" class="space-y-4">
+                <form action="{{ route('booking.start') }}" method="GET" class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tanggal Sewa</label>
                         <div class="relative flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
@@ -251,7 +251,7 @@
 
     </main>
 
-    <x-footer />
+    <x-frontliner.footer />
 
 </body>
 </html>

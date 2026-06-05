@@ -15,7 +15,7 @@
 </head>
 <body class="bg-white text-gray-900">
     <!-- Header -->
-    <x-navbar-non-login />
+    <x-frontliner.navbar-non-login />
 
     <!-- Hero Section -->
     <section class="bg-gradient-to-r from-blue-50 to-blue-100 py-12 lg:py-24">
@@ -106,9 +106,9 @@
                             <span class="text-sm text-gray-600">👥 5 penumpang</span>
                         </div>
                         <p class="text-2xl font-bold text-blue-600 mb-4">Rp 2,5jt</p>
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+                        <a href="{{ route('booking.start') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-center">
                             Pesan Sekarang
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -125,9 +125,9 @@
                             <span class="text-sm text-gray-600">👥 7 penumpang</span>
                         </div>
                         <p class="text-2xl font-bold text-blue-600 mb-4">Rp 3,5jt</p>
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+                        <a href="{{ route('booking.start') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-center">
                             Pesan Sekarang
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -144,9 +144,9 @@
                             <span class="text-sm text-gray-600">👥 2 penumpang</span>
                         </div>
                         <p class="text-2xl font-bold text-blue-600 mb-4">Rp 5,2jt</p>
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+                        <a href="{{ route('booking.start') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-center">
                             Pesan Sekarang
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -231,6 +231,6 @@
         </div>
     </section>
 
-    <x-footer />
+    <x-frontliner.footer />
 </body>
 </html>

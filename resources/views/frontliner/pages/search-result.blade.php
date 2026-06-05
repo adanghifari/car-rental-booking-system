@@ -12,7 +12,7 @@
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
-    <x-navbar />
+    <x-frontliner.navbar-non-login />
 
     <main class="max-w-[1400px] mx-auto px-4 md:px-8 py-10 w-full flex-grow">
         
@@ -195,7 +195,7 @@
                                 <div>
                                     <p class="text-sm font-bold text-gray-900">Rp 5.2jt<span class="text-[10px] font-normal text-gray-400">/hari</span></p>
                                 </div>
-                                <button type="button" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Pesan Sekarang</button>
+                                <a href="{{ route('booking.start') }}" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition inline-block">Pesan Sekarang</a>
                             </div>
                         </div>
 
@@ -225,7 +225,7 @@
                                 <div>
                                     <p class="text-sm font-bold text-gray-900">Rp 7.8jt<span class="text-[10px] font-normal text-gray-400">/hari</span></p>
                                 </div>
-                                <button type="button" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Pesan Sekarang</button>
+                                <a href="{{ route('booking.start') }}" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition inline-block">Pesan Sekarang</a>
                             </div>
                         </div>
 
@@ -255,7 +255,7 @@
                                 <div>
                                     <p class="text-sm font-bold text-gray-900">Rp 6.5jt<span class="text-[10px] font-normal text-gray-400">/hari</span></p>
                                 </div>
-                                <button type="button" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition">Pesan Sekarang</button>
+                                <a href="{{ route('booking.start') }}" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-4 py-2 rounded-xl text-xs font-semibold transition inline-block">Pesan Sekarang</a>
                             </div>
                         </div>
 
@@ -278,7 +278,7 @@
         </div>
     </main>
 
-    <x-footer />
+    <x-frontliner.footer />
 
 </body>
 </html>
