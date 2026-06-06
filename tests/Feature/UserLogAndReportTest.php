@@ -74,24 +74,26 @@ class UserLogAndReportTest extends TestCase
         Sanctum::actingAs($this->admin);
 
         // Seed logs
-        UserLog::create([
+        $log1 = new UserLog([
             'user_id' => $this->customer->id,
             'username' => $this->customer->username,
             'activity' => 'Login Member',
             'device' => 'iPhone 15 Pro',
             'ip_address' => '192.168.1.1',
             'status' => 'success',
-            'created_at' => '2026-06-06 12:00:00',
         ]);
+        $log1->created_at = '2026-06-06 12:00:00';
+        $log1->save();
 
-        UserLog::create([
+        $log2 = new UserLog([
             'username' => 'unknown_user',
             'activity' => 'Gagal Login (Password)',
             'device' => 'MacBook Air',
             'ip_address' => '103.11.24.12',
             'status' => 'failed',
-            'created_at' => '2026-06-05 12:00:00',
         ]);
+        $log2->created_at = '2026-06-05 12:00:00';
+        $log2->save();
 
         // Test list
         $response = $this->getJson('/api/v1/log');

@@ -14,6 +14,12 @@ class MidtransService
         $isProduction = (bool) config('services.midtrans.is_production', false);
 
         if ($serverKey === '') {
+            if (config('app.env') === 'local') {
+                return [
+                    'token' => 'mock-snap-token-' . rand(1000, 9999),
+                    'redirect_url' => route('booking.simulate-payment', ['rental_id' => $rental->id]),
+                ];
+            }
             throw new RuntimeException('Midtrans server key is not configured.');
         }
 

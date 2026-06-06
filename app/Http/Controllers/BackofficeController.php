@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\CarStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RentalStatus;
+use App\Enums\VehicleType;
+use App\Enums\TransmissionType;
 use App\Models\Car;
 use App\Models\PaymentHistory;
 use App\Models\Rental;
@@ -15,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class BackofficeController extends Controller
 {
@@ -194,10 +197,10 @@ class BackofficeController extends Controller
                         ->where('name', 'like', '%'.$filters['search'].'%')
                         ->orWhere('brand', 'like', '%'.$filters['search'].'%')
                         ->orWhere('license_plate', 'like', '%'.$filters['search'].'%')
-                        ->orWhere('type', 'like', '%'.$filters['search'].'%');
+                        ->orWhere('vehicle_type', 'like', '%'.$filters['search'].'%');
                 });
             })
-            ->when($filters['type'] !== '', fn ($query) => $query->where('type', $filters['type']))
+            ->when($filters['type'] !== '', fn ($query) => $query->where('vehicle_type', $filters['type']))
             ->when($filters['transmission'] !== '', fn ($query) => $query->where('transmission', $filters['transmission']))
             ->when($filters['status'] !== '', function ($query) use ($filters, $activeRentalCarIds) {
                 if ($filters['status'] === 'available') {
@@ -229,24 +232,26 @@ class BackofficeController extends Controller
                     'description' => $car->description ?? '-',
                     'color' => $car->color ?? '-',
                     'status_raw' => $car->status instanceof CarStatus ? $car->status->value : (string) $car->status,
-                    'price' => (int) $car->rental_fee,
-                    'price_label' => number_format((int) $car->rental_fee, 0, ',', '.'),
-                    'price_raw' => (int) $car->rental_fee,
+                    'price' => (int) $car->daily_rate,
+                    'price_label' => number_format((int) $car->daily_rate, 0, ',', '.'),
+                    'price_raw' => (int) $car->daily_rate,
                     'rating' => number_format($car->rating ?: 5, 1),
                     'rating_raw' => (float) ($car->rating ?: 5),
                     'status' => $status['label'],
                     'status_tone' => $status['tone'],
                     'status_note' => $status['note'],
-                    'transmission' => str($car->transmission)->headline()->value(),
-                    'transmission_raw' => $car->transmission,
-                    'seat' => $car->seat.' Kursi',
-                    'seat_raw' => (int) $car->seat,
+                    'transmission' => $car->transmission instanceof TransmissionType ? $car->transmission->label() : (string) $car->transmission,
+                    'transmission_raw' => $car->transmission instanceof TransmissionType ? $car->transmission->value : (string) $car->transmission,
+                    'seat' => $car->seat_count.' Kursi',
+                    'seat_raw' => (int) $car->seat_count,
                     'year' => $car->year ? (string) $car->year : 'Tahun belum diisi',
                     'year_raw' => $car->year,
                     'cc' => $car->cc ? number_format($car->cc, 0, ',', '.').' CC' : 'CC belum diisi',
                     'cc_raw' => (int) $car->cc,
-                    'type' => str($car->type)->headline()->value(),
-                    'type_raw' => $car->type,
+                    'type' => $car->vehicle_type instanceof VehicleType ? $car->vehicle_type->label() : (string) $car->vehicle_type,
+                    'type_raw' => $car->vehicle_type instanceof VehicleType ? $car->vehicle_type->value : (string) $car->vehicle_type,
+                    'self_drive_available' => (bool) $car->self_drive_available,
+                    'driver_available' => (bool) $car->driver_available,
                     'plate' => strtoupper($car->license_plate),
                     'plate_raw' => $car->license_plate,
                     'image_url' => $this->resolveCarImageUrl($car->image),
@@ -271,18 +276,8 @@ class BackofficeController extends Controller
             ],
             'filters' => $filters,
             'cars' => $cars,
-            'typeOptions' => Car::query()
-                ->whereNotNull('type')
-                ->where('type', '!=', '')
-                ->distinct()
-                ->orderBy('type')
-                ->pluck('type'),
-            'transmissionOptions' => Car::query()
-                ->whereNotNull('transmission')
-                ->where('transmission', '!=', '')
-                ->distinct()
-                ->orderBy('transmission')
-                ->pluck('transmission'),
+            'typeOptions' => VehicleType::values(),
+            'transmissionOptions' => TransmissionType::values(),
             'pagination' => $this->paginationWindow($cars->currentPage(), $cars->lastPage()),
         ]);
     }
@@ -293,17 +288,19 @@ class BackofficeController extends Controller
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'transmission' => ['required', 'string', 'max:50'],
-            'seat' => ['required', 'integer', 'min:1', 'max:99'],
+            'transmission' => ['required', Rule::in(TransmissionType::values())],
+            'seat_count' => ['required', 'integer', 'min:1', 'max:99'],
             'year' => ['required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
             'cc' => ['required', 'integer', 'min:1', 'max:99999'],
-            'type' => ['required', 'string', 'max:100'],
+            'vehicle_type' => ['required', Rule::in(VehicleType::values())],
             'color' => ['required', 'string', 'max:50'],
-            'rental_fee' => ['required', 'integer', 'min:0'],
+            'daily_rate' => ['required', 'integer', 'min:0'],
             'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate'],
             'image' => ['required', 'file', 'image', 'max:5120'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
+            'self_drive_available' => ['nullable', 'boolean'],
+            'driver_available' => ['nullable', 'boolean'],
         ]);
 
         if ($validator->fails()) {
@@ -319,6 +316,8 @@ class BackofficeController extends Controller
             ->all();
 
         $validated['status'] = CarStatus::AVAILABLE;
+        $validated['self_drive_available'] = $request->boolean('self_drive_available');
+        $validated['driver_available'] = $request->boolean('driver_available');
 
         Car::create($validated);
 
@@ -333,19 +332,21 @@ class BackofficeController extends Controller
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'transmission' => ['required', 'string', 'max:50'],
-            'seat' => ['required', 'integer', 'min:1', 'max:99'],
+            'transmission' => ['required', Rule::in(TransmissionType::values())],
+            'seat_count' => ['required', 'integer', 'min:1', 'max:99'],
             'year' => ['required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
             'cc' => ['required', 'integer', 'min:1', 'max:99999'],
-            'type' => ['required', 'string', 'max:100'],
+            'vehicle_type' => ['required', Rule::in(VehicleType::values())],
             'color' => ['required', 'string', 'max:50'],
-            'rental_fee' => ['required', 'integer', 'min:0'],
+            'daily_rate' => ['required', 'integer', 'min:0'],
             'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate,' . $car->id],
             'image' => ['nullable', 'file', 'image', 'max:5120'],
             'remove_image' => ['nullable', 'boolean'],
             'remove_gallery_images' => ['nullable', 'string'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
+            'self_drive_available' => ['nullable', 'boolean'],
+            'driver_available' => ['nullable', 'boolean'],
         ]);
 
         if ($validator->fails()) {
@@ -384,6 +385,9 @@ class BackofficeController extends Controller
                 unset($validated['gallery_images']);
             }
         }
+
+        $validated['self_drive_available'] = $request->boolean('self_drive_available');
+        $validated['driver_available'] = $request->boolean('driver_available');
 
         $car->fill($validated);
         $car->save();

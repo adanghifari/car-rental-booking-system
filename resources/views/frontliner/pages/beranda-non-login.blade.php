@@ -17,9 +17,22 @@
     <x-frontliner.navbar-non-login />
 
     <header class="relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
-        <div class="absolute right-0 bottom-0 top-0 w-full md:w-2/3 h-full z-0 opacity-80 md:opacity-100">
-            <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80" alt="Teal Luxury Car" class="w-full h-full object-cover object-center scale-x-[-1]">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#0B1528] via-transparent to-transparent"></div>
+        <!-- Hero Background Slider -->
+        <div class="absolute right-0 bottom-0 top-0 w-full md:w-2/3 h-full z-0 opacity-80 md:opacity-100" id="hero-slider">
+            @if(isset($cars) && $cars->count() > 0)
+                @foreach($cars as $index => $car)
+                    <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out {{ $index === 0 ? 'opacity-100' : 'opacity-0' }}" data-slide-index="{{ $index }}">
+                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80' }}" 
+                             alt="{{ $car->name }}" 
+                             class="w-full h-full object-cover object-center scale-x-[-1]">
+                    </div>
+                @endforeach
+            @else
+                <div class="absolute inset-0">
+                    <img src="https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80" alt="Default Car" class="w-full h-full object-cover object-center scale-x-[-1]">
+                </div>
+            @endif
+            <div class="absolute inset-0 bg-gradient-to-r from-[#0B1528] via-transparent to-transparent z-10"></div>
         </div>
 
         <div class="max-w-7xl mx-auto px-6 relative z-10 py-20 w-full">
@@ -41,38 +54,29 @@
     </header>
 
     <div class="max-w-6xl mx-auto px-6 -mt-10 relative z-20">
-        <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-            <div class="relative">
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Lokasi Penjemputan</label>
-                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#0B3C9B" class="w-5 h-5 mr-2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                    </svg>
-                    <input type="text" placeholder="Cari kota atau bandara..." class="bg-transparent text-sm text-gray-700 focus:outline-none w-full">
-                </div>
-            </div>
+        <form method="GET" action="{{ route('search-result') }}" class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div>
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-                    <input type="date" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full">
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full">
                 </div>
             </div>
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Berakhir</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Harga Maksimal (Budget)</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-                    <input type="date" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full">
+                    <span class="text-sm text-gray-400 mr-2">Rp</span>
+                    <input type="number" name="max_price" placeholder="Contoh: 500000" value="{{ request('max_price') }}" class="bg-transparent text-sm text-gray-700 focus:outline-none w-full">
                 </div>
             </div>
             <div class="pt-6">
-                <button class="w-full bg-[#0B3C9B] hover:bg-[#082D76] text-white text-sm font-semibold py-3.5 px-6 rounded-xl transition flex items-center justify-center space-x-2 shadow-md">
+                <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] text-white text-sm font-semibold py-3.5 px-6 rounded-xl transition flex items-center justify-center space-x-2 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.604 10.604Z" />
                     </svg>
                     <span>Cari Kendaraan</span>
                 </button>
             </div>
-        </div>
+        </form>
     </div>
 
     <section id="armada" class="max-w-7xl mx-auto px-6 py-24">
@@ -90,79 +94,40 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-                <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80" alt="Precision X-Series" class="w-full h-full object-cover">
-                    <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">Tersedia</span>
-                </div>
-                <div class="flex justify-between items-start mb-4">
+            @forelse($cars as $car)
+                <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900">Precision X-Series</h3>
-                        <p class="text-xs text-gray-400">Luxury Executive Sedan</p>
+                        <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
+                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                            <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                                {{ $car->status->value ?? $car->status }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">{{ $car->name }}</h3>
+                                <p class="text-xs text-gray-400">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-lg font-bold text-gray-900">Rp {{ number_format($car->daily_rate, 0, ',', '.') }}</span>
+                                <p class="text-[10px] text-gray-400">/ hari</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-500 font-medium mb-6 border-t pt-4 border-gray-50">
+                            <span class="flex items-center">👥 {{ $car->seat_count }} Kursi</span>
+                            <span class="flex items-center">⚙️ {{ $car->transmission->label() }}</span>
+                            <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <span class="text-lg font-bold text-gray-900">Rp 2.4jt</span>
-                        <p class="text-[10px] text-gray-400">/ hari</p>
-                    </div>
+                    <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
+                        Pesan Sekarang
+                    </button>
                 </div>
-                <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-500 font-medium mb-6 border-t pt-4 border-gray-50">
-                    <span class="flex items-center">👥 4 Kursi</span>
-                    <span class="flex items-center">⚙️ Auto</span>
-                    <span class="flex items-center">⚡ EV Hybrid</span>
+            @empty
+                <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-100">
+                    <p class="text-gray-500">Tidak ada mobil yang tersedia.</p>
                 </div>
-                <button class="w-full border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm">
-                    Pesan Sekarang
-                </button>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-                <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=500&q=80" alt="Velocity SUV GT" class="w-full h-full object-cover">
-                    <span class="absolute top-3 right-3 bg-[#0B3C9B] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">Premium</span>
-                </div>
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900">Velocity SUV GT</h3>
-                        <p class="text-xs text-gray-400">High-Performance SUV</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-lg font-bold text-gray-900">Rp 3.8jt</span>
-                        <p class="text-[10px] text-gray-400">/ hari</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-500 font-medium mb-6 border-t pt-4 border-gray-50">
-                    <span class="flex items-center">👥 7 Kursi</span>
-                    <span class="flex items-center">⛽ Bensin</span>
-                    <span class="flex items-center">⛓️ AWD</span>
-                </div>
-                <button class="w-full border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm">
-                    Pesan Sekarang
-                </button>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition">
-                <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
-                    <img src="https://images.unsplash.com/photo-1525609004556-c46c7d6cf0a3?auto=format&fit=crop&w=500&q=80" alt="Azure Convertible" class="w-full h-full object-cover">
-                </div>
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900">Azure Convertible</h3>
-                        <p class="text-xs text-gray-400">Luxury Sports Tourer</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-lg font-bold text-gray-900">Rp 5.2jt</span>
-                        <p class="text-[10px] text-gray-400">/ hari</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-500 font-medium mb-6 border-t pt-4 border-gray-50">
-                    <span class="flex items-center">👥 2 Kursi</span>
-                    <span class="flex items-center">⚙️ Auto</span>
-                    <span class="flex items-center">🏎️ Sport Mode</span>
-                </div>
-                <button class="w-full border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm">
-                    Pesan Sekarang
-                </button>
-            </div>
+            @endforelse
         </div>
     </section>
 
@@ -256,5 +221,22 @@
         @endif
 
         <x-frontliner.footer />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.hero-slide');
+            if (slides.length > 1) {
+                let currentSlide = 0;
+                setInterval(() => {
+                    slides[currentSlide].classList.remove('opacity-100');
+                    slides[currentSlide].classList.add('opacity-0');
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    slides[currentSlide].classList.remove('opacity-0');
+                    slides[currentSlide].classList.add('opacity-100');
+                }, 5000); // Ganti gambar setiap 5 detik
+            }
+        });
+    </script>
+    <x-frontliner.booking-modal />
 </body>
 </html>
