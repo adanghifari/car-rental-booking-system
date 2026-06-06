@@ -15,8 +15,16 @@
     @if(auth()->check())
         <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center gap-2">
+                <!-- Logo with Back Button -->
+                <div class="flex items-center gap-3">
+                    <button onclick="window.history.length > 1 ? window.history.back() : window.location.href='{{ route('armada') }}'"
+                        class="group flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200"
+                        title="Kembali">
+                        <svg class="w-5 h-5 text-gray-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+                        </svg>
+                    </button>
+                    <div class="w-px h-6 bg-gray-200"></div>
                     <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
                 </div>
 
@@ -160,7 +168,7 @@
                     @endif
                 </div>
 
-                <form action="{{ route('booking.start') }}" method="GET" class="space-y-4">
+                <form id="detail-booking-form" action="{{ route('booking.start') }}" method="GET" class="space-y-4">
                     <input type="hidden" name="car_id" value="{{ $car->id }}">
                     <input type="hidden" name="service_type" id="service_type" value="self_drive">
 
@@ -168,11 +176,11 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mulai Sewa</label>
-                            <input type="date" name="start_date" id="rent_start_date" onchange="calculatePrice()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20">
+                            <input type="date" name="start_date" id="rent_start_date" onchange="calculatePrice()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20 focus:border-[#0B3C9B]/30 transition">
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Selesai Sewa</label>
-                            <input type="date" name="end_date" id="rent_end_date" onchange="calculatePrice()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20">
+                            <input type="date" name="end_date" id="rent_end_date" onchange="calculatePrice()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20 focus:border-[#0B3C9B]/30 transition">
                         </div>
                     </div>
 
@@ -181,12 +189,12 @@
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilihan Layanan</label>
                         <div class="grid grid-cols-2 gap-3">
                             <button type="button" id="btn-self-drive" onclick="selectService('self_drive')" 
-                                class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition {{ !$car->self_drive_available ? 'opacity-40 cursor-not-allowed' : '' }}">
+                                class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->self_drive_available ? 'opacity-40 cursor-not-allowed' : '' }}">
                                 <span class="text-base">🔑</span>
                                 <span>Lepas Kunci</span>
                             </button>
                             <button type="button" id="btn-with-driver" onclick="selectService('with_driver')" 
-                                class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition {{ !$car->driver_available ? 'opacity-40 cursor-not-allowed' : '' }}">
+                                class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->driver_available ? 'opacity-40 cursor-not-allowed' : '' }}">
                                 <span class="text-base">👤</span>
                                 <span>Dengan Sopir</span>
                             </button>
@@ -194,27 +202,28 @@
                     </div>
 
                     <!-- Price Breakdown -->
-                    <div class="border-t border-gray-100 pt-4 space-y-2 text-xs">
+                    <div class="border-t border-gray-100 pt-4 space-y-2.5 text-xs">
                         <div class="flex justify-between text-gray-500">
-                            <span id="display-days">Sewa 3 Hari</span>
+                            <span id="display-days">Sewa 0 Hari</span>
                             <span id="display-rent-cost" class="font-semibold text-gray-800">Rp -</span>
                         </div>
                         <div class="flex justify-between text-gray-500">
                             <span>Biaya Layanan & Asuransi</span>
                             <span id="display-service-cost" class="font-semibold text-gray-800">Rp -</span>
                         </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-dashed text-sm font-bold text-gray-900">
+                        <div class="flex justify-between items-center pt-2.5 border-t border-dashed border-gray-200 text-sm font-bold text-gray-900">
                             <span>Total Harga</span>
                             <span id="display-total-cost" class="text-[#0B3C9B] text-base">Rp -</span>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] text-white font-bold py-3.5 rounded-xl text-xs transition shadow-md tracking-wider uppercase">
+                    <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.98] text-white font-bold py-3.5 rounded-xl text-xs transition-all duration-200 shadow-lg shadow-blue-200 tracking-wider uppercase">
                         Booking Sekarang
                     </button>
-                    <p class="text-[9px] text-center text-gray-400">Pembatalan gratis hingga 24 jam sebelum pengambilan</p>
+                    <p class="text-[9px] text-center text-gray-400 italic">Pembatalan gratis hingga 24 jam sebelum pengambilan</p>
                 </form>
             </aside>
+
         </div>
 
 
@@ -317,17 +326,12 @@
             element.classList.add('border-2', 'border-[#0B3C9B]');
         }
 
-        // Price Calculation Script
+        // ── Sidebar Booking Form Logic ──
         const dailyRate = {{ $car->daily_rate }};
         const selfDriveAvailable = {{ $car->self_drive_available ? 'true' : 'false' }};
         const driverAvailable = {{ $car->driver_available ? 'true' : 'false' }};
         
-        let selectedService = '';
-        if (selfDriveAvailable) {
-            selectedService = 'self_drive';
-        } else if (driverAvailable) {
-            selectedService = 'with_driver';
-        }
+        let selectedService = selfDriveAvailable ? 'self_drive' : (driverAvailable ? 'with_driver' : '');
         
         function selectService(type) {
             if (type === 'self_drive' && !selfDriveAvailable) return;
@@ -336,85 +340,67 @@
             selectedService = type;
             document.getElementById('service_type').value = type;
             
-            const selfDriveBtn = document.getElementById('btn-self-drive');
-            const withDriverBtn = document.getElementById('btn-with-driver');
+            const selfBtn = document.getElementById('btn-self-drive');
+            const driverBtn = document.getElementById('btn-with-driver');
+            const activeClasses = ['border-[#0B3C9B]', 'bg-white', 'text-[#0B3C9B]', 'font-bold', 'border-2', 'shadow-sm'];
+            const inactiveClasses = ['border-gray-200', 'bg-gray-50', 'text-gray-500', 'font-medium'];
             
             if (type === 'self_drive') {
-                if (selfDriveBtn) {
-                    selfDriveBtn.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-500', 'font-medium');
-                    selfDriveBtn.classList.add('border-[#0B3C9B]', 'bg-white', 'text-[#0B3C9B]', 'font-bold', 'border-2');
-                }
-                if (withDriverBtn) {
-                    withDriverBtn.classList.remove('border-[#0B3C9B]', 'bg-white', 'text-[#0B3C9B]', 'font-bold', 'border-2');
-                    withDriverBtn.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-500', 'font-medium');
-                }
+                selfBtn?.classList.remove(...inactiveClasses);
+                selfBtn?.classList.add(...activeClasses);
+                driverBtn?.classList.remove(...activeClasses);
+                driverBtn?.classList.add(...inactiveClasses);
             } else {
-                if (withDriverBtn) {
-                    withDriverBtn.classList.remove('border-gray-200', 'bg-gray-50', 'text-gray-500', 'font-medium');
-                    withDriverBtn.classList.add('border-[#0B3C9B]', 'bg-white', 'text-[#0B3C9B]', 'font-bold', 'border-2');
-                }
-                if (selfDriveBtn) {
-                    selfDriveBtn.classList.remove('border-[#0B3C9B]', 'bg-white', 'text-[#0B3C9B]', 'font-bold', 'border-2');
-                    selfDriveBtn.classList.add('border-gray-200', 'bg-gray-50', 'text-gray-500', 'font-medium');
-                }
+                driverBtn?.classList.remove(...inactiveClasses);
+                driverBtn?.classList.add(...activeClasses);
+                selfBtn?.classList.remove(...activeClasses);
+                selfBtn?.classList.add(...inactiveClasses);
             }
-            
             calculatePrice();
         }
         
         function calculatePrice() {
-            const startInput = document.getElementById('rent_start_date').value;
-            const endInput = document.getElementById('rent_end_date').value;
+            const startVal = document.getElementById('rent_start_date').value;
+            const endVal = document.getElementById('rent_end_date').value;
+            if (!startVal || !endVal) return;
             
-            if (!startInput || !endInput) return;
-            
-            const start = new Date(startInput);
-            const end = new Date(endInput);
-            
-            let diffTime = end - start;
-            let days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+            const start = new Date(startVal);
+            const end = new Date(endVal);
+            let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
             if (days < 1) days = 1;
             
             const rentCost = dailyRate * days;
-            
-            let driverCost = 0;
-            if (selectedService === 'with_driver') {
-                driverCost = 150000 * days;
-            }
-            
+            let driverCost = selectedService === 'with_driver' ? 150000 * days : 0;
             const serviceCost = 100000 + driverCost;
             const totalCost = rentCost + serviceCost;
-            
-            const formatRupiah = (num) => 'Rp ' + num.toLocaleString('id-ID');
+            const fmt = (n) => 'Rp ' + n.toLocaleString('id-ID');
             
             document.getElementById('display-days').textContent = `Sewa ${days} Hari`;
-            document.getElementById('display-rent-cost').textContent = formatRupiah(rentCost);
-            document.getElementById('display-service-cost').textContent = formatRupiah(serviceCost);
-            document.getElementById('display-total-cost').textContent = formatRupiah(totalCost);
+            document.getElementById('display-rent-cost').textContent = fmt(rentCost);
+            document.getElementById('display-service-cost').textContent = fmt(serviceCost);
+            document.getElementById('display-total-cost').textContent = fmt(totalCost);
         }
+        
+        // Auth check on form submit
+        document.getElementById('detail-booking-form').addEventListener('submit', function(e) {
+            @guest
+                e.preventDefault();
+                window.location.href = "{{ route('login') }}?redirect=" + encodeURIComponent(window.location.pathname);
+            @endguest
+        });
         
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            
             const threeDaysLater = new Date(tomorrow);
             threeDaysLater.setDate(threeDaysLater.getDate() + 3);
-            
-            const formatDate = (date) => date.toISOString().split('T')[0];
+            const formatDate = (d) => d.toISOString().split('T')[0];
             
             const startEl = document.getElementById('rent_start_date');
             const endEl = document.getElementById('rent_end_date');
-            
-            if (startEl) {
-                startEl.value = formatDate(tomorrow);
-                startEl.min = formatDate(tomorrow);
-            }
-            if (endEl) {
-                endEl.value = formatDate(threeDaysLater);
-                endEl.min = formatDate(tomorrow);
-            }
+            if (startEl) { startEl.value = formatDate(tomorrow); startEl.min = formatDate(tomorrow); }
+            if (endEl) { endEl.value = formatDate(threeDaysLater); endEl.min = formatDate(tomorrow); }
             
             selectService(selectedService);
         });

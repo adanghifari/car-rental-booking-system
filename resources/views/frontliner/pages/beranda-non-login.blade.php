@@ -119,9 +119,9 @@
                             <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
                         </div>
                     </div>
-                    <a href="{{ route('booking.start') }}" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm">
+                    <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                         Pesan Sekarang
-                    </a>
+                    </button>
                 </div>
             @empty
                 <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-100">
@@ -237,5 +237,6 @@
             }
         });
     </script>
+    <x-frontliner.booking-modal />
 </body>
 </html>
