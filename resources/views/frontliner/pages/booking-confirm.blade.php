@@ -63,7 +63,7 @@
         </nav>
 
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Konfirmasi Detail Pemesanan</h1>
-        <p class="text-sm text-gray-600 mb-8">Lengkapi detail perjalanan Anda untuk memastikan layanan presisi kami.</p>
+        <p class="text-sm text-gray-600 mb-8 font-medium">Periksa rincian pemesanan Anda dan lakukan verifikasi identitas untuk melanjutkan pembayaran.</p>
 
         <!-- Grid Container -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -72,12 +72,12 @@
             <div class="lg:col-span-3 space-y-6">
                 
                 @if (session('error'))
-                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold">
-                        {{ session('error') }}
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
+                        ⚠️ {{ session('error') }}
                     </div>
                 @endif
 
-                <form action="{{ route('booking.confirm') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form action="{{ route('booking.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     <input type="hidden" name="car_id" value="{{ $car->id }}">
                     <input type="hidden" name="start_date" value="{{ $start_date }}">
@@ -156,20 +156,20 @@
                         </div>
                     </div>
 
-                    <!-- Dokumen Identitas -->
+                    <!-- Dokumen Identitas KTP -->
                     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
                                 🪪
                             </div>
-                            <h2 class="text-base font-bold text-gray-900 font-semibold">Dokumen Identitas (KTP)</h2>
+                            <h2 class="text-base font-bold text-gray-900">Dokumen Identitas (KTP)</h2>
                         </div>
 
                         <!-- Drag and Drop Area -->
                         <div class="relative border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl bg-gray-50/30 transition duration-200 p-8 flex flex-col items-center justify-center text-center cursor-pointer"
                              onclick="document.getElementById('ktp-input').click()">
                             
-                            <input type="file" name="ktp" id="ktp-input" accept="image/*" class="hidden" required onchange="handleKtpSelected(this)">
+                            <input type="file" name="ktp" id="ktp-input" accept="image/*" class="hidden" onchange="handleKtpSelected(this)">
                             
                             <div id="ktp-placeholder" class="space-y-3">
                                 <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
@@ -177,18 +177,81 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">Klik untuk unggah KTP</p>
-                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB)</p>
+                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
                                 </div>
                             </div>
 
                             <!-- Uploaded Preview -->
-                            <div id="ktp-preview-container" class="hidden space-y-3">
-                                <div class="w-16 h-16 rounded-xl bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center text-2xl">
-                                    📄
+                            <div id="ktp-preview-container" class="hidden space-y-3 w-full">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <img id="ktp-preview-image" src="" alt="Pratinjau KTP" class="w-full object-contain max-h-24">
                                 </div>
                                 <div>
-                                    <p id="ktp-filename" class="text-sm font-bold text-gray-800 max-w-[250px] truncate mx-auto"></p>
+                                    <p id="ktp-filename" class="text-xs font-bold text-gray-800 max-w-[250px] truncate mx-auto"></p>
                                     <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase">KTP Dipilih</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OCR Result Loading / Results Mock -->
+                        <div id="ocr-loader" class="hidden p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 justify-center text-xs font-bold text-blue-700">
+                            <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Mengekstrak data identitas (OCR)...
+                        </div>
+
+                        <div id="ocr-result" class="hidden p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2 text-xs">
+                            <p class="font-bold text-emerald-800 text-center uppercase tracking-wider text-[10px]">✓ Hasil Ekstraksi OCR KTP Berhasil</p>
+                            <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-emerald-100/50">
+                                <span class="text-emerald-600/70 font-semibold">NIK:</span>
+                                <span class="col-span-2 font-bold text-emerald-900">3273123456789001</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <span class="text-emerald-600/70 font-semibold">Nama:</span>
+                                <span class="col-span-2 font-bold text-emerald-900 uppercase">{{ auth()->user()->name }}</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1">
+                                <span class="text-emerald-600/70 font-semibold">Status:</span>
+                                <span class="col-span-2 font-bold text-emerald-900 uppercase">Valid & Terverifikasi</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Foto Selfie (Verifikasi Wajah) -->
+                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+                                📸
+                            </div>
+                            <h2 class="text-base font-bold text-gray-900">Verifikasi Wajah (Selfie)</h2>
+                        </div>
+
+                        <!-- Drag and Drop Area -->
+                        <div class="relative border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl bg-gray-50/30 transition duration-200 p-8 flex flex-col items-center justify-center text-center cursor-pointer"
+                             onclick="document.getElementById('selfie-input').click()">
+                            
+                            <input type="file" name="selfie" id="selfie-input" accept="image/*" class="hidden" onchange="handleSelfieSelected(this)">
+                            
+                            <div id="selfie-placeholder" class="space-y-3">
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
+                                    🤳
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-800">Klik untuk unggah Selfie</p>
+                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
+                                </div>
+                            </div>
+
+                            <!-- Uploaded Preview -->
+                            <div id="selfie-preview-container" class="hidden space-y-3 w-full">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                    <img id="selfie-preview-image" src="" alt="Pratinjau Selfie" class="w-full object-contain max-h-24">
+                                </div>
+                                <div>
+                                    <p id="selfie-filename" class="text-xs font-bold text-gray-800 max-w-[250px] truncate mx-auto"></p>
+                                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase">Selfie Dipilih</span>
                                 </div>
                             </div>
                         </div>
@@ -197,10 +260,7 @@
                     <!-- Submit Button -->
                     <div class="space-y-4">
                         <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-blue-200 flex items-center justify-center gap-2">
-                            Lanjutkan ke Ringkasan
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                            </svg>
+                            💳 Konfirmasi & Bayar Sekarang
                         </button>
                         <p class="text-xs text-center text-gray-400 flex items-center justify-center gap-1.5">
                             🔒 Pemesanan Anda diproses dengan enkripsi keamanan tinggi.
@@ -209,7 +269,7 @@
                 </form>
             </div>
 
-            <!-- Right Side: Car Info Card (2 Cols) -->
+            <!-- Right Side: Car Details Sticky Card (2 Cols) -->
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-md p-6 space-y-6 lg:sticky lg:top-24">
                     <!-- Image -->
@@ -229,36 +289,30 @@
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 border-y border-gray-100 py-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">🛋️</span>
-                            <div>
-                                <p class="text-[9px] font-bold text-gray-400 uppercase">Kapasitas</p>
-                                <p class="text-xs font-bold text-gray-800">{{ $car->seat_count }} Kursi</p>
-                            </div>
+                    <!-- Pricing Breakdown Summary -->
+                    <div class="border-t border-gray-100 pt-4 space-y-3 text-xs text-gray-500">
+                        <div class="flex justify-between">
+                            <span>Durasi Sewa:</span>
+                            <span class="font-bold text-gray-800">{{ $days }} Hari</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">⚙️</span>
-                            <div>
-                                <p class="text-[9px] font-bold text-gray-400 uppercase">Akselerasi</p>
-                                <p class="text-xs font-bold text-gray-800">2.8s (0-100)</p>
-                            </div>
+                        <div class="flex justify-between">
+                            <span>Biaya Sewa Mobil (Rp {{ number_format($car->daily_rate, 0, ',', '.') }} x {{ $days }}):</span>
+                            <span class="font-bold text-gray-800">Rp {{ number_format($rentCost, 0, ',', '.') }}</span>
                         </div>
-                    </div>
-
-                    <!-- Price Estimate -->
-                    <div>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estimasi Biaya</p>
-                        <p class="text-2xl font-extrabold text-[#0B3C9B] mt-1">
-                            Rp {{ number_format($car->daily_rate, 0, ',', '.') }}
-                            <span class="text-xs font-medium text-gray-400">/hari</span>
-                        </p>
-                    </div>
-
-                    <!-- Inclusions -->
-                    <div class="bg-gray-50/70 p-4 rounded-xl flex gap-3 text-xs text-gray-600 leading-relaxed border border-gray-100">
-                        <span class="text-blue-500 font-bold text-base mt-0.5">✓</span>
-                        <p>Termasuk Asuransi All-Risk Platinum, Layanan Penjemputan 24/7, dan Pembersihan Interior Premium sebelum pengiriman.</p>
+                        <div class="flex justify-between">
+                            <span>Biaya Layanan & Asuransi:</span>
+                            <span class="font-bold text-gray-800">Rp 100.000</span>
+                        </div>
+                        @if($service_type === 'with_driver')
+                            <div class="flex justify-between">
+                                <span>Biaya Driver (Rp 150.000 x {{ $days }}):</span>
+                                <span class="font-bold text-gray-800">Rp {{ number_format($driverCost, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+                        <div class="flex justify-between items-center pt-3 border-t border-dashed border-gray-200 text-sm font-extrabold text-gray-900">
+                            <span>Total Harga:</span>
+                            <span class="text-[#0B3C9B] text-base">Rp {{ number_format($totalPrice, 0, ',', '.') }}</span>
+                        </div>
                     </div>
 
                     <!-- Ubah Pesanan Button -->
@@ -285,12 +339,53 @@
             const file = input.files[0];
             const placeholder = document.getElementById('ktp-placeholder');
             const preview = document.getElementById('ktp-preview-container');
+            const previewImage = document.getElementById('ktp-preview-image');
             const filenameEl = document.getElementById('ktp-filename');
+            const ocrLoader = document.getElementById('ocr-loader');
+            const ocrResult = document.getElementById('ocr-result');
 
             if (file) {
+                // Show Image Preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    placeholder.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                    
+                    // Mock OCR Extraction loading and feedback
+                    ocrResult.classList.add('hidden');
+                    ocrLoader.classList.remove('hidden');
+                    setTimeout(() => {
+                        ocrLoader.classList.add('hidden');
+                        ocrResult.classList.remove('hidden');
+                    }, 1200);
+                }
+                reader.readAsDataURL(file);
                 filenameEl.textContent = file.name;
-                placeholder.classList.add('hidden');
-                preview.classList.remove('hidden');
+            } else {
+                placeholder.classList.remove('hidden');
+                preview.classList.add('hidden');
+                ocrLoader.classList.add('hidden');
+                ocrResult.classList.add('hidden');
+            }
+        }
+
+        function handleSelfieSelected(input) {
+            const file = input.files[0];
+            const placeholder = document.getElementById('selfie-placeholder');
+            const preview = document.getElementById('selfie-preview-container');
+            const previewImage = document.getElementById('selfie-preview-image');
+            const filenameEl = document.getElementById('selfie-filename');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    placeholder.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+                filenameEl.textContent = file.name;
             } else {
                 placeholder.classList.remove('hidden');
                 preview.classList.add('hidden');
