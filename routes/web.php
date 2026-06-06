@@ -4,6 +4,7 @@ use App\Http\Controllers\BackofficeController;
 use Illuminate\Http\RedirectResponse;
 use App\Models\User;
 use App\Models\Car;
+use App\Models\Rental;
 use App\Enums\CarStatus;
 use App\Enums\RentalStatus;
 use App\Enums\VehicleType;
@@ -512,7 +513,7 @@ Route::get('/search-result', function (Request $request) {
     ]);
 })->middleware('token.cookie')->name('search-result');
 Route::get('/armada', function (Request $request) {
-    $cars = Car::query()->where('status', CarStatus::AVAILABLE)->get();
+    $cars = Car::all();
 
     return view('frontliner.pages.armada', [
         'cars' => $cars,
