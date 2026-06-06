@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Models\UserLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -76,6 +77,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            UserLog::log($user, 'Gagal Login (Password)', 'failed', $request, $login);
             return ApiResponse::unauthorized('Invalid credentials.');
         }
 
@@ -83,6 +85,8 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $plainTextToken = $user->createToken($this->tokenName($request))->plainTextToken;
+
+        UserLog::log($user, 'Login Member', 'success', $request);
 
         return $this->withAccessTokenCookie(
             ApiResponse::success([
