@@ -385,11 +385,18 @@
         document.getElementById('detail-booking-form').addEventListener('submit', function(e) {
             @guest
                 e.preventDefault();
-                window.location.href = "{{ route('login') }}?redirect=" + encodeURIComponent(window.location.pathname);
+                const urlParams = new URLSearchParams(new FormData(this));
+                const dest = "/booking/start?" + urlParams.toString();
+                window.location.href = "{{ route('login') }}?redirect=" + encodeURIComponent(dest);
             @endguest
         });
         
         document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const qStart = urlParams.get('start_date');
+            const qEnd = urlParams.get('end_date');
+            const qService = urlParams.get('service_type');
+
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -399,9 +406,19 @@
             
             const startEl = document.getElementById('rent_start_date');
             const endEl = document.getElementById('rent_end_date');
-            if (startEl) { startEl.value = formatDate(tomorrow); startEl.min = formatDate(tomorrow); }
-            if (endEl) { endEl.value = formatDate(threeDaysLater); endEl.min = formatDate(tomorrow); }
             
+            if (startEl) { 
+                startEl.value = qStart || formatDate(tomorrow); 
+                startEl.min = formatDate(tomorrow); 
+            }
+            if (endEl) { 
+                endEl.value = qEnd || formatDate(threeDaysLater); 
+                endEl.min = formatDate(tomorrow); 
+            }
+            
+            if (qService) {
+                selectedService = qService;
+            }
             selectService(selectedService);
         });
     </script>

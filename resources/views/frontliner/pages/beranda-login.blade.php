@@ -82,6 +82,30 @@
         </div>
     </header>
 
+    @if(session('success'))
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">✅</span>
+                    <p class="text-sm font-semibold text-emerald-800">{{ session('success') }}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">×</button>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <p class="text-sm font-semibold text-red-800">{{ session('error') }}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+            </div>
+        </div>
+    @endif
+
     <!-- Welcome Banner -->
     <section class="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">

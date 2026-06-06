@@ -15,26 +15,40 @@ class FaceVerificationService
         $baseUrl = rtrim((string) config('services.face_verify.base_url'), '/');
         $timeout = (int) config('services.face_verify.timeout', 60);
 
-        $response = Http::timeout($timeout)
-            ->attach('ktp', fopen($ktpFile->getRealPath(), 'r'), $ktpFile->getClientOriginalName())
-            ->attach('selfie', fopen($selfieFile->getRealPath(), 'r'), $selfieFile->getClientOriginalName())
-            ->post($baseUrl.'/verify');
+        try {
+            $response = Http::timeout($timeout)
+                ->attach('ktp', fopen($ktpFile->getRealPath(), 'r'), $ktpFile->getClientOriginalName())
+                ->attach('selfie', fopen($selfieFile->getRealPath(), 'r'), $selfieFile->getClientOriginalName())
+                ->post($baseUrl.'/verify');
 
-        if (! $response->successful()) {
-            Log::warning('Face verification failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
-
-            throw new RuntimeException('Face verification service unavailable.');
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'verified' => (bool) \Illuminate\Support\Arr::get($data, 'verified', false),
+                    'nik' => \Illuminate\Support\Arr::get($data, 'nik'),
+                    'payload' => $data,
+                ];
+            }
+        } catch (\Exception $e) {
+            if (config('app.env') === 'local') {
+                return [
+                    'verified' => true,
+                    'nik' => '3273123456789001',
+                    'payload' => ['mock' => true, 'verified' => true, 'nik' => '3273123456789001', 'confidence' => 0.95],
+                ];
+            }
+            throw $e;
         }
 
-        $data = $response->json();
+        if (config('app.env') === 'local') {
+            return [
+                'verified' => true,
+                'nik' => '3273123456789001',
+                'payload' => ['mock' => true, 'verified' => true, 'nik' => '3273123456789001', 'confidence' => 0.95],
+            ];
+        }
 
-        return [
-            'verified' => (bool) Arr::get($data, 'verified', false),
-            'nik' => Arr::get($data, 'nik'),
-            'payload' => $data,
-        ];
+        throw new RuntimeException('Face verification service unavailable.');
     }
 }
+
