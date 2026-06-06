@@ -24,7 +24,8 @@
 
             <!-- Navigation - Hidden on mobile -->
             <nav class="hidden lg:flex items-center gap-8">
-                <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
+                <a href="{{ route('frontliner') }}" class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Beranda</a>
+                <a href="{{ route('armada') }}" class="{{ Route::currentRouteName() === 'armada' || Route::currentRouteName() === 'search-result' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Armada</a>
                 <a href="#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
                 <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
             </nav>
@@ -237,32 +238,29 @@
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Pesan Kendaraan Baru</h2>
 
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Lokasi -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">📍 Lokasi Jemput</label>
-                        <input type="text" placeholder="Pilih lokasi" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-
+                <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <!-- Tanggal -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">📅 Tanggal Mulai</label>
-                        <input type="date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
 
                     <!-- Harga -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">💰 Harga Maksimal</label>
-                        <input type="text" placeholder="Rp 500.000" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">💰 Harga Maksimal (Budget)</label>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-gray-500 text-sm">Rp</span>
+                            <input type="number" name="max_price" placeholder="Contoh: 500000" value="{{ request('max_price') }}" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
                     </div>
 
                     <!-- Search Button -->
                     <div class="flex items-end">
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
                             🔍 Cari Kendaraan
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </section>
@@ -275,62 +273,33 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Car Card 1 -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
-                <div class="bg-gray-200 h-48 flex items-center justify-center">
-                    <p class="text-gray-500">Gambar Mobil</p>
-                </div>
-                <div class="p-4">
-                    <h3 class="font-bold text-lg mb-1">Premium S-Series</h3>
-                    <p class="text-gray-600 text-sm mb-3">Sedan mewah untuk perjalanan bisnis</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm text-gray-600">⭐ 4.8/5</span>
-                        <span class="text-sm text-gray-600">👥 5 penumpang</span>
+            @forelse($cars as $car)
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between">
+                    <div>
+                        <div class="bg-gray-200 h-48 flex items-center justify-center overflow-hidden">
+                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">{{ $car->name }}</h3>
+                            <p class="text-gray-600 text-sm mb-3">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-sm text-gray-600">⭐ {{ $car->rating ?? '4.8' }}/5</span>
+                                <span class="text-sm text-gray-600">👥 {{ $car->seat_count }} penumpang</span>
+                            </div>
+                            <p class="text-2xl font-bold text-blue-600 mb-4">Rp {{ number_format($car->daily_rate, 0, ',', '.') }} / hari</p>
+                        </div>
                     </div>
-                    <p class="text-2xl font-bold text-blue-600 mb-4">Rp 2,5jt</p>
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-                        Pesan Sekarang
-                    </button>
-                </div>
-            </div>
-
-            <!-- Car Card 2 -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
-                <div class="bg-gray-200 h-48 flex items-center justify-center">
-                    <p class="text-gray-500">Gambar Mobil</p>
-                </div>
-                <div class="p-4">
-                    <h3 class="font-bold text-lg mb-1">Velocity SUV GT</h3>
-                    <p class="text-gray-600 text-sm mb-3">SUV tangguh untuk petualangan</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm text-gray-600">⭐ 4.9/5</span>
-                        <span class="text-sm text-gray-600">👥 7 penumpang</span>
+                    <div class="p-4 pt-0">
+                        <a href="{{ route('booking.start') }}" class="w-full text-center block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
+                            Pesan Sekarang
+                        </a>
                     </div>
-                    <p class="text-2xl font-bold text-blue-600 mb-4">Rp 3,5jt</p>
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-                        Pesan Sekarang
-                    </button>
                 </div>
-            </div>
-
-            <!-- Car Card 3 -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition">
-                <div class="bg-gray-200 h-48 flex items-center justify-center">
-                    <p class="text-gray-500">Gambar Mobil</p>
+            @empty
+                <div class="col-span-3 text-center py-12 bg-white rounded-xl border border-gray-200">
+                    <p class="text-gray-500">Tidak ada mobil yang tersedia.</p>
                 </div>
-                <div class="p-4">
-                    <h3 class="font-bold text-lg mb-1">Azure Convertible</h3>
-                    <p class="text-gray-600 text-sm mb-3">Mobil sport untuk gaya hidup</p>
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm text-gray-600">⭐ 5.0/5</span>
-                        <span class="text-sm text-gray-600">👥 2 penumpang</span>
-                    </div>
-                    <p class="text-2xl font-bold text-blue-600 mb-4">Rp 5,2jt</p>
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-                        Pesan Sekarang
-                    </button>
-                </div>
-            </div>
+            @endforelse
         </div>
     </section>
 

@@ -400,8 +400,8 @@
                                 <label class="form-label" for="transmission">Transmisi</label>
                                 <select id="transmission" name="transmission" class="form-select" data-car-field="transmission">
                                     <option value="">Pilih transmisi</option>
-                                    @foreach (['Automatic', 'Manual', 'CVT'] as $transmission)
-                                        <option value="{{ $transmission }}" @selected(old('transmission') === $transmission)>{{ $transmission }}</option>
+                                    @foreach (\App\Enums\TransmissionType::cases() as $type)
+                                        <option value="{{ $type->value }}" @selected(old('transmission') === $type->value)>{{ $type->label() }}</option>
                                     @endforeach
                                 </select>
                                 @error('transmission')
@@ -410,9 +410,9 @@
                             </div>
 
                             <div class="form-field">
-                                <label class="form-label" for="seat">Jumlah Kursi</label>
-                                <input id="seat" name="seat" type="number" min="1" max="99" class="form-input" value="{{ old('seat') }}" placeholder="7" data-car-field="seat">
-                                @error('seat')
+                                <label class="form-label" for="seat_count">Jumlah Kursi</label>
+                                <input id="seat_count" name="seat_count" type="number" min="1" max="99" class="form-input" value="{{ old('seat_count') }}" placeholder="7" data-car-field="seat">
+                                @error('seat_count')
                                     <div class="error-text">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -434,14 +434,14 @@
                             </div>
 
                             <div class="form-field">
-                                <label class="form-label" for="type">Tipe Mobil</label>
-                                <select id="type" name="type" class="form-select" data-car-field="type">
+                                <label class="form-label" for="vehicle_type">Tipe Mobil</label>
+                                <select id="vehicle_type" name="vehicle_type" class="form-select" data-car-field="type">
                                     <option value="">Pilih tipe</option>
-                                    @foreach (['SUV', 'MPV', 'Sedan', 'Hatchback', 'City Car', 'Van', 'LCGC'] as $type)
-                                        <option value="{{ $type }}" @selected(old('type') === $type)>{{ $type }}</option>
+                                    @foreach (\App\Enums\VehicleType::cases() as $type)
+                                        <option value="{{ $type->value }}" @selected(old('vehicle_type') === $type->value)>{{ $type->label() }}</option>
                                     @endforeach
                                 </select>
-                                @error('type')
+                                @error('vehicle_type')
                                     <div class="error-text">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -455,11 +455,25 @@
                             </div>
 
                             <div class="form-field">
-                                <label class="form-label" for="rental_fee">Tarif Sewa per Hari</label>
-                                <input id="rental_fee" name="rental_fee" type="number" min="0" class="form-input" value="{{ old('rental_fee') }}" placeholder="500000" data-car-field="rental_fee">
-                                @error('rental_fee')
+                                <label class="form-label" for="daily_rate">Tarif Sewa per Hari</label>
+                                <input id="daily_rate" name="daily_rate" type="number" min="0" class="form-input" value="{{ old('daily_rate') }}" placeholder="500000" data-car-field="rental_fee">
+                                @error('daily_rate')
                                     <div class="error-text">{{ $message }}</div>
                                 @enderror
+                            </div>
+
+                            <div class="form-field full">
+                                <label class="form-label" style="margin-bottom: 8px; display: block;">Layanan Tersedia</label>
+                                <div style="display: flex; gap: 24px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.95); background: rgba(255, 255, 255, 0.92);">
+                                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #202636;">
+                                        <input type="checkbox" name="self_drive_available" value="1" @checked(old('self_drive_available')) data-car-field="self_drive_available" style="width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid rgba(219, 227, 239, 0.95); accent-color: var(--blue);">
+                                        <span>Lepas Kunci</span>
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #202636;">
+                                        <input type="checkbox" name="driver_available" value="1" @checked(old('driver_available')) data-car-field="driver_available" style="width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid rgba(219, 227, 239, 0.95); accent-color: var(--blue);">
+                                        <span>Dengan Driver</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <div class="form-field full">
@@ -606,6 +620,10 @@
                             <div class="detail-value" data-detail-price>-</div>
                         </div>
                         <div class="detail-item">
+                            <div class="detail-label">Layanan</div>
+                            <div class="detail-value" data-detail-services>-</div>
+                        </div>
+                        <div class="detail-item">
                             <div class="detail-label">Keterangan Status</div>
                             <div class="detail-value" data-detail-status-note>-</div>
                         </div>
@@ -684,6 +702,7 @@
                     seat: detailModal.querySelector('[data-detail-seat]'),
                     cc: detailModal.querySelector('[data-detail-cc]'),
                     price: detailModal.querySelector('[data-detail-price]'),
+                    services: detailModal.querySelector('[data-detail-services]'),
                     statusNote: detailModal.querySelector('[data-detail-status-note]'),
                     description: detailModal.querySelector('[data-detail-description]'),
                     gallery: detailModal.querySelector('[data-detail-gallery]'),
@@ -748,6 +767,8 @@
                         color: car.color ?? '',
                         rental_fee: car.price_raw ?? '',
                         description: car.description ?? '',
+                        self_drive_available: car.self_drive_available ?? false,
+                        driver_available: car.driver_available ?? false,
                     };
 
                     Object.entries(fieldMap).forEach(([key, value]) => {
@@ -757,6 +778,11 @@
                         }
 
                         if (element.type === 'file') {
+                            return;
+                        }
+
+                        if (element.type === 'checkbox') {
+                            element.checked = Boolean(value);
                             return;
                         }
 
@@ -825,6 +851,10 @@
                     detailFields.seat.textContent = car.seat ?? '-';
                     detailFields.cc.textContent = car.cc ?? '-';
                     detailFields.price.textContent = `Rp ${car.price_label ?? '-'} / hari`;
+                    const servicesList = [];
+                    if (car.self_drive_available) servicesList.push('Lepas Kunci');
+                    if (car.driver_available) servicesList.push('Dengan Driver');
+                    detailFields.services.textContent = servicesList.length > 0 ? servicesList.join(', ') : 'Tidak ada';
                     detailFields.statusNote.textContent = car.status_note ?? '-';
                     detailFields.description.textContent = buildDetailHtml(car.description);
 

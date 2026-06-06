@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CarStatus;
+use App\Enums\VehicleType;
+use App\Enums\TransmissionType;
 use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use Illuminate\Http\JsonResponse;
@@ -35,17 +37,19 @@ class CarController extends Controller
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'transmission' => ['required', 'string', 'max:50'],
-            'seat' => ['required', 'integer', 'min:1'],
+            'transmission' => ['required', Rule::in(TransmissionType::values())],
+            'seat_count' => ['required', 'integer', 'min:1'],
             'year' => ['sometimes', 'required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
             'cc' => ['sometimes', 'required', 'integer', 'min:1', 'max:99999'],
-            'type' => ['required', 'string', 'max:100'],
+            'vehicle_type' => ['required', Rule::in(VehicleType::values())],
             'color' => ['required', 'string', 'max:50'],
-            'rental_fee' => ['required', 'integer', 'min:0'],
+            'daily_rate' => ['required', 'integer', 'min:0'],
             'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate'],
             'status' => ['sometimes', 'required', Rule::in(CarStatus::values())],
             'image' => ['sometimes', 'required', 'string'],
             'rating' => ['sometimes', 'required', 'numeric', 'between:0,5'],
+            'self_drive_available' => ['sometimes', 'required', 'boolean'],
+            'driver_available' => ['sometimes', 'required', 'boolean'],
         ]);
 
         if ($validator->fails()) {
@@ -65,17 +69,19 @@ class CarController extends Controller
             'brand' => ['sometimes', 'required', 'string', 'max:100'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'required', 'string'],
-            'transmission' => ['sometimes', 'required', 'string', 'max:50'],
-            'seat' => ['sometimes', 'required', 'integer', 'min:1'],
+            'transmission' => ['sometimes', 'required', Rule::in(TransmissionType::values())],
+            'seat_count' => ['sometimes', 'required', 'integer', 'min:1'],
             'year' => ['sometimes', 'required', 'integer', 'min:1990', 'max:' . (int) now()->addYear()->year],
             'cc' => ['sometimes', 'required', 'integer', 'min:1', 'max:99999'],
-            'type' => ['sometimes', 'required', 'string', 'max:100'],
+            'vehicle_type' => ['sometimes', 'required', Rule::in(VehicleType::values())],
             'color' => ['sometimes', 'required', 'string', 'max:50'],
-            'rental_fee' => ['sometimes', 'required', 'integer', 'min:0'],
+            'daily_rate' => ['sometimes', 'required', 'integer', 'min:0'],
             'license_plate' => ['sometimes', 'required', 'string', 'max:30', 'unique:cars,license_plate,' . $car->id],
             'status' => ['sometimes', 'required', Rule::in(CarStatus::values())],
             'image' => ['sometimes', 'required', 'string'],
             'rating' => ['sometimes', 'required', 'numeric', 'between:0,5'],
+            'self_drive_available' => ['sometimes', 'required', 'boolean'],
+            'driver_available' => ['sometimes', 'required', 'boolean'],
         ]);
 
         if ($validator->fails()) {

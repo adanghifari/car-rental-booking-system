@@ -75,7 +75,7 @@ class RentalController extends Controller
                 'car_id' => $car->id,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
-                'total_price' => $car->rental_fee * $days,
+                'total_price' => $car->daily_rate * $days,
                 'status' => RentalStatus::PREPAID,
                 'type' => $validated['type'],
                 'prepaid_expires_at' => now()->addDay(),
@@ -140,11 +140,11 @@ class RentalController extends Controller
         // Filter by tipe mobil (car type)
         if ($request->filled('tipe_mobil')) {
             $query->whereHas('car', function ($q) use ($request) {
-                $q->where('type', $request->query('tipe_mobil'));
+                $q->where('vehicle_type', strtolower($request->query('tipe_mobil')));
             });
         } elseif ($request->filled('car_type')) {
             $query->whereHas('car', function ($q) use ($request) {
-                $q->where('type', $request->query('car_type'));
+                $q->where('vehicle_type', strtolower($request->query('car_type')));
             });
         }
 
@@ -223,7 +223,7 @@ class RentalController extends Controller
                     $startDate = Carbon::parse($rental->start_date);
                     $endDate = Carbon::parse($rental->end_date);
                     $days = max(1, $startDate->diffInDays($endDate));
-                    $rental->total_price = $car->rental_fee * $days;
+                    $rental->total_price = $car->daily_rate * $days;
                 }
             }
 

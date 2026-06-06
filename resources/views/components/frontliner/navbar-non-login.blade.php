@@ -7,8 +7,8 @@
 
             <!-- Navigation - Hidden on mobile -->
             <nav class="hidden lg:flex items-center gap-8">
-                <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
-                <a href="#armada" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
+                <a href="{{ route('home') }}" class="{{ Route::currentRouteName() === 'home' || Route::currentRouteName() === 'beranda' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Beranda</a>
+                <a href="{{ route('armada') }}" class="{{ Route::currentRouteName() === 'armada' || Route::currentRouteName() === 'search-result' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Armada</a>
                 <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni Kami</a>
             </nav>
 
