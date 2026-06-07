@@ -26,7 +26,7 @@
             <nav class="hidden lg:flex items-center gap-8">
                 <a href="{{ route('frontliner') }}" class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Beranda</a>
                 <a href="{{ route('armada') }}" class="{{ Route::currentRouteName() === 'armada' || Route::currentRouteName() === 'search-result' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Armada</a>
-                <a href="#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
+                <a href="{{ route('pesanan-saya') }}" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
                 <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
             </nav>
 
@@ -187,72 +187,89 @@
 
     <!-- Active Rental Section -->
     <section id="pesanan-saya" class="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Penyewaan Aktif</h2>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Pesanan Saya</h2>
+            <a href="{{ route('pesanan-saya') }}" class="group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-[#0B3C9B] hover:text-white transition-all duration-300 shadow-sm border border-blue-100" title="Lihat Semua Riwayat Pemesanan">
+                <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+            </a>
+        </div>
 
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-sm font-medium text-blue-100">Booking ID: BK-2024-001</p>
-                        <h3 class="text-xl font-bold">Premium S-Series</h3>
-                    </div>
-                    <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                        Dalam Perjalanan
-                    </span>
-                </div>
-            </div>
-
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <!-- Rental Details -->
-                    <div>
-                        <p class="text-gray-600 text-sm mb-2">Tanggal Sewa</p>
-                        <p class="text-lg font-semibold text-gray-900">24 Mei - 26 Mei 2024</p>
-                        <p class="text-sm text-gray-500">3 hari</p>
-                    </div>
-
-                    <div>
-                        <p class="text-gray-600 text-sm mb-2">Total Biaya</p>
-                        <p class="text-lg font-semibold text-gray-900">Rp 7,500,000</p>
-                        <p class="text-sm text-green-600">✓ Pembayaran Lunas</p>
-                    </div>
-
-                    <div>
-                        <p class="text-gray-600 text-sm mb-2">Lokasi Jemput</p>
-                        <p class="text-lg font-semibold text-gray-900">Bandara Sokarno Hatta</p>
-                        <p class="text-sm text-gray-500">Terminal 3, Level M</p>
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <div class="space-y-6">
+            @forelse($rentals as $rental)
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col justify-between">
+                    <div class="bg-gradient-to-r @if($rental->status === \App\Enums\RentalStatus::ONGOING) from-blue-500 to-blue-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) from-yellow-500 to-yellow-600 @else from-gray-500 to-gray-600 @endif text-white p-4 flex justify-between items-center">
                         <div>
-                            <p class="text-gray-600 text-sm">KM Awal</p>
-                            <p class="text-2xl font-bold text-gray-900">25,432</p>
+                            <p class="text-sm font-medium text-white/80">Booking ID: BK-{{ str_pad($rental->id, 5, '0', STR_PAD_LEFT) }}</p>
+                            <h3 class="text-xl font-bold">{{ $rental->car->brand ?? '' }} {{ $rental->car->name ?? 'Mobil' }}</h3>
                         </div>
-                        <div>
-                            <p class="text-gray-600 text-sm">KM Saat Ini</p>
-                            <p class="text-2xl font-bold text-blue-600">28,156</p>
+                        <span class="bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+                            @if($rental->status === \App\Enums\RentalStatus::ONGOING)
+                                Aktif (Lunas)
+                            @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
+                                Menunggu Pembayaran
+                            @else
+                                Selesai
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <!-- Rental Details -->
+                            <div>
+                                <p class="text-gray-600 text-sm mb-2">Tanggal Sewa</p>
+                                <p class="text-lg font-semibold text-gray-900">
+                                    {{ \Carbon\Carbon::parse($rental->start_date)->translatedFormat('d M') }} - {{ \Carbon\Carbon::parse($rental->end_date)->translatedFormat('d M Y') }}
+                                </p>
+                                <p class="text-sm text-gray-500">{{ max(1, \Carbon\Carbon::parse($rental->start_date)->diffInDays(\Carbon\Carbon::parse($rental->end_date))) }} hari</p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600 text-sm mb-2">Total Biaya</p>
+                                <p class="text-lg font-semibold text-gray-900">Rp {{ number_format($rental->total_price, 0, ',', '.') }}</p>
+                                <p class="text-sm @if($rental->status === \App\Enums\RentalStatus::ONGOING) text-green-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) text-yellow-600 @else text-gray-600 @endif font-medium">
+                                    @if($rental->status === \App\Enums\RentalStatus::ONGOING)
+                                        ✓ Pembayaran Lunas
+                                    @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
+                                        ⚠ Belum Dibayar
+                                    @else
+                                        ✓ Selesai
+                                    @endif
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600 text-sm mb-2">Tipe Layanan</p>
+                                <p class="text-lg font-semibold text-gray-900">
+                                    {{ $rental->type === \App\Enums\RentalType::WITH_DRIVER ? 'Dengan Sopir' : 'Lepas Kunci' }}
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-gray-600 text-sm">Total Perjalanan</p>
-                            <p class="text-2xl font-bold text-gray-900">2,724 km</p>
+
+                        <div class="flex flex-col sm:flex-row gap-4 pt-2">
+                            <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="flex-1 text-center bg-[#0B3C9B] hover:bg-[#082D76] text-white font-semibold py-2 px-4 rounded-lg transition inline-block text-sm">
+                                🔍 Lihat Detail Pesanan
+                            </a>
+                            @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+                                @php
+                                    $latestPayment = $rental->paymentHistories()->latest()->first();
+                                    $payUrl = $latestPayment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
+                                @endphp
+                                <a href="{{ $payUrl }}" class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition inline-block text-sm">
+                                    💳 Bayar Sekarang
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>
-
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                        📍 Tracking Kendaraan
-                    </button>
-                    <button class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-2 px-4 rounded-lg transition">
-                        📞 Hubungi Support
-                    </button>
-                    <button class="flex-1 border-2 border-gray-300 hover:border-gray-400 text-gray-900 font-semibold py-2 px-4 rounded-lg transition">
-                        📄 Invoice
-                    </button>
+            @empty
+                <div class="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
+                    <p class="font-medium text-base">Belum ada pesanan.</p>
+                    <p class="text-xs text-gray-400 mt-1">Silakan cari mobil untuk mulai menyewa.</p>
                 </div>
-            </div>
+            @endforelse
         </div>
     </section>
 
