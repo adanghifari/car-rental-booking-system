@@ -449,6 +449,119 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
     ]);
 })->middleware(['token.cookie', 'auth'])->name('booking.detail');
 
+Route::get('/pesanan-saya', function (Request $request) {
+    $user = auth()->user();
+    if (!$user) {
+        return redirect()->route('login');
+    }
+
+    // Run Midtrans sync for prepaid rentals of this user first, to be consistent!
+    $midtrans = app(\App\Services\MidtransService::class);
+    $prepaidRentals = Rental::where('user_id', $user->id)
+        ->where('status', RentalStatus::PREPAID)
+        ->get();
+
+    foreach ($prepaidRentals as $rental) {
+        $latestPayment = $rental->paymentHistories()->latest()->first();
+        if ($latestPayment && $latestPayment->provider_order_id) {
+            try {
+                $status = $midtrans->getTransactionStatus($latestPayment->provider_order_id);
+                if ($status === 'settlement' || $status === 'capture') {
+                    DB::transaction(function () use ($rental, $latestPayment) {
+                        $latestPayment->status = \App\Enums\PaymentStatus::PAID;
+                        $latestPayment->save();
+
+                        $rental->status = RentalStatus::ONGOING;
+                        $rental->save();
+
+                        $car = $rental->car;
+                        if ($car) {
+                            $car->status = CarStatus::UNAVAILABLE;
+                            $car->save();
+                        }
+                    });
+                } elseif (in_array($status, ['deny', 'cancel', 'expire', 'failure'])) {
+                    DB::transaction(function () use ($rental, $latestPayment) {
+                        $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
+                        $latestPayment->save();
+
+                        $rental->status = RentalStatus::RETURNED; // Cancelled
+                        $rental->save();
+
+                        $car = $rental->car;
+                        if ($car) {
+                            $car->status = CarStatus::AVAILABLE;
+                            $car->save();
+                        }
+                    });
+                }
+            } catch (\Exception $e) {
+                // Ignore API failures
+            }
+        }
+    }
+
+    // Build the query
+    $query = Rental::with(['car', 'paymentHistories'])
+        ->where('user_id', $user->id);
+
+    // Apply search filter (car name, brand, or license plate)
+    if ($request->filled('q')) {
+        $search = $request->input('q');
+        $query->whereHas('car', function ($q) use ($search) {
+            $q->where(function ($sq) use ($search) {
+                $sq->where('name', 'like', "%{$search}%")
+                  ->orWhere('brand', 'like', "%{$search}%")
+                  ->orWhere('license_plate', 'like', "%{$search}%");
+            });
+        });
+    }
+
+    // Apply status filter
+    // Options: 'aktif', 'selesai', 'pending', 'dibatalkan'
+    if ($request->filled('status')) {
+        $status = $request->input('status');
+        if ($status === 'aktif') {
+            $query->where('status', RentalStatus::ONGOING);
+        } elseif ($status === 'selesai') {
+            $query->where('status', RentalStatus::RETURNED)
+                ->whereHas('paymentHistories', function ($q) {
+                    $q->where('status', \App\Enums\PaymentStatus::PAID);
+                });
+        } elseif ($status === 'pending') {
+            $query->where('status', RentalStatus::PREPAID);
+        } elseif ($status === 'dibatalkan') {
+            $query->where(function ($q) {
+                $q->where('status', RentalStatus::RETURNED)
+                  ->whereHas('paymentHistories', function ($p) {
+                      $p->where('status', \App\Enums\PaymentStatus::CANCELLED);
+                  });
+            });
+        }
+    }
+
+    // Apply vehicle type filter
+    if ($request->filled('type')) {
+        $type = $request->input('type');
+        $query->whereHas('car', function ($q) use ($type) {
+            $q->where('vehicle_type', $type);
+        });
+    }
+
+    // Apply date filter
+    if ($request->filled('date')) {
+        $date = $request->input('date');
+        $query->whereDate('start_date', '<=', $date)
+              ->whereDate('end_date', '>=', $date);
+    }
+
+    $rentals = $query->orderBy('created_at', 'desc')->paginate(6)->withQueryString();
+
+    return view('frontliner.pages.pesanan-saya', [
+        'rentals' => $rentals,
+    ]);
+})->middleware(['token.cookie', 'auth'])->name('pesanan-saya');
+
 Route::get('/booking/simulate-payment', function (Request $request) {
     $rentalId = $request->query('rental_id');
     $rental = Rental::with(['car', 'user'])->findOrFail($rentalId);

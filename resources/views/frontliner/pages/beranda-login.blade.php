@@ -26,7 +26,7 @@
             <nav class="hidden lg:flex items-center gap-8">
                 <a href="{{ route('frontliner') }}" class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Beranda</a>
                 <a href="{{ route('armada') }}" class="{{ Route::currentRouteName() === 'armada' || Route::currentRouteName() === 'search-result' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Armada</a>
-                <a href="#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
+                <a href="{{ route('pesanan-saya') }}" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
                 <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
             </nav>
 
@@ -187,7 +187,14 @@
 
     <!-- Active Rental Section -->
     <section id="pesanan-saya" class="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-gray-200">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Pesanan Saya</h2>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Pesanan Saya</h2>
+            <a href="{{ route('pesanan-saya') }}" class="group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-[#0B3C9B] hover:text-white transition-all duration-300 shadow-sm border border-blue-100" title="Lihat Semua Riwayat Pemesanan">
+                <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+            </a>
+        </div>
 
         <div class="space-y-6">
             @forelse($rentals as $rental)

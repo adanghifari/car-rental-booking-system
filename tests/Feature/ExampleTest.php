@@ -173,6 +173,36 @@ class ExampleTest extends TestCase
         $response->assertSee('Bayar Sekarang via Midtrans');
     }
 
+    public function test_pesanan_saya_page_is_accessible_and_filterable(): void
+    {
+        $user = \App\Models\User::create([
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'password' => bcrypt('password'),
+            'role' => \App\Models\User::ROLE_CUSTOMER,
+        ]);
+
+        $car = $this->createCar();
+
+        $rental = \App\Models\Rental::create([
+            'user_id' => $user->id,
+            'car_id' => $car->id,
+            'start_date' => now(),
+            'end_date' => now()->addDays(3),
+            'total_price' => 1000000,
+            'status' => \App\Enums\RentalStatus::PREPAID,
+            'type' => \App\Enums\RentalType::SELF_DRIVE,
+            'ktp_path' => 'ktp/mock_ktp.png',
+            'selfie_path' => 'selfie/mock_selfie.png',
+        ]);
+
+        $response = $this->actingAs($user)->get('/pesanan-saya');
+        $response->assertStatus(200);
+        $response->assertSee('Semua Riwayat Pemesanan');
+        $response->assertSee('RESI:');
+        $response->assertSee('Pending');
+    }
+
     private function createCar(array $attributes = []): \App\Models\Car
     {
         return \App\Models\Car::create(array_merge([

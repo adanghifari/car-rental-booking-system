@@ -25,7 +25,7 @@
                 <nav class="hidden lg:flex items-center gap-8">
                     <a href="{{ route('frontliner') }}" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
                     <a href="{{ route('armada') }}" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
-                    <a href="{{ route('frontliner') }}#pesanan-saya" class="text-[#0B3C9B] border-b-2 border-[#0B3C9B] pb-1 font-semibold">Pesanan Saya</a>
+                    <a href="{{ route('pesanan-saya') }}" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
                     <a href="{{ route('frontliner') }}#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
                 </nav>
 
