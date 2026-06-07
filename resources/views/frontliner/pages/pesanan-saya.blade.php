@@ -69,7 +69,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
                 <!-- Status Filter Pills -->
                 <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Status</label>
@@ -100,20 +100,39 @@
                     <div class="flex flex-wrap gap-2">
                         @php
                             $activeType = request('type', '');
-                            $types = [
-                                '' => 'Semua Kendaraan',
-                                'sedan' => 'Sedan',
-                                'suv' => 'SUV',
-                                'sport' => 'Sport'
-                            ];
                         @endphp
-                        @foreach($types as $val => $label)
-                            <a href="{{ request()->fullUrlWithQuery(['type' => $val, 'page' => null]) }}" 
-                               class="px-4 py-2 rounded-xl text-xs font-semibold transition border {{ $activeType === $val ? 'bg-[#0B3C9B] border-[#0B3C9B] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
-                                {{ $label }}
+                        <a href="{{ request()->fullUrlWithQuery(['type' => '', 'page' => null]) }}" 
+                           class="px-4 py-2 rounded-xl text-xs font-semibold transition border {{ $activeType === '' ? 'bg-[#0B3C9B] border-[#0B3C9B] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                            Semua Kendaraan
+                        </a>
+                        @foreach(\App\Enums\VehicleType::cases() as $typeCase)
+                            <a href="{{ request()->fullUrlWithQuery(['type' => $typeCase->value, 'page' => null]) }}" 
+                               class="px-4 py-2 rounded-xl text-xs font-semibold transition border {{ $activeType === $typeCase->value ? 'bg-[#0B3C9B] border-[#0B3C9B] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                                {{ $typeCase->label() }}
                             </a>
                         @endforeach
                         <input type="hidden" name="type" value="{{ $activeType }}">
+                    </div>
+                </div>
+
+                <!-- Service Type Filter Pills -->
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tipe Layanan</label>
+                    <div class="flex flex-wrap gap-2">
+                        @php
+                            $activeService = request('service', '');
+                        @endphp
+                        <a href="{{ request()->fullUrlWithQuery(['service' => '', 'page' => null]) }}" 
+                           class="px-4 py-2 rounded-xl text-xs font-semibold transition border {{ $activeService === '' ? 'bg-[#0B3C9B] border-[#0B3C9B] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                            Semua Layanan
+                        </a>
+                        @foreach(\App\Enums\RentalType::cases() as $serviceCase)
+                            <a href="{{ request()->fullUrlWithQuery(['service' => $serviceCase->value, 'page' => null]) }}" 
+                               class="px-4 py-2 rounded-xl text-xs font-semibold transition border {{ $activeService === $serviceCase->value ? 'bg-[#0B3C9B] border-[#0B3C9B] text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+                                {{ $serviceCase->value === 'Self Drive' ? 'Lepas Kunci' : 'Dengan Sopir' }}
+                            </a>
+                        @endforeach
+                        <input type="hidden" name="service" value="{{ $activeService }}">
                     </div>
                 </div>
             </div>

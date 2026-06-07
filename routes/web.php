@@ -548,6 +548,12 @@ Route::get('/pesanan-saya', function (Request $request) {
         });
     }
 
+    // Apply service type filter
+    if ($request->filled('service')) {
+        $service = $request->input('service');
+        $query->where('type', $service);
+    }
+
     // Apply date filter
     if ($request->filled('date')) {
         $date = $request->input('date');
