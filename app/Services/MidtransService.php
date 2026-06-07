@@ -57,6 +57,30 @@ class MidtransService
         return $response->json();
     }
 
+    public function getTransactionStatus(string $orderId): ?string
+    {
+        $serverKey = (string) config('services.midtrans.server_key');
+        $isProduction = (bool) config('services.midtrans.is_production', false);
+
+        if ($serverKey === '') {
+            return null;
+        }
+
+        $endpoint = $isProduction
+            ? "https://api.midtrans.com/v2/{$orderId}/status"
+            : "https://api.sandbox.midtrans.com/v2/{$orderId}/status";
+
+        $response = \Illuminate\Support\Facades\Http::acceptJson()
+            ->withBasicAuth($serverKey, '')
+            ->get($endpoint);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        return $response->json('transaction_status');
+    }
+
     public function verifySignature(array $payload): bool
     {
         $serverKey = (string) config('services.midtrans.server_key');

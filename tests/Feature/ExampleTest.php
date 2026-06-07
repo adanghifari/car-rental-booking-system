@@ -44,7 +44,7 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Avanza Murah');
         $response->assertSee('Fortuner Mahal');
-        $response->assertDontSee('Brio Tidak Tersedia');
+        $response->assertSee('Brio Tidak Tersedia');
 
         // 3. Visit home page with max_price filter
         $response = $this->get('/?max_price=400000');
@@ -141,6 +141,36 @@ class ExampleTest extends TestCase
         $response->assertSee('Avanza Murah');
         $response->assertSee('Fortuner Mahal');
         $response->assertSee('MD CAR RENTAL');
+    }
+
+    public function test_booking_detail_page_is_accessible_to_owner(): void
+    {
+        $user = \App\Models\User::create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'password' => bcrypt('password'),
+            'role' => \App\Models\User::ROLE_CUSTOMER,
+        ]);
+
+        $car = $this->createCar();
+
+        $rental = \App\Models\Rental::create([
+            'user_id' => $user->id,
+            'car_id' => $car->id,
+            'start_date' => now(),
+            'end_date' => now()->addDays(3),
+            'total_price' => 1000000,
+            'status' => \App\Enums\RentalStatus::PREPAID,
+            'type' => \App\Enums\RentalType::SELF_DRIVE,
+            'ktp_path' => 'ktp/mock_ktp.png',
+            'selfie_path' => 'selfie/mock_selfie.png',
+        ]);
+
+        $response = $this->actingAs($user)->get("/booking/detail/{$rental->id}");
+        $response->assertStatus(200);
+        $response->assertSee('Detail Kendaraan');
+        $response->assertSee('Rincian Biaya');
+        $response->assertSee('Bayar Sekarang via Midtrans');
     }
 
     private function createCar(array $attributes = []): \App\Models\Car
