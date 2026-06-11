@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Pesanan - HD RENTAL CAR</title>
+    <title>Detail Pesanan - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -182,7 +182,7 @@
                     </div>
                     <div>
                         <h2 class="text-base font-bold">Rental Selesai</h2>
-                        <p class="text-xs text-blue-100 mt-0.5">Terima kasih telah menyewa kendaraan di HD RENTAL CAR.</p>
+                        <p class="text-xs text-blue-100 mt-0.5">Terima kasih telah menyewa kendaraan di MD CAR RENTAL.</p>
                     </div>
                 </div>
                 <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
@@ -390,7 +390,7 @@
 
     <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 mt-12">
         <div class="max-w-7xl mx-auto px-4 lg:px-8 text-center text-xs">
-            <p>&copy; 2026 HD Rental Car. All rights reserved.</p>
+            <p>&copy; 2026 MD CAR RENTAL. All rights reserved.</p>
         </div>
     </footer>
 

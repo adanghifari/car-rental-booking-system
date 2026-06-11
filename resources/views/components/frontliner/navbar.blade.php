@@ -12,7 +12,7 @@
                 </button>
                 <div id="nav-back-separator" class="w-px h-6 bg-slate-200"></div>
             </div>
-            <a href="{{ auth()->check() ? route('frontliner') : route('home') }}" class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent transition duration-300">HD RENTAL CAR</a>
+            <a href="{{ auth()->check() ? route('frontliner') : route('home') }}" class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent transition duration-300">MD CAR RENTAL</a>
         </div>
 
         <!-- Navigation - Hidden on mobile -->

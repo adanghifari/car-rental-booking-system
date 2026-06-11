@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konfirmasi Detail Pemesanan - HD RENTAL CAR</title>
+    <title>Konfirmasi Detail Pemesanan - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,7 +25,7 @@
                     </svg>
                 </a>
                 <div class="w-px h-6 bg-gray-200"></div>
-                <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
+                <span class="text-2xl font-bold text-blue-600">MD CAR RENTAL</span>
             </div>
 
             <!-- Navigation - Hidden on mobile -->
@@ -263,7 +263,7 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-500">
-        <p>&copy; 2026 HD RENTAL CAR. Hak Cipta Dilindungi Undang-Undang.</p>
+        <p>&copy; 2026 MD CAR RENTAL. Hak Cipta Dilindungi Undang-Undang.</p>
     </footer>
 </body>
 </html>

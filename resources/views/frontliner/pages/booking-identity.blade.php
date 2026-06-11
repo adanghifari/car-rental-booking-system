@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Data Penyewa - HD RENTAL CAR</title>
+    <title>Verifikasi Data Penyewa - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -25,7 +25,7 @@
                     </svg>
                 </a>
                 <div class="w-px h-6 bg-gray-200"></div>
-                <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
+                <span class="text-2xl font-bold text-blue-600">MD CAR RENTAL</span>
             </div>
 
             <!-- Navigation - Hidden on mobile -->
@@ -132,7 +132,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('booking.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form id="booking-identity-form" action="{{ route('booking.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                     @csrf
                     <input type="hidden" name="car_id" value="{{ $car->id }}">
                     <input type="hidden" name="start_date" value="{{ $start_date }}">
@@ -176,7 +176,7 @@
                             </div>
                         </div>
 
-                        <!-- OCR Result Loading / Results Mock -->
+                        <!-- OCR Status -->
                         <div id="ocr-loader" class="hidden p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 justify-center text-xs font-bold text-blue-700">
                             <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -185,20 +185,9 @@
                             Mengekstrak data identitas (OCR)...
                         </div>
 
-                        <div id="ocr-result" class="hidden p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2 text-xs">
-                            <p class="font-bold text-emerald-800 text-center uppercase tracking-wider text-[10px]">✓ Hasil Ekstraksi OCR KTP Berhasil</p>
-                            <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-emerald-100/50">
-                                <span class="text-emerald-600/70 font-semibold">NIK:</span>
-                                <span class="col-span-2 font-bold text-emerald-900">3273123456789001</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-1">
-                                <span class="text-emerald-600/70 font-semibold">Nama:</span>
-                                <span class="col-span-2 font-bold text-emerald-900 uppercase">{{ auth()->user()->name }}</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-1">
-                                <span class="text-emerald-600/70 font-semibold">Status:</span>
-                                <span class="col-span-2 font-bold text-emerald-900 uppercase">Valid & Terverifikasi</span>
-                            </div>
+                        <div id="ocr-result" class="hidden p-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-900">
+                            <p class="font-bold uppercase tracking-wider text-[10px] mb-1">Pratinjau OCR</p>
+                            <p class="leading-relaxed">Data identitas akan dicek saat tombol <strong>Kirim Verifikasi</strong> ditekan. Status ini bukan hasil verifikasi final.</p>
                         </div>
                     </div>
 
@@ -242,7 +231,10 @@
 
                     <!-- Submit Button -->
                     <div class="space-y-4">
-                        <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-blue-200 flex items-center justify-center gap-2">
+                        <div id="client-validation-error" class="hidden p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
+                            ⚠️ Mohon unggah KTP dan selfie terlebih dahulu sebelum mengirim verifikasi.
+                        </div>
+                        <button id="submit-verification-button" type="button" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-blue-200 flex items-center justify-center gap-2">
                             Kirim Verifikasi
                         </button>
                         <p class="text-[11px] text-[#475569] leading-relaxed bg-[#F1F5F9] p-3 rounded-xl border border-gray-200">
@@ -310,10 +302,38 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-500">
-        <p>&copy; 2026 HD RENTAL CAR. Hak Cipta Dilindungi Undang-Undang.</p>
+        <p>&copy; 2026 MD CAR RENTAL. Hak Cipta Dilindungi Undang-Undang.</p>
     </footer>
 
     <script>
+        const bookingForm = document.getElementById('booking-identity-form');
+        const submitButton = document.getElementById('submit-verification-button');
+        const clientValidationError = document.getElementById('client-validation-error');
+        const ktpInput = document.getElementById('ktp-input');
+        const selfieInput = document.getElementById('selfie-input');
+
+        function submitBookingIdentityForm() {
+            const hasKtp = ktpInput && ktpInput.files && ktpInput.files.length > 0;
+            const hasSelfie = selfieInput && selfieInput.files && selfieInput.files.length > 0;
+
+            if (!hasKtp || !hasSelfie) {
+                clientValidationError.classList.remove('hidden');
+                if (!hasKtp) {
+                    ktpInput.focus({ preventScroll: true });
+                } else {
+                    selfieInput.focus({ preventScroll: true });
+                }
+                return;
+            }
+
+            clientValidationError.classList.add('hidden');
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+            bookingForm.submit();
+        }
+
+        submitButton.addEventListener('click', submitBookingIdentityForm);
+
         function handleKtpSelected(input) {
             const file = input.files[0];
             const placeholder = document.getElementById('ktp-placeholder');
@@ -324,6 +344,7 @@
             const ocrResult = document.getElementById('ocr-result');
 
             if (file) {
+                clientValidationError.classList.add('hidden');
                 // Show Image Preview
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -331,8 +352,7 @@
                     placeholder.classList.add('hidden');
                     preview.classList.remove('hidden');
                     
-                    // Mock OCR Extraction loading and feedback
-                    ocrResult.classList.add('hidden');
+                    // Show a neutral OCR status, not a success state.
                     ocrLoader.classList.remove('hidden');
                     setTimeout(() => {
                         ocrLoader.classList.add('hidden');
@@ -357,6 +377,7 @@
             const filenameEl = document.getElementById('selfie-filename');
 
             if (file) {
+                clientValidationError.classList.add('hidden');
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     previewImage.src = e.target.result;

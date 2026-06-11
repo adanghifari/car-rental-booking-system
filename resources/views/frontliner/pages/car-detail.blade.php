@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail {{ $car->name }} - HD RENTAL CAR</title>
+    <title>Detail {{ $car->name }} - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -186,7 +186,7 @@
                         <div class="text-amber-400 text-xs">★★★★★</div>
                     </div>
                     <p class="text-gray-600 text-xs leading-relaxed italic">
-                        "Pelayanan HD Rental Car sangat profesional. Mobil diantar tepat waktu, sopir sopan, dan unitnya benar-benar terasa seperti mobil baru."
+                        "Pelayanan MD CAR RENTAL sangat profesional. Mobil diantar tepat waktu, sopir sopan, dan unitnya benar-benar terasa seperti mobil baru."
                     </p>
                 </div>
             </div>
