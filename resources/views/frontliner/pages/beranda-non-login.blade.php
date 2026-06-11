@@ -14,7 +14,7 @@
 </head>
 
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased">
-    <x-frontliner.navbar-non-login />
+    <x-frontliner.navbar />
 
     <header class="relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
         <!-- Hero Background Slider -->
@@ -41,10 +41,10 @@
                     THE PRECISION CONCIERGE
                 </span>
                 <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">
-                    Presisi dalam Setiap Perjalanan
+                    Rental Mobil Terpercaya untuk Segala Kebutuhan
                 </h1>
                 <p class="text-gray-300 text-base md:text-lg mb-8 leading-relaxed font-light">
-                    Rasakan kemewahan tanpa kompromi dengan layanan kurasi kendaraan kelas atas kami. Didesain untuk mereka yang menghargai ketepatan dan performa.
+                    Mulai dari perjalanan keluarga hingga perjalanan bisnis, temukan kendaraan terbaik dengan pemesanan yang cepat dan praktis.
                 </p>
                 <a href="#armada" class="inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-8 py-3.5 rounded-xl font-medium transition shadow-lg shadow-blue-900/40">
                     Jelajahi Armada
