@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Armada Kami - Rental Mobil</title>
+    <title>Favorit Saya - Rental Mobil</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -24,24 +24,25 @@
                     <nav class="text-xs text-blue-200 mb-2 flex items-center space-x-2">
                         <a href="{{ auth()->check() ? route('frontliner') : route('home') }}" class="hover:underline">Beranda</a>
                         <span>/</span>
-                        <span class="text-white font-medium">Armada</span>
+                        <span class="text-white font-medium">Favorite</span>
                     </nav>
-                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-2">Katalog Armada</h1>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-2">Armada Favorit Anda</h1>
                     <p class="text-sm text-blue-100 font-light">
-                        Menampilkan seluruh armada mobil yang tersedia untuk perjalanan Anda.
+                        Daftar kendaraan pilihan yang telah Anda simpan untuk perjalanan impian Anda.
                     </p>
                 </div>
             </div>
 
-            <!-- Semua Hasil Pencarian -->
-            <section>
+            <!-- Bagian Grid Favorit -->
+            <section id="favorites-section">
                 <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
-                    <h2 class="text-xl font-bold text-gray-900 tracking-tight">Semua Armada</h2>
+                    <h2 class="text-xl font-bold text-gray-900 tracking-tight">Pilihan Saya</h2>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10">
-                    @forelse($cars as $car)
-                        <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition">
+                <!-- Grid Mobil -->
+                <div id="favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10 hidden">
+                    @foreach($cars as $car)
+                        <div class="favorite-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition duration-300 transform hidden" data-car-id="{{ $car->id }}">
                             <div>
                                 <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
                                     <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
@@ -67,9 +68,9 @@
                                         <button type="button" 
                                             onclick="toggleFavorite({{ $car->id }}, event)"
                                             data-car-id="{{ $car->id }}"
-                                            class="favorite-btn text-slate-800 hover:text-red-600 transition-colors duration-200 cursor-pointer focus:outline-none p-1"
-                                            title="Tambah ke Favorit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 heart-icon transition-transform duration-200 active:scale-75">
+                                            class="favorite-btn text-red-600 transition-colors duration-200 cursor-pointer focus:outline-none p-1"
+                                            title="Hapus dari Favorit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 heart-icon transition-transform duration-200 active:scale-75 text-red-600">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
                                             </svg>
                                         </button>
@@ -96,16 +97,25 @@
                                 </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="col-span-4 text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto text-gray-300 mb-4">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                            </svg>
-                            <p class="text-gray-500 font-medium text-base mb-1">Armada Tidak Ditemukan</p>
-                            <p class="text-gray-400 text-xs">Saat ini belum ada mobil yang terdaftar.</p>
-                        </div>
-                    @endforelse
+                    @endforeach
                 </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm max-w-2xl mx-auto my-10 px-6">
+                    <div class="w-24 h-24 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Belum Ada Mobil Favorit</h3>
+                    <p class="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
+                        Jelajahi armada kami dan temukan berbagai pilihan kendaraan terbaik untuk menemani perjalanan Anda.
+                    </p>
+                    <a href="{{ route('armada') }}" class="inline-flex items-center justify-center px-6 py-3 bg-[#0B3C9B] hover:bg-[#082D76] text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-md shadow-blue-900/10 hover:shadow-lg hover:shadow-blue-900/20">
+                        Cari Kendaraan
+                    </a>
+                </div>
+
             </section>
 
         </div>
@@ -117,7 +127,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const userId = '{{ auth()->id() }}';
-            const isGuest = !userId;
             const storageKey = 'favorites_' + (userId || 'guest');
 
             // Load favorites from localStorage
@@ -128,59 +137,53 @@
                 favorites = [];
             }
 
-            // Initialize hearts visual state
-            document.querySelectorAll('.favorite-btn').forEach(btn => {
-                const carId = parseInt(btn.getAttribute('data-car-id'));
-                const svg = btn.querySelector('.heart-icon');
-                
-                if (favorites.includes(carId)) {
-                    svg.setAttribute('fill', 'currentColor');
-                    btn.classList.remove('text-slate-800');
-                    btn.classList.add('text-red-600');
+            const grid = document.getElementById('favorites-grid');
+            const emptyState = document.getElementById('empty-state');
+
+            function checkEmptyState() {
+                const visibleCards = document.querySelectorAll('.favorite-card:not(.hidden)');
+                if (visibleCards.length === 0) {
+                    grid.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
                 } else {
-                    svg.setAttribute('fill', 'none');
-                    btn.classList.remove('text-red-600');
-                    btn.classList.add('text-slate-800');
+                    grid.classList.remove('hidden');
+                    emptyState.classList.add('hidden');
+                }
+            }
+
+            // Show favorited cars
+            document.querySelectorAll('.favorite-card').forEach(card => {
+                const carId = parseInt(card.getAttribute('data-car-id'));
+                if (favorites.includes(carId)) {
+                    card.classList.remove('hidden');
                 }
             });
 
-            // Toggle favorite function
+            checkEmptyState();
+
+            // Toggle favorite function (Remove from favorites page)
             window.toggleFavorite = function(carId, event) {
                 if (event) event.stopPropagation();
 
-                if (isGuest) {
-                    window.location.href = "{{ route('login') }}";
-                    return;
-                }
-
-                const btn = document.querySelector(`.favorite-btn[data-car-id="${carId}"]`);
-                if (!btn) return;
-
-                const svg = btn.querySelector('.heart-icon');
                 const index = favorites.indexOf(carId);
-
                 if (index > -1) {
-                    // Remove
                     favorites.splice(index, 1);
-                    svg.setAttribute('fill', 'none');
-                    btn.classList.remove('text-red-600');
-                    btn.classList.add('text-slate-800');
-                } else {
-                    // Add
-                    favorites.push(carId);
-                    svg.setAttribute('fill', 'currentColor');
-                    btn.classList.remove('text-slate-800');
-                    btn.classList.add('text-red-600');
-                    
-                    showSuccessPopup("Berhasil menambahkan ke favorite");
                 }
-
                 localStorage.setItem(storageKey, JSON.stringify(favorites));
+
+                // Remove card with animation
+                const card = document.querySelector(`.favorite-card[data-car-id="${carId}"]`);
+                if (card) {
+                    card.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => {
+                        card.classList.add('hidden');
+                        card.remove();
+                        checkEmptyState();
+                    }, 300);
+                }
             };
         });
     </script>
-
-    <x-frontliner.success-popup />
 
 </body>
 </html>

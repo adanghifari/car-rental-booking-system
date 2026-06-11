@@ -1,20 +1,22 @@
 <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
         <!-- Logo with Back Button -->
-        <div class="flex items-center gap-3">
-            <button onclick="window.history.length > 1 ? window.history.back() : window.location.href='{{ auth()->check() ? route('frontliner') : route('home') }}'"
-                class="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200 cursor-pointer"
-                title="Kembali">
-                <svg class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
-                </svg>
-            </button>
-            <div class="w-px h-6 bg-slate-200"></div>
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div id="nav-back-container" class="flex items-center gap-3">
+                <button id="nav-back-button" onclick="window.history.back()"
+                    class="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200 cursor-pointer"
+                    title="Kembali">
+                    <svg class="w-5 h-5 text-slate-500 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+                    </svg>
+                </button>
+                <div id="nav-back-separator" class="w-px h-6 bg-slate-200"></div>
+            </div>
             <a href="{{ auth()->check() ? route('frontliner') : route('home') }}" class="text-2xl font-extrabold tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent transition duration-300">HD RENTAL CAR</a>
         </div>
 
         <!-- Navigation - Hidden on mobile -->
-        <nav class="hidden lg:flex items-center gap-8">
+        <nav class="hidden lg:flex items-center gap-8 justify-center">
             @guest
                 <a href="{{ route('home') }}" class="{{ Route::currentRouteName() === 'home' || Route::currentRouteName() === 'beranda' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
                 <a href="{{ route('armada') }}" class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
@@ -25,12 +27,12 @@
                 <a href="{{ route('frontliner') }}" class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
                 <a href="{{ route('armada') }}" class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
                 <a href="{{ route('pesanan-saya') }}" class="{{ Route::currentRouteName() === 'pesanan-saya' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Pesanan Saya</a>
-                <a href="#" class="text-slate-600 hover:text-blue-600 transition font-medium">Favorite</a>
+                <a href="{{ route('favorite') }}" class="{{ Route::currentRouteName() === 'favorite' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Favorite</a>
             @endauth
         </nav>
 
         <!-- Right Section (Auth / Guest Buttons) -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-1 justify-end min-w-0">
             @guest
                 <div class="flex items-center gap-3">
                     <a href="{{ route('login') }}" class="px-4 py-2.5 text-blue-600 hover:text-blue-700 font-semibold text-sm transition">
@@ -94,4 +96,37 @@
             @endauth
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('nav-back-container');
+            if (!container) return;
+
+            let depth = 1;
+            const state = window.history.state;
+            const referrerSameOrigin = document.referrer && document.referrer.startsWith(window.location.origin);
+
+            if (state && typeof state.depth === 'number') {
+                depth = state.depth;
+            } else {
+                if (referrerSameOrigin) {
+                    const lastDepth = parseInt(sessionStorage.getItem('nav_app_depth') || '0');
+                    depth = lastDepth + 1;
+                } else {
+                    depth = 1;
+                }
+                window.history.replaceState({ depth: depth }, '');
+            }
+
+            sessionStorage.setItem('nav_app_depth', depth);
+
+            const isHomepage = {{ in_array(Route::currentRouteName(), ['home', 'frontliner', 'beranda']) ? 'true' : 'false' }};
+
+            if (isHomepage || depth <= 1) {
+                container.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+            }
+        });
+    </script>
 </header>
