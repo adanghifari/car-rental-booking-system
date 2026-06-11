@@ -774,3 +774,11 @@ Route::get('/car-detail/{car}', function (Car $car) {
         'similarCars' => $similarCars,
     ]);
 })->middleware('token.cookie')->name('car-detail');
+
+Route::get('/favorite', function (Request $request) {
+    $cars = \App\Models\Car::all();
+    return view('frontliner.pages.favorite', [
+        'cars' => $cars,
+    ]);
+})->middleware(['token.cookie', 'auth'])->name('favorite');
+

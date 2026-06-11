@@ -12,36 +12,7 @@
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
-    <!-- Header / Navbar -->
-    <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center gap-2">
-                <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="hidden lg:flex items-center gap-8">
-                <a href="{{ route('frontliner') }}" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
-                <a href="{{ route('armada') }}" class="text-gray-700 hover:text-blue-600 transition">Armada</a>
-                <a href="{{ route('pesanan-saya') }}" class="text-[#0B3C9B] border-b-2 border-[#0B3C9B] pb-1 font-semibold">Pesanan Saya</a>
-                <a href="{{ route('frontliner') }}#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
-            </nav>
-
-            <!-- User Profile -->
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
-                    <div class="text-right border-r pr-4 border-gray-100 mr-2">
-                        <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'User' }}</p>
-                        <p class="text-xs text-gray-500">Member</p>
-                    </div>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    <x-frontliner.navbar />
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full space-y-8">
