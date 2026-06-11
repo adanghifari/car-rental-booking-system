@@ -622,6 +622,14 @@ Route::post('/dashboard/cars', [BackofficeController::class, 'storeCar'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars.store');
 
+Route::get('/dashboard/reservations', [BackofficeController::class, 'reservations'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.reservations');
+
+Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReservation'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.reservations.store');
+
 Route::put('/dashboard/cars/{car}', [BackofficeController::class, 'updateCar'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars.update');

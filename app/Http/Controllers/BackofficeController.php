@@ -6,6 +6,8 @@ use App\Enums\CarStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RentalStatus;
 use App\Enums\VehicleType;
+use App\Enums\RentalType;
+use Illuminate\Support\Facades\DB;
 use App\Enums\TransmissionType;
 use App\Models\Car;
 use App\Models\PaymentHistory;
@@ -405,6 +407,123 @@ class BackofficeController extends Controller
         return redirect()
             ->route('backoffice.cars')
             ->with('success', 'Mobil berhasil dihapus.');
+    }
+
+    public function reservations(Request $request): View
+    {
+        $totalReservations = Rental::count();
+        $pendingReservations = Rental::where('status', RentalStatus::PREPAID)->count();
+        $completedReservations = Rental::where('status', RentalStatus::RETURNED)->count();
+
+        $rentals = Rental::with(['user:id,name', 'car:id,brand,name'])
+            ->latest()
+            ->paginate(6)
+            ->withQueryString()
+            ->through(function (Rental $rental) {
+                return [
+                    'id' => $rental->id,
+                    'booking_id' => $rental->id,
+                    'customer_name' => $rental->user?->name,
+                    'car_model' => trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
+                    'start_date' => $rental->start_date?->toDateString(),
+                    'end_date' => $rental->end_date?->toDateString(),
+                    'total_price' => (int) ($rental->total_price ?? 0),
+                    'status' => $rental->status instanceof RentalStatus ? $rental->status->value : (string) $rental->status,
+                ];
+            });
+
+        $customers = User::query()
+            ->where('role', '!=', User::ROLE_ADMIN)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+            ->all();
+
+        $availableCars = Car::query()
+            ->where('status', CarStatus::AVAILABLE)
+            ->get()
+            ->map(fn (Car $c) => ['id' => $c->id, 'brand' => $c->brand, 'model' => $c->name ?? $c->model ?? ''])
+            ->all();
+
+        return view('backoffice.reservations', [
+            'admin' => request()->user(),
+            'rentals' => $rentals,
+            'pagination' => $this->paginationWindow($rentals->currentPage(), $rentals->lastPage()),
+            'customers' => $customers,
+            'availableCars' => $availableCars,
+            'summary' => [
+                'total' => $totalReservations,
+                'pending' => $pendingReservations,
+                'completed' => $completedReservations,
+            ],
+        ]);
+    }
+
+    public function storeReservation(Request $request): RedirectResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'car_id' => ['required', 'integer', 'exists:cars,id'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'type' => ['nullable', Rule::in(RentalType::values())],
+            'ktp' => ['nullable', 'file', 'image', 'max:5120'],
+            'selfie' => ['nullable', 'file', 'image', 'max:5120'],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $data = $validator->validated();
+
+        try {
+            $rental = DB::transaction(function () use ($request, $data) {
+                $car = Car::query()->lockForUpdate()->findOrFail($data['car_id']);
+                if ($car->status !== CarStatus::AVAILABLE) {
+                    throw new \RuntimeException('Mobil tidak tersedia.');
+                }
+
+                $ktpPath = null;
+                $selfiePath = null;
+                if ($request->hasFile('ktp')) {
+                    $ktpPath = Storage::disk('local')->putFile('ktp', $request->file('ktp'));
+                }
+                if ($request->hasFile('selfie')) {
+                    $selfiePath = Storage::disk('local')->putFile('selfie', $request->file('selfie'));
+                }
+
+                $start = Carbon::parse($data['start_date']);
+                $end = Carbon::parse($data['end_date']);
+                $days = max(1, $start->diffInDays($end));
+
+                $rentCost = (int) ($car->daily_rate ?? 0) * $days;
+                $serviceCost = 100000; // default service fee
+                $totalPrice = $rentCost + $serviceCost;
+
+                $rental = Rental::create([
+                    'user_id' => $data['user_id'],
+                    'car_id' => $car->id,
+                    'start_date' => $start,
+                    'end_date' => $end,
+                    'total_price' => $totalPrice,
+                    'status' => RentalStatus::PREPAID,
+                    'type' => $data['type'] ?? RentalType::SELF_DRIVE,
+                    'prepaid_expires_at' => now()->addDay(),
+                    'ktp_path' => $ktpPath,
+                    'selfie_path' => $selfiePath,
+                ]);
+
+                $car->status = CarStatus::UNAVAILABLE;
+                $car->save();
+
+                return $rental;
+            });
+
+            return redirect()->route('backoffice.reservations')->with('success', 'Reservasi berhasil dibuat.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage() ?: 'Gagal membuat reservasi.')->withInput();
+        }
     }
 
     private function paginationWindow(int $currentPage, int $lastPage): array
