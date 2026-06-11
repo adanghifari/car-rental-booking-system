@@ -119,6 +119,15 @@ class PaymentController extends Controller
                     }
                 } elseif ($paymentStatus === PaymentStatus::EXPIRED) {
                     $rental->status = RentalStatus::EXPIRED;
+                    $rental->prepaid_expires_at = null;
+                    if ($rental->ktp_path) {
+                        Storage::disk('local')->delete($rental->ktp_path);
+                    }
+                    if ($rental->selfie_path) {
+                        Storage::disk('local')->delete($rental->selfie_path);
+                    }
+                    $rental->ktp_path = '';
+                    $rental->selfie_path = '';
                     $rental->save();
 
                     $car = $rental->car;
@@ -128,6 +137,15 @@ class PaymentController extends Controller
                     }
                 } elseif ($paymentStatus === PaymentStatus::CANCELLED) {
                     $rental->status = RentalStatus::CANCELLED;
+                    $rental->prepaid_expires_at = null;
+                    if ($rental->ktp_path) {
+                        Storage::disk('local')->delete($rental->ktp_path);
+                    }
+                    if ($rental->selfie_path) {
+                        Storage::disk('local')->delete($rental->selfie_path);
+                    }
+                    $rental->ktp_path = '';
+                    $rental->selfie_path = '';
                     $rental->save();
 
                     $car = $rental->car;

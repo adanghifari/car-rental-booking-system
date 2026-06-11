@@ -98,7 +98,10 @@
         </nav>
 
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Verifikasi Data Penyewa</h1>
-        <p class="text-sm text-gray-600 mb-8 font-medium">Silakan unggah foto KTP dan selfie Anda untuk keperluan verifikasi identitas penyewa.</p>
+        <p class="text-sm text-gray-600 mb-4 font-medium">Silakan unggah foto KTP dan selfie Anda untuk keperluan verifikasi identitas penyewa.</p>
+        <div class="mb-8 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-900">
+            Mobil ini telah diamankan sementara untuk Anda selama proses verifikasi. Lengkapi data penyewa untuk melanjutkan ke pembayaran.
+        </div>
 
         <!-- Grid Container -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -109,6 +112,23 @@
                 @if (session('error'))
                     <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
                         ⚠️ {{ session('error') }}
+                    </div>
+                @endif
+
+                @if (!empty($error_message))
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
+                        ⚠️ {{ $error_message }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm space-y-1">
+                        <p>⚠️ Terdapat kesalahan pada data yang diunggah:</p>
+                        <ul class="list-disc list-inside font-medium">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                     </div>
                 @endif
 
@@ -140,7 +160,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">Klik untuk unggah KTP</p>
-                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
+                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Wajib</p>
                                 </div>
                             </div>
 
@@ -203,7 +223,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">Klik untuk unggah Selfie</p>
-                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
+                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Wajib</p>
                                 </div>
                             </div>
 
@@ -230,6 +250,11 @@
                         </p>
                     </div>
                 </form>
+
+                <a href="{{ route('booking.start') }}?car_id={{ $car->id }}&start_date={{ $start_date }}&end_date={{ $end_date }}&service_type={{ $service_type }}"
+                   class="mt-4 w-full bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-red-100 flex items-center justify-center gap-2">
+                    ← Kembali
+                </a>
             </div>
 
             <!-- Right Side: Car Details Sticky Card (2 Cols) -->

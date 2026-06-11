@@ -345,6 +345,11 @@
 					@csrf
 					<button type="button" class="primary-button" style="background: var(--green); box-shadow: 0 14px 34px rgba(29, 187, 132, 0.18);" onclick="submitReturnAction()">Mobil Sudah DiKembalikan</button>
 				</form>
+
+				<form id="cancel-action-form" method="POST" action="" style="display: none; justify-content: flex-end; margin-top: 16px;">
+					@csrf
+					<button type="button" class="secondary-button" style="border-color: var(--red); color: var(--red); background: rgba(239, 68, 68, 0.05);" onclick="submitCancelAction()">Batalkan Reservasi</button>
+				</form>
 			</div>
 		</div>
 	</div>
@@ -479,6 +484,15 @@
 					}
 				};
 
+				window.submitCancelAction = function() {
+					const form = document.getElementById('cancel-action-form');
+					if (form) {
+						window.showCustomConfirm('Apakah Anda yakin ingin membatalkan reservasi ini?', () => {
+							form.submit();
+						});
+					}
+				};
+
 				document.querySelectorAll('[data-reservation-detail]').forEach((btn) => {
 					btn.addEventListener('click', () => {
 						const payload = btn.dataset.reservation || '{}';
@@ -546,6 +560,14 @@
 								returnForm.action = '/dashboard/reservations/' + data.id + '/return';
 							} else {
 								returnForm.style.display = 'none';
+							}
+
+							const cancelForm = document.getElementById('cancel-action-form');
+							if (data.status_raw === 'pending_verification' || data.status_raw === 'prepaid') {
+								cancelForm.style.display = 'flex';
+								cancelForm.action = '/dashboard/reservations/' + data.id + '/cancel';
+							} else {
+								cancelForm.style.display = 'none';
 							}
 
 							closeForm();

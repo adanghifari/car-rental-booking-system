@@ -115,7 +115,7 @@ class BookingIdentityVerificationTest extends TestCase
             $this->assertFalse($rental->verification_passed);
         }
         
-        $this->assertEquals(CarStatus::UNAVAILABLE, $this->car->fresh()->status);
+        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
     }
 
     public function test_admin_manual_approval_starts_4_hour_countdown(): void
@@ -331,6 +331,64 @@ class BookingIdentityVerificationTest extends TestCase
         $rental->refresh();
         $this->assertEquals(RentalStatus::RETURNED, $rental->status);
         $this->assertNotNull($rental->returned_at);
+        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
+    }
+
+    public function test_customer_cancellation_on_identity_step_restores_car_to_available(): void
+    {
+        $this->actingAs($this->customer);
+
+        // Go to identity step to reserve the car and create initial rental
+        $response = $this->post('/booking/identity', [
+            'car_id' => $this->car->id,
+            'start_date' => '2026-07-10',
+            'end_date' => '2026-07-12',
+            'service_type' => 'self_drive',
+        ]);
+
+        $response->assertOk();
+
+        // Car status remains AVAILABLE (held by overlapping rental date checks)
+        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
+
+        $rental = Rental::first();
+        $this->assertNotNull($rental);
+        $this->assertEquals(RentalStatus::PENDING_VERIFICATION, $rental->status);
+
+        // Cancel the booking
+        $cancelResponse = $this->post("/booking/detail/{$rental->id}/cancel");
+        $cancelResponse->assertRedirect();
+
+        // Rental should be CANCELLED and car status restored to AVAILABLE
+        $rental->refresh();
+        $this->assertEquals(RentalStatus::CANCELLED, $rental->status);
+        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
+    }
+
+    public function test_admin_can_cancel_pending_verification_rental(): void
+    {
+        $this->actingAs($this->admin);
+
+        $rental = Rental::create([
+            'user_id' => $this->customer->id,
+            'car_id' => $this->car->id,
+            'start_date' => '2026-07-10',
+            'end_date' => '2026-07-12',
+            'total_price' => 3000000,
+            'status' => RentalStatus::PENDING_VERIFICATION,
+            'type' => RentalType::SELF_DRIVE,
+            'verification_status' => VerificationStatus::NEEDS_REVIEW,
+            'ktp_path' => 'ktp/test.jpg',
+            'selfie_path' => 'selfie/test.jpg',
+        ]);
+
+        $response = $this->post("/dashboard/reservations/{$rental->id}/cancel");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $rental->refresh();
+        $this->assertEquals(RentalStatus::CANCELLED, $rental->status);
         $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
     }
 }

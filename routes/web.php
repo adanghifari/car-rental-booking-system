@@ -11,6 +11,50 @@ use App\Enums\VehicleType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\ViewErrorBag;
+
+if (! function_exists('booking_active_rental_statuses')) {
+    function booking_active_rental_statuses(): array
+    {
+        return [
+            RentalStatus::PENDING_VERIFICATION,
+            RentalStatus::PREPAID,
+            RentalStatus::ONGOING,
+        ];
+    }
+}
+
+if (! function_exists('booking_rental_has_overlap')) {
+    function booking_rental_has_overlap(int $carId, string $startDate, string $endDate, ?int $ignoreRentalId = null): bool
+    {
+        return Rental::query()
+            ->where('car_id', $carId)
+            ->whereIn('status', booking_active_rental_statuses())
+            ->when($ignoreRentalId, fn ($query) => $query->where('id', '!=', $ignoreRentalId))
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereDate('start_date', '<=', $endDate)
+                    ->whereDate('end_date', '>=', $startDate);
+            })
+            ->exists();
+    }
+}
+
+if (! function_exists('booking_release_identity_files')) {
+    function booking_release_identity_files(Rental $rental): void
+    {
+        if ($rental->ktp_path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->ktp_path);
+        }
+
+        if ($rental->selfie_path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->selfie_path);
+        }
+
+        $rental->ktp_path = '';
+        $rental->selfie_path = '';
+    }
+}
 
 Route::get('/', function (Request $request) {
     $user = $request->user();
@@ -31,7 +75,7 @@ Route::get('/', function (Request $request) {
             $q->select(DB::raw(1))
                 ->from('rentals')
                 ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
                 ->whereDate('rentals.start_date', '<=', $startDate)
                 ->whereDate('rentals.end_date', '>=', $startDate);
         });
@@ -70,7 +114,7 @@ Route::get('/beranda', function (Request $request) {
             $q->select(DB::raw(1))
                 ->from('rentals')
                 ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
                 ->whereDate('rentals.start_date', '<=', $startDate)
                 ->whereDate('rentals.end_date', '>=', $startDate);
         });
@@ -105,7 +149,7 @@ Route::get('/frontliner', function (Request $request) {
             $q->select(DB::raw(1))
                 ->from('rentals')
                 ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
                 ->whereDate('rentals.start_date', '<=', $startDate)
                 ->whereDate('rentals.end_date', '>=', $startDate);
         });
@@ -218,6 +262,11 @@ Route::get('/booking/start', function (Request $request) {
 
     $car = Car::findOrFail($carId);
 
+    if ($car->status !== CarStatus::AVAILABLE || booking_rental_has_overlap($car->id, $startDate, $endDate)) {
+        return redirect()->route('car-detail', $carId)
+            ->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+    }
+
     // Calculate dates & price
     $start = \Carbon\Carbon::parse($startDate);
     $end = \Carbon\Carbon::parse($endDate);
@@ -253,30 +302,13 @@ Route::post('/booking/identity', function (Request $request) {
     $startDate = $request->input('start_date');
     $endDate = $request->input('end_date');
     $serviceType = $request->input('service_type');
-
     $car = Car::findOrFail($carId);
 
-    // 1. Check if car is available in status
-    if ($car->status !== CarStatus::AVAILABLE) {
+    if ($car->status !== CarStatus::AVAILABLE || booking_rental_has_overlap($car->id, $startDate, $endDate)) {
         return redirect()->route('car-detail', $carId)
             ->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
     }
 
-    // 2. Check if there are overlapping rentals
-    $overlapping = Rental::where('car_id', $carId)
-        ->whereIn('status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-        ->where(function ($q) use ($startDate, $endDate) {
-            $q->whereDate('start_date', '<=', $endDate)
-              ->whereDate('end_date', '>=', $startDate);
-        })
-        ->exists();
-
-    if ($overlapping) {
-        return redirect()->route('car-detail', $carId)
-            ->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
-    }
-
-    // 3. Calculate prices to display in step 3
     $start = \Carbon\Carbon::parse($startDate);
     $end = \Carbon\Carbon::parse($endDate);
     $days = max(1, $start->diffInDays($end));
@@ -304,143 +336,76 @@ Route::get('/booking/identity', function () {
 })->middleware(['token.cookie', 'auth']);
 
 Route::post('/booking/submit', function (Request $request, \App\Services\FaceVerificationService $faceVerify, \App\Services\MidtransService $midtrans) {
-    $request->validate([
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+    $serviceType = $request->input('service_type');
+    $carId = $request->input('car_id');
+    $car = Car::findOrFail($carId);
+
+    $validator = Validator::make($request->all(), [
         'car_id' => 'required|integer|exists:cars,id',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
         'service_type' => 'required|string',
-        'ktp' => 'nullable|file|image|max:5120',
-        'selfie' => 'nullable|file|image|max:5120',
+        'ktp' => 'required|file|image|min:1|max:5120',
+        'selfie' => 'required|file|image|min:1|max:5120',
     ]);
 
-    $carId = $request->input('car_id');
-    $startDate = $request->input('start_date');
-    $endDate = $request->input('end_date');
-    $serviceType = $request->input('service_type');
+    $start = \Carbon\Carbon::parse($startDate);
+    $end = \Carbon\Carbon::parse($endDate);
+    $days = max(1, $start->diffInDays($end));
+    $rentCost = $car->daily_rate * $days;
+    $driverCost = ($serviceType === 'with_driver') ? 150000 * $days : 0;
+    $serviceCost = 100000 + $driverCost;
+    $totalPrice = $rentCost + $serviceCost;
+    $type = ($serviceType === 'with_driver')
+        ? \App\Enums\RentalType::WITH_DRIVER
+        : \App\Enums\RentalType::SELF_DRIVE;
 
-    $car = Car::findOrFail($carId);
+    $renderIdentityPage = function (array $extraData = [], ?ViewErrorBag $errorBag = null) use ($car, $startDate, $endDate, $serviceType, $days, $rentCost, $driverCost, $serviceCost, $totalPrice) {
+        return response()->view('frontliner.pages.booking-identity', array_merge([
+            'car' => $car,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'service_type' => $serviceType,
+            'days' => $days,
+            'rentCost' => $rentCost,
+            'driverCost' => $driverCost,
+            'serviceCost' => $serviceCost,
+            'totalPrice' => $totalPrice,
+            'errors' => $errorBag ?? new ViewErrorBag(),
+        ], $extraData), 422);
+    };
 
-    // Double check availability to prevent race conditions
-    if ($car->status !== CarStatus::AVAILABLE) {
-        return redirect()->route('frontliner')->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+    if ($validator->fails()) {
+        $errorBag = new ViewErrorBag();
+        $errorBag->put('default', $validator->errors());
+
+        return $renderIdentityPage([], $errorBag);
     }
 
-    $overlapping = Rental::where('car_id', $carId)
-        ->whereIn('status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-        ->where(function ($q) use ($startDate, $endDate) {
-            $q->whereDate('start_date', '<=', $endDate)
-              ->whereDate('end_date', '>=', $startDate);
-        })
-        ->exists();
-
-    if ($overlapping) {
-        return redirect()->route('frontliner')->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
-    }
-
-    // 1. Prepare files for face verification
-    if ($request->hasFile('ktp')) {
-        $ktpFile = $request->file('ktp');
-    } else {
-        $ktpPath = 'temp/mock_ktp.png';
-        $ktpFullPath = storage_path('app/public/' . $ktpPath);
-        if (! file_exists($ktpFullPath)) {
-            @mkdir(dirname($ktpFullPath), 0755, true);
-            $dummyPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-            @file_put_contents($ktpFullPath, $dummyPng);
-        }
-        $ktpFile = new \Illuminate\Http\UploadedFile(
-            $ktpFullPath,
-            basename($ktpFullPath),
-            mime_content_type($ktpFullPath),
-            null,
-            true
-        );
-    }
-
-    if ($request->hasFile('selfie')) {
-        $selfieFile = $request->file('selfie');
-    } else {
-        $selfiePath = 'temp/mock_selfie.png';
-        $selfieFullPath = storage_path('app/public/' . $selfiePath);
-        if (! file_exists($selfieFullPath)) {
-            @mkdir(dirname($selfieFullPath), 0755, true);
-            $dummyPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
-            @file_put_contents($selfieFullPath, $dummyPng);
-        }
-        $selfieFile = new \Illuminate\Http\UploadedFile(
-            $selfieFullPath,
-            basename($selfieFullPath),
-            mime_content_type($selfieFullPath),
-            null,
-            true
-        );
-    }
-
-    // 2. Perform Face Verification
     $autoVerifyPassed = false;
     try {
-        $verification = $faceVerify->verify($ktpFile, $selfieFile);
-        if ($verification['verified']) {
-            $autoVerifyPassed = true;
-        }
+        $verification = $faceVerify->verify($request->file('ktp'), $request->file('selfie'));
+        $autoVerifyPassed = (bool) ($verification['verified'] ?? false);
     } catch (\Exception $e) {
         \Illuminate\Support\Facades\Log::warning('Face verification service failure: ' . $e->getMessage());
     }
 
-    // 3. Create Rental within Transaction
     try {
-        $rental = DB::transaction(function () use ($request, $car, $startDate, $endDate) {
-            // Re-verify availability with lock
-            $car = Car::query()->lockForUpdate()->find($car->id);
+        $rental = DB::transaction(function () use ($request, $carId, $start, $end, $type, $totalPrice) {
+            $car = Car::query()->lockForUpdate()->findOrFail($carId);
+
             if ($car->status !== CarStatus::AVAILABLE) {
-                throw new \RuntimeException('Car is no longer available.');
+                throw new \RuntimeException('Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
             }
 
-            $overlapping = Rental::where('car_id', $car->id)
-                ->whereIn('status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-                ->where(function ($q) use ($startDate, $endDate) {
-                    $q->whereDate('start_date', '<=', $endDate)
-                      ->whereDate('end_date', '>=', $startDate);
-                })
-                ->exists();
-
-            if ($overlapping) {
-                throw new \RuntimeException('Car is no longer available for these dates.');
+            if (booking_rental_has_overlap($car->id, $start->format('Y-m-d'), $end->format('Y-m-d'))) {
+                throw new \RuntimeException('Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
             }
 
-            // Move files to permanent storage
-            if ($request->hasFile('ktp')) {
-                $ktpPermanentPath = \Illuminate\Support\Facades\Storage::disk('local')->putFile('ktp', $request->file('ktp'));
-            } else {
-                $ktpPermanentPath = 'ktp/mock_ktp.png';
-                if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($ktpPermanentPath)) {
-                    \Illuminate\Support\Facades\Storage::disk('local')->put($ktpPermanentPath, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
-                }
-            }
-
-            if ($request->hasFile('selfie')) {
-                $selfiePermanentPath = \Illuminate\Support\Facades\Storage::disk('local')->putFile('selfie', $request->file('selfie'));
-            } else {
-                $selfiePermanentPath = 'selfie/mock_selfie.png';
-                if (! \Illuminate\Support\Facades\Storage::disk('local')->exists($selfiePermanentPath)) {
-                    \Illuminate\Support\Facades\Storage::disk('local')->put($selfiePermanentPath, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
-                }
-            }
-
-            // Calculate price
-            $start = \Carbon\Carbon::parse($startDate);
-            $end = \Carbon\Carbon::parse($endDate);
-            $days = max(1, $start->diffInDays($end));
-
-            $rentCost = $car->daily_rate * $days;
-            $driverCost = ($request->input('service_type') === 'with_driver') ? 150000 * $days : 0;
-            $serviceCost = 100000 + $driverCost;
-            $totalPrice = $rentCost + $serviceCost;
-
-            // Map UI service type to RentalType enum value
-            $type = ($request->input('service_type') === 'with_driver') 
-                ? \App\Enums\RentalType::WITH_DRIVER 
-                : \App\Enums\RentalType::SELF_DRIVE;
+            $ktpPermanentPath = \Illuminate\Support\Facades\Storage::disk('local')->putFile('ktp', $request->file('ktp'));
+            $selfiePermanentPath = \Illuminate\Support\Facades\Storage::disk('local')->putFile('selfie', $request->file('selfie'));
 
             $rental = Rental::create([
                 'user_id' => auth()->id(),
@@ -458,28 +423,27 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
                 'verification_status' => \App\Enums\VerificationStatus::PENDING,
             ]);
 
-            // Mark car as UNAVAILABLE
             $car->status = CarStatus::UNAVAILABLE;
             $car->save();
 
             return $rental;
         });
-    } catch (\Exception $e) {
-        return redirect()->route('frontliner')->with('error', $e->getMessage() ?: 'Gagal memproses pemesanan.');
+    } catch (\Throwable $e) {
+        return $renderIdentityPage([
+            'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
+        ]);
     }
 
-    // 4. Handle auto verification results
     if ($autoVerifyPassed) {
         DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::PREPAID;
             $rental->verification_status = \App\Enums\VerificationStatus::VERIFIED;
-            $rental->verified_at = now();
             $rental->verification_passed = true;
+            $rental->verified_at = now();
             $rental->prepaid_expires_at = now()->addHours(4);
             $rental->save();
         });
 
-        // Initialize Midtrans Payment
         try {
             $orderId = 'rental-' . $rental->id . '-' . now()->format('YmdHis');
             $midtransResponse = $midtrans->createTransaction($rental, $orderId);
@@ -494,31 +458,19 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
                 'redirect_url' => $midtransResponse['redirect_url'] ?? null,
                 'payload' => $midtransResponse,
             ]);
-
-            return redirect()->route('booking.detail', ['rental' => $rental->id]);
-        } catch (\Exception $e) {
-            // Rollback status to CANCELLED and make car AVAILABLE if payment gateway init fails
-            DB::transaction(function () use ($rental) {
-                $rental->status = RentalStatus::CANCELLED;
-                $rental->save();
-                $car = $rental->car;
-                if ($car) {
-                    $car->status = CarStatus::AVAILABLE;
-                    $car->save();
-                }
-            });
-            return redirect()->route('frontliner')->with('error', 'Gagal memulai gerbang pembayaran: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            return redirect()->route('booking.detail', ['rental' => $rental->id])
+                ->with('error', 'Verifikasi selesai, tetapi inisialisasi pembayaran gagal: ' . $e->getMessage());
         }
     } else {
-        // Needs review
         DB::transaction(function () use ($rental) {
             $rental->verification_status = \App\Enums\VerificationStatus::NEEDS_REVIEW;
             $rental->prepaid_expires_at = null;
             $rental->save();
         });
-
-        return redirect()->route('booking.detail', ['rental' => $rental->id]);
     }
+
+    return redirect()->route('booking.detail', ['rental' => $rental->id]);
 })->middleware(['token.cookie', 'auth'])->name('booking.submit');
 
 Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Services\MidtransService $midtrans) {
@@ -539,6 +491,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
     if ($rental->verified_at && $rental->verified_at->addHours(4)->isPast()) {
         DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::EXPIRED;
+            $rental->prepaid_expires_at = null;
+            booking_release_identity_files($rental);
             $rental->save();
 
             $car = $rental->car;
@@ -591,6 +545,8 @@ Route::post('/booking/detail/{rental}/cancel', function (Rental $rental) {
     DB::transaction(function () use ($rental) {
         $rental->status = RentalStatus::CANCELLED;
         $rental->verification_status = \App\Enums\VerificationStatus::CANCELLED;
+        $rental->prepaid_expires_at = null;
+        booking_release_identity_files($rental);
         $rental->save();
 
         $car = $rental->car;
@@ -643,6 +599,8 @@ Route::post('/dashboard/reservations/{rental}/verify', function (Request $reques
         DB::transaction(function () use ($rental) {
             $rental->verification_status = \App\Enums\VerificationStatus::REJECTED;
             $rental->status = RentalStatus::CANCELLED;
+            $rental->prepaid_expires_at = null;
+            booking_release_identity_files($rental);
             $rental->save();
 
             $car = $rental->car;
@@ -696,6 +654,48 @@ Route::post('/dashboard/reservations/{rental}/return', function (Rental $rental)
     return back()->with('success', 'Mobil berhasil dikembalikan. Pemesanan selesai.');
 })->middleware(['auth', 'admin'])->name('backoffice.reservations.return');
 
+Route::post('/dashboard/reservations/{rental}/cancel', function (Rental $rental) {
+    $user = auth()->user();
+    if (!$user || $user->role !== User::ROLE_ADMIN) {
+        abort(403);
+    }
+
+    if ($rental->status === RentalStatus::RETURNED || $rental->status === RentalStatus::ONGOING || $rental->status === RentalStatus::CANCELLED || $rental->status === RentalStatus::EXPIRED) {
+        return back()->with('error', 'Reservasi tidak dapat dibatalkan pada tahap ini.');
+    }
+
+    DB::transaction(function () use ($rental) {
+        $rental->status = RentalStatus::CANCELLED;
+        $rental->verification_status = \App\Enums\VerificationStatus::CANCELLED;
+        $rental->prepaid_expires_at = null;
+        booking_release_identity_files($rental);
+        $rental->save();
+
+        $car = $rental->car;
+        if ($car) {
+            $car->status = CarStatus::AVAILABLE;
+            $car->save();
+        }
+
+        // Delete uploaded files
+        if ($rental->ktp_path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->ktp_path);
+        }
+        if ($rental->selfie_path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->selfie_path);
+        }
+
+        // Cancel payments
+        $latestPayment = $rental->paymentHistories()->latest()->first();
+        if ($latestPayment) {
+            $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
+            $latestPayment->save();
+        }
+    });
+
+    return back()->with('success', 'Reservasi berhasil dibatalkan oleh Admin.');
+})->middleware(['auth', 'admin'])->name('backoffice.reservations.cancel');
+
 Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\MidtransService $midtrans) {
     $user = auth()->user();
     if (!$user || ($rental->user_id !== $user->id && $user->role !== User::ROLE_ADMIN)) {
@@ -732,6 +732,8 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                     $latestPayment->save();
 
                     $rental->status = RentalStatus::EXPIRED;
+                    $rental->prepaid_expires_at = null;
+                    booking_release_identity_files($rental);
                     $rental->save();
 
                     $car = $rental->car;
@@ -750,6 +752,8 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                     $latestPayment->save();
 
                     $rental->status = RentalStatus::CANCELLED;
+                    $rental->prepaid_expires_at = null;
+                    booking_release_identity_files($rental);
                     $rental->save();
 
                     $car = $rental->car;
@@ -812,6 +816,8 @@ Route::get('/pesanan-saya', function (Request $request) {
                         $latestPayment->save();
 
                         $rental->status = RentalStatus::EXPIRED;
+                        $rental->prepaid_expires_at = null;
+                        booking_release_identity_files($rental);
                         $rental->save();
 
                         $car = $rental->car;
@@ -826,6 +832,8 @@ Route::get('/pesanan-saya', function (Request $request) {
                         $latestPayment->save();
 
                         $rental->status = RentalStatus::CANCELLED;
+                        $rental->prepaid_expires_at = null;
+                        booking_release_identity_files($rental);
                         $rental->save();
 
                         $car = $rental->car;
@@ -1050,7 +1058,7 @@ Route::get('/search-result', function (Request $request) {
             $q->select(DB::raw(1))
                 ->from('rentals')
                 ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
                 ->whereDate('rentals.start_date', '<=', $startDate)
                 ->whereDate('rentals.end_date', '>=', $startDate);
         });
@@ -1136,4 +1144,3 @@ Route::get('/favorite', function (Request $request) {
         'cars' => $cars,
     ]);
 })->middleware(['token.cookie', 'auth'])->name('favorite');
-

@@ -29,6 +29,7 @@
         } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
             $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
         }
+        $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
     @endphp
 
     <!-- Main Content -->
@@ -92,7 +93,23 @@
         @endif
 
         <!-- Banner Status Pemesanan -->
-        @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
+        @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::PENDING && ! $hasIdentityDocs)
+            <!-- Booking sementara, belum upload identitas -->
+            <div class="bg-sky-500 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        🔒
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Menunggu Kelengkapan Data Penyewa</h2>
+                        <p class="text-xs text-sky-50 mt-0.5">Mobil sudah diamankan sementara untuk Anda. Silakan lengkapi KTP dan selfie untuk melanjutkan proses booking.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Data Belum Lengkap
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
             <!-- Menunggu Review Admin -->
             <div class="bg-amber-500 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
                 <div class="flex items-center gap-3">
@@ -329,6 +346,10 @@
                             <span>💳</span>
                             <span>Bayar Sekarang via Midtrans</span>
                         </a>
+                    @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::PENDING && ! $hasIdentityDocs)
+                        <button type="button" disabled class="w-full text-center block bg-sky-100 text-sky-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            🔒 Menunggu Kelengkapan Data Penyewa
+                        </button>
                     @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
                         <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
                             ⏱️ Menunggu Verifikasi Disetujui

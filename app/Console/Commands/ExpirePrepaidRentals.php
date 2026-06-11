@@ -31,6 +31,14 @@ class ExpirePrepaidRentals extends Command
                       ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
                       ->whereNotNull('verified_at')
                       ->where('verified_at', '<=', now()->subHours(4));
+                })
+                // 3. Stale booking holds that never received identity uploads
+                ->orWhere(function ($q) {
+                    $q->where('status', RentalStatus::PENDING_VERIFICATION)
+                      ->where('verification_status', \App\Enums\VerificationStatus::PENDING)
+                      ->where('ktp_path', '')
+                      ->where('selfie_path', '')
+                      ->where('created_at', '<=', now()->subHour());
                 });
             })
             ->with(['car', 'paymentHistories'])
@@ -63,6 +71,10 @@ class ExpirePrepaidRentals extends Command
                 }
 
                 $rental->status = RentalStatus::EXPIRED;
+                $rental->verification_status = \App\Enums\VerificationStatus::CANCELLED;
+                $rental->prepaid_expires_at = null;
+                $rental->ktp_path = '';
+                $rental->selfie_path = '';
                 $rental->save();
             }
         });

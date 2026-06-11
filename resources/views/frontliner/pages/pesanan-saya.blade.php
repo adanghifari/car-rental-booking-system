@@ -115,6 +115,7 @@
                 @php
                     $car = $rental->car;
                     $latestPayment = $rental->paymentHistories()->latest()->first();
+                    $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
                     
                     // Determine Status State and Label
                     $state = 'dibatalkan';
@@ -134,9 +135,13 @@
                             $state = 'need_pay';
                             $statusLabel = 'Menunggu Pembayaran';
                             $badgeColor = 'bg-[#F59E0B]';
+                        } elseif (! $hasIdentityDocs) {
+                            $state = 'waiting_docs';
+                            $statusLabel = 'Menunggu Kelengkapan Data Penyewa';
+                            $badgeColor = 'bg-sky-500';
                         } else {
                             $state = 'verifying';
-                            $statusLabel = 'Menunggu Verifikasi';
+                            $statusLabel = 'Menunggu Verifikasi Data Penyewa';
                             $badgeColor = 'bg-amber-500';
                         }
                     } elseif ($rental->status === \App\Enums\RentalStatus::PREPAID) {
@@ -189,7 +194,9 @@
                     <div class="p-5 border-t border-gray-50 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Total Biaya</span>
-                            @if($state === 'verifying')
+                            @if($state === 'waiting_docs')
+                                <span class="text-xs font-bold text-sky-500">Lengkapi Data</span>
+                            @elseif($state === 'verifying')
                                 <span class="text-xs font-bold text-amber-500">Ditinjau</span>
                             @elseif($state === 'need_pay' || $state === 'pending_pay')
                                 <span class="text-xs font-bold text-yellow-600">Menunggu Pembayaran</span>
@@ -216,6 +223,10 @@
                             @elseif($state === 'verifying')
                                 <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-4 rounded-xl transition">
                                     Lihat Status
+                                </a>
+                            @elseif($state === 'waiting_docs')
+                                <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-sky-200 hover:bg-sky-50 text-sky-700 font-bold text-xs py-2 px-4 rounded-xl transition">
+                                    Lengkapi Data
                                 </a>
                             @elseif($state === 'selesai')
                                 <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-3 rounded-xl transition">

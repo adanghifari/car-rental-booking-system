@@ -194,7 +194,7 @@ class BackofficeController extends Controller
     public function cars(Request $request): View
     {
         $activeRentalCarIds = Rental::query()
-            ->whereIn('status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+            ->where('status', RentalStatus::ONGOING)
             ->pluck('car_id')
             ->filter()
             ->unique()
