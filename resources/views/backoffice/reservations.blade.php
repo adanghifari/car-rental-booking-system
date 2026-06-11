@@ -343,8 +343,27 @@
 
 				<form id="return-action-form" method="POST" action="" style="display: none; justify-content: flex-end; margin-top: 16px;">
 					@csrf
-					<button type="submit" class="primary-button" style="background: var(--green); box-shadow: 0 14px 34px rgba(29, 187, 132, 0.18);" onclick="return confirm('Apakah Anda yakin mobil ini sudah dikembalikan dan ingin menyelesaikan sewa?')">Mobil Sudah DiKembalikan</button>
+					<button type="button" class="primary-button" style="background: var(--green); box-shadow: 0 14px 34px rgba(29, 187, 132, 0.18);" onclick="submitReturnAction()">Mobil Sudah DiKembalikan</button>
 				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Custom Confirmation Modal -->
+	<div class="modal-overlay" id="confirm-modal-overlay" style="z-index: 100; display: none; background: rgba(10, 15, 26, 0.4);" hidden>
+		<div class="modal-panel" style="width: min(450px, 100%); border-radius: 20px; padding: 24px; text-align: center; transform: scale(0.95); transition: transform 0.2s ease;">
+			<div style="width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: rgba(245, 158, 11, 0.12); color: var(--amber); margin: 0 auto 16px;">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+					<path d="M12 9v4"/>
+					<path d="m12 17h.01"/>
+					<path d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+				</svg>
+			</div>
+			<h3 style="margin-top: 0; margin-bottom: 8px; font-size: 18px; font-weight: 700; color: var(--text);">Konfirmasi Tindakan</h3>
+			<p id="confirm-modal-message" style="margin-top: 0; margin-bottom: 24px; font-size: 14px; color: var(--muted); line-height: 1.5;"></p>
+			<div style="display: flex; gap: 12px; justify-content: center;">
+				<button type="button" class="secondary-button" id="confirm-modal-cancel-btn" style="padding: 10px 20px; border-radius: 12px;">Batal</button>
+				<button type="button" class="primary-button" id="confirm-modal-ok-btn" style="padding: 10px 20px; border-radius: 12px; background: var(--blue);">Lanjutkan</button>
 			</div>
 		</div>
 	</div>
@@ -397,14 +416,66 @@
 
 				document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeForm(); closeDetail(); } });
 
+				window.showCustomConfirm = function(message, onConfirm) {
+					const overlay = document.getElementById('confirm-modal-overlay');
+					const msgEl = document.getElementById('confirm-modal-message');
+					const okBtn = document.getElementById('confirm-modal-ok-btn');
+					const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+					
+					if (!overlay || !msgEl || !okBtn || !cancelBtn) return;
+					
+					msgEl.textContent = message;
+					overlay.style.display = 'grid';
+					overlay.removeAttribute('hidden');
+					
+					// Force reflow
+					overlay.offsetHeight;
+					overlay.classList.add('is-open');
+					overlay.firstElementChild.style.transform = 'scale(1)';
+					
+					const cleanup = () => {
+						overlay.classList.remove('is-open');
+						overlay.firstElementChild.style.transform = 'scale(0.95)';
+						setTimeout(() => {
+							overlay.style.display = 'none';
+							overlay.setAttribute('hidden', '');
+						}, 200);
+					};
+					
+					// Remove old listeners
+					const newOkBtn = okBtn.cloneNode(true);
+					const newCancelBtn = cancelBtn.cloneNode(true);
+					okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+					cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+					
+					newOkBtn.addEventListener('click', () => {
+						cleanup();
+						onConfirm();
+					});
+					
+					newCancelBtn.addEventListener('click', cleanup);
+					overlay.addEventListener('click', (e) => {
+						if (e.target === overlay) cleanup();
+					});
+				};
+
 				window.submitVerificationAction = function(action) {
 					const form = document.getElementById('verification-action-form');
 					const input = document.getElementById('verification-action-input');
 					if (form && input) {
-						if (confirm(`Apakah Anda yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} verifikasi ini?`)) {
+						window.showCustomConfirm(`Apakah Anda yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} verifikasi ini?`, () => {
 							input.value = action;
 							form.submit();
-						}
+						});
+					}
+				};
+
+				window.submitReturnAction = function() {
+					const form = document.getElementById('return-action-form');
+					if (form) {
+						window.showCustomConfirm('Apakah Anda yakin mobil ini sudah dikembalikan dan ingin menyelesaikan sewa?', () => {
+							form.submit();
+						});
 					}
 				};
 
