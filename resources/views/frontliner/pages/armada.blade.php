@@ -12,76 +12,7 @@
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
-    @if(auth()->check())
-        <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
-                </div>
-
-                <!-- Navigation - Hidden on mobile -->
-                <nav class="hidden lg:flex items-center gap-8">
-                    <a href="{{ route('frontliner') }}" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
-                    <a href="{{ route('armada') }}" class="text-[#0B3C9B] border-b-2 border-[#0B3C9B] pb-1 font-semibold">Armada</a>
-                    <a href="{{ route('frontliner') }}#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
-                    <a href="{{ route('frontliner') }}#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
-                </nav>
-
-                <!-- Right Section - User Profile -->
-                <div class="flex items-center gap-4">
-                    <!-- Notifications -->
-                    <button class="relative text-gray-700 hover:text-blue-600 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                        <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                            2
-                        </span>
-                    </button>
-
-                    <!-- User Menu -->
-                    <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
-                        <div class="text-right border-r pr-4 border-gray-100 mr-2">
-                            <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'User' }}</p>
-                            <p class="text-xs text-gray-500">Member</p>
-                        </div>
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                        </div>
-
-                        <!-- Dropdown Menu -->
-                        <div class="relative group">
-                            <button class="text-gray-700 hover:text-blue-600 transition">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </button>
-                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block z-50">
-                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                                    👤 Profil Saya
-                                </a>
-                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    ⚙️ Pengaturan
-                                </a>
-                                <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    💳 Pembayaran
-                                </a>
-                                <form method="POST" action="{{ route('logout') }}" class="border-t">
-                                    @csrf
-                                    <button type="submit" class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-b-lg">
-                                        🚪 Logout
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-    @else
-        <x-frontliner.navbar-non-login />
-    @endif
+    <x-frontliner.navbar />
 
     <main class="max-w-[1400px] mx-auto px-4 md:px-8 py-10 w-full flex-grow">
         

@@ -14,73 +14,7 @@
     </style>
 </head>
 <body class="bg-white text-gray-900">
-    <!-- Header -->
-    <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <!-- Logo -->
-            <div class="flex items-center gap-2">
-                <span class="text-2xl font-bold text-blue-600">HD RENTAL CAR</span>
-            </div>
-
-            <!-- Navigation - Hidden on mobile -->
-            <nav class="hidden lg:flex items-center gap-8">
-                <a href="{{ route('frontliner') }}" class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Beranda</a>
-                <a href="{{ route('armada') }}" class="{{ Route::currentRouteName() === 'armada' || Route::currentRouteName() === 'search-result' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-gray-700 hover:text-blue-600 transition' }}">Armada</a>
-                <a href="{{ route('pesanan-saya') }}" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
-                <a href="#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
-            </nav>
-
-            <!-- Right Section - User Profile -->
-            <div class="flex items-center gap-4">
-                <!-- Notifications -->
-                <button class="relative text-gray-700 hover:text-blue-600 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                    </svg>
-                    <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                        2
-                    </span>
-                </button>
-
-                <!-- User Menu -->
-                <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
-                    <div class="text-right">
-                        <p class="text-sm font-semibold text-gray-900">{{ $user->name ?? 'User' }}</p>
-                        <p class="text-xs text-gray-500">Member</p>
-                    </div>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ substr($user->name ?? 'U', 0, 1) }}
-                    </div>
-
-                    <!-- Dropdown Menu -->
-                    <div class="relative group">
-                        <button class="text-gray-700 hover:text-blue-600 transition">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                            </svg>
-                        </button>
-                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg hidden group-hover:block">
-                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                                👤 Profil Saya
-                            </a>
-                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                ⚙️ Pengaturan
-                            </a>
-                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                💳 Pembayaran
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}" class="border-t">
-                                @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 rounded-b-lg">
-                                    🚪 Logout
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    <x-frontliner.navbar />
 
     @if(session('success'))
         <div class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
@@ -89,7 +23,7 @@
                     <span class="text-xl">✅</span>
                     <p class="text-sm font-semibold text-emerald-800">{{ session('success') }}</p>
                 </div>
-                <button onclick="this.parentElement.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">×</button>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700 font-bold text-lg leading-none">&times;</button>
             </div>
         </div>
     @endif
@@ -101,95 +35,126 @@
                     <span class="text-xl">⚠️</span>
                     <p class="text-sm font-semibold text-red-800">{{ session('error') }}</p>
                 </div>
-                <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
             </div>
         </div>
     @endif
 
-    <!-- Welcome Banner -->
-    <section class="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                Selamat datang kembali, {{ $user->name ?? 'User' }}! 👋
-            </h1>
-            <p class="text-gray-600">
-                Lanjutkan perjalanan Anda dengan HD Rental Car. Nikmati pengalaman berkendara yang luar biasa.
-            </p>
+    <!-- Welcome Banner (Hero Section) -->
+    <section class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
+        <div class="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 text-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative border border-slate-800 p-8 md:p-12">
+            <!-- Glowing light effects -->
+            <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl"></div>
+
+            <div class="relative z-10 max-w-2xl">
+                <span class="inline-flex items-center gap-1.5 bg-blue-500/25 border border-blue-400/30 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold mb-6 tracking-wide backdrop-blur-sm">
+                    ✨ Partner Perjalanan Terbaik Anda
+                </span>
+                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                    Selamat datang kembali, <br class="hidden sm:inline"><span class="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{{ $user->name ?? 'User' }}</span>! 👋
+                </h1>
+                <p class="text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed">
+                    Lanjutkan perjalanan Anda dengan HD Rental Car. Nikmati berkendara aman dan nyaman dengan armada pilihan terbaik yang terawat.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <a href="#cari-mobil" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 shadow-lg shadow-blue-600/35 text-sm cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Cari Kendaraan
+                    </a>
+                    <a href="{{ route('armada') }}" class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 backdrop-blur-sm text-sm cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Lihat Semua Armada
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
+    @php
+        $totalSpent = $rentals->whereIn('status', [\App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED])->sum('total_price');
+        $activeCount = $rentals->where('status', \App\Enums\RentalStatus::ONGOING)->count();
+        $prepaidCount = $rentals->where('status', \App\Enums\RentalStatus::PREPAID)->count();
+        $completedCount = $rentals->where('status', \App\Enums\RentalStatus::RETURNED)->count();
+    @endphp
+
     <!-- Quick Stats -->
     <section class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- Total Rentals -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Total Penyewaan</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">5</p>
-                    </div>
-                    <div class="bg-blue-100 text-blue-600 p-3 rounded-lg">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300 flex items-center justify-between group">
+                <div>
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Penyewaan</p>
+                    <p class="text-3xl font-extrabold text-slate-800 mt-2">{{ $rentals->count() }}</p>
+                    <p class="text-xs text-slate-400 mt-1">Transaksi sewa</p>
+                </div>
+                <div class="bg-blue-50 text-blue-600 p-3.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
                 </div>
             </div>
 
             <!-- Active Rentals -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Penyewaan Aktif</p>
-                        <p class="text-3xl font-bold text-green-600 mt-2">1</p>
-                    </div>
-                    <div class="bg-green-100 text-green-600 p-3 rounded-lg">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
-                            <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-100 transition-all duration-300 flex items-center justify-between group">
+                <div>
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Penyewaan Aktif</p>
+                    <p class="text-3xl font-extrabold text-emerald-600 mt-2">{{ $activeCount }}</p>
+                    <p class="text-xs text-slate-400 mt-1">Sedang berlangsung</p>
+                </div>
+                <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
                 </div>
             </div>
 
             <!-- Total Spent -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Total Biaya</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">Rp 12,5jt</p>
-                    </div>
-                    <div class="bg-yellow-100 text-yellow-600 p-3 rounded-lg">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M8.16 5.314l4.897-4.897a1 1 0 011.415 0l4.896 4.897a1 1 0 01-1.414 1.414L13 4.586V12a1 1 0 11-2 0V4.586l-3.793 3.793a1 1 0 01-1.414-1.414zM11.84 14.686l-4.897 4.897a1 1 0 01-1.415 0l-4.896-4.897a1 1 0 011.414-1.414L7 15.414V8a1 1 0 112 0v7.414l3.793-3.793a1 1 0 011.414 1.414z"></path>
-                        </svg>
-                    </div>
+            <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 flex items-center justify-between group">
+                <div>
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Pengeluaran</p>
+                    <p class="text-2xl font-extrabold text-slate-800 mt-2">Rp {{ number_format($totalSpent, 0, ',', '.') }}</p>
+                    <p class="text-xs text-slate-400 mt-1">Pembayaran terverifikasi</p>
+                </div>
+                <div class="bg-indigo-50 text-indigo-600 p-3.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
                 </div>
             </div>
 
-            <!-- Member Level -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Status Member</p>
-                        <p class="text-lg font-bold text-blue-600 mt-2">Regular ⭐</p>
-                        <p class="text-xs text-gray-500 mt-1">Upgrade dalam 2 sewa</p>
-                    </div>
-                    <div class="bg-purple-100 text-purple-600 p-3 rounded-lg">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                        </svg>
-                    </div>
+            <!-- Pending Payments (Fourth card instead of status member!) -->
+            <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-amber-100 transition-all duration-300 flex items-center justify-between group">
+                <div>
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Menunggu Pembayaran</p>
+                    <p class="text-3xl font-extrabold @if($prepaidCount > 0) text-amber-600 animate-pulse @else text-slate-800 @endif mt-2">{{ $prepaidCount }}</p>
+                    <p class="text-xs text-slate-400 mt-1">Pemesanan tertunda</p>
+                </div>
+                <div class="@if($prepaidCount > 0) bg-amber-50 text-amber-600 @else bg-slate-50 text-slate-400 @endif p-3.5 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
             </div>
         </div>
     </section>
 
+    @php
+        $activeRentals = $rentals->whereIn('status', [\App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::PREPAID]);
+    @endphp
+
     <!-- Active Rental Section -->
-    <section id="pesanan-saya" class="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-gray-200">
+    <section class="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-slate-100">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">Pesanan Saya</h2>
-            <a href="{{ route('pesanan-saya') }}" class="group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-[#0B3C9B] hover:text-white transition-all duration-300 shadow-sm border border-blue-100" title="Lihat Semua Riwayat Pemesanan">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Pesanan Aktif Anda</h2>
+                <p class="text-sm text-slate-500 mt-1">Daftar transaksi rental Anda yang sedang aktif atau menunggu penyelesaian pembayaran.</p>
+            </div>
+            <a href="{{ route('pesanan-saya') }}" class="group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm border border-blue-100" title="Lihat Semua Riwayat Pemesanan">
                 <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
                 </svg>
@@ -197,59 +162,91 @@
         </div>
 
         <div class="space-y-6">
-            @forelse($rentals as $rental)
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col justify-between">
-                    <div class="bg-gradient-to-r @if($rental->status === \App\Enums\RentalStatus::ONGOING) from-blue-500 to-blue-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) from-yellow-500 to-yellow-600 @else from-gray-500 to-gray-600 @endif text-white p-4 flex justify-between items-center">
+            @forelse($activeRentals as $rental)
+                <div class="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative @if($rental->status === \App\Enums\RentalStatus::ONGOING) border-l-4 border-l-blue-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) border-l-4 border-l-amber-500 @else border-l-4 border-l-slate-400 @endif">
+                    
+                    <!-- Card Top Header -->
+                    <div class="px-6 py-4 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/40">
                         <div>
-                            <p class="text-sm font-medium text-white/80">Booking ID: BK-{{ str_pad($rental->id, 5, '0', STR_PAD_LEFT) }}</p>
-                            <h3 class="text-xl font-bold">{{ $rental->car->brand ?? '' }} {{ $rental->car->name ?? 'Mobil' }}</h3>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Booking ID: BK-{{ str_pad($rental->id, 5, '0', STR_PAD_LEFT) }}</span>
+                            <h3 class="text-xl font-bold text-slate-800 mt-0.5">{{ $rental->car->brand ?? '' }} {{ $rental->car->name ?? 'Mobil' }}</h3>
                         </div>
-                        <span class="bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+                        <div>
                             @if($rental->status === \App\Enums\RentalStatus::ONGOING)
-                                Aktif (Lunas)
+                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
+                                    ✓ Aktif & Lunas
+                                </span>
                             @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
-                                Menunggu Pembayaran
+                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-100 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase animate-pulse">
+                                    ⚠️ Menunggu Pembayaran
+                                </span>
                             @else
-                                Selesai
+                                <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
+                                    Selesai
+                                </span>
                             @endif
-                        </span>
+                        </div>
                     </div>
 
+                    <!-- Card Body -->
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <!-- Rental Details -->
-                            <div>
-                                <p class="text-gray-600 text-sm mb-2">Tanggal Sewa</p>
-                                <p class="text-lg font-semibold text-gray-900">
-                                    {{ \Carbon\Carbon::parse($rental->start_date)->translatedFormat('d M') }} - {{ \Carbon\Carbon::parse($rental->end_date)->translatedFormat('d M Y') }}
-                                </p>
-                                <p class="text-sm text-gray-500">{{ max(1, \Carbon\Carbon::parse($rental->start_date)->diffInDays(\Carbon\Carbon::parse($rental->end_date))) }} hari</p>
+                            <div class="flex items-start gap-3">
+                                <div class="bg-slate-50 p-2.5 rounded-xl text-slate-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tanggal Sewa</p>
+                                    <p class="text-base font-semibold text-slate-800 mt-0.5">
+                                        {{ \Carbon\Carbon::parse($rental->start_date)->translatedFormat('d M') }} - {{ \Carbon\Carbon::parse($rental->end_date)->translatedFormat('d M Y') }}
+                                    </p>
+                                    <p class="text-xs text-slate-500 mt-0.5">{{ max(1, \Carbon\Carbon::parse($rental->start_date)->diffInDays(\Carbon\Carbon::parse($rental->end_date))) }} Hari Sewa</p>
+                                </div>
                             </div>
 
-                            <div>
-                                <p class="text-gray-600 text-sm mb-2">Total Biaya</p>
-                                <p class="text-lg font-semibold text-gray-900">Rp {{ number_format($rental->total_price, 0, ',', '.') }}</p>
-                                <p class="text-sm @if($rental->status === \App\Enums\RentalStatus::ONGOING) text-green-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) text-yellow-600 @else text-gray-600 @endif font-medium">
-                                    @if($rental->status === \App\Enums\RentalStatus::ONGOING)
-                                        ✓ Pembayaran Lunas
-                                    @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
-                                        ⚠ Belum Dibayar
-                                    @else
-                                        ✓ Selesai
-                                    @endif
-                                </p>
+                            <div class="flex items-start gap-3">
+                                <div class="bg-slate-50 p-2.5 rounded-xl text-slate-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Biaya</p>
+                                    <p class="text-base font-bold text-slate-800 mt-0.5">Rp {{ number_format($rental->total_price, 0, ',', '.') }}</p>
+                                    <p class="text-xs font-semibold mt-0.5 @if($rental->status === \App\Enums\RentalStatus::ONGOING) text-emerald-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) text-amber-600 @else text-slate-600 @endif">
+                                        @if($rental->status === \App\Enums\RentalStatus::ONGOING)
+                                            ✓ Sudah Lunas
+                                        @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
+                                            ⚠ Menunggu Transaksi
+                                        @else
+                                            ✓ Selesai
+                                        @endif
+                                    </p>
+                                </div>
                             </div>
 
-                            <div>
-                                <p class="text-gray-600 text-sm mb-2">Tipe Layanan</p>
-                                <p class="text-lg font-semibold text-gray-900">
-                                    {{ $rental->type === \App\Enums\RentalType::WITH_DRIVER ? 'Dengan Sopir' : 'Lepas Kunci' }}
-                                </p>
+                            <div class="flex items-start gap-3">
+                                <div class="bg-slate-50 p-2.5 rounded-xl text-slate-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tipe Layanan</p>
+                                    <p class="text-base font-semibold text-slate-800 mt-0.5">
+                                        {{ $rental->type === \App\Enums\RentalType::WITH_DRIVER ? 'Dengan Sopir' : 'Lepas Kunci' }}
+                                    </p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Metode Layanan</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="flex flex-col sm:flex-row gap-4 pt-2">
-                            <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="flex-1 text-center bg-[#0B3C9B] hover:bg-[#082D76] text-white font-semibold py-2 px-4 rounded-lg transition inline-block text-sm">
+                        <!-- Actions Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 pt-3 border-t border-slate-50">
+                            <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all text-sm border border-slate-200/60 cursor-pointer">
                                 🔍 Lihat Detail Pesanan
                             </a>
                             @if($rental->status === \App\Enums\RentalStatus::PREPAID)
@@ -257,48 +254,64 @@
                                     $latestPayment = $rental->paymentHistories()->latest()->first();
                                     $payUrl = $latestPayment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                                 @endphp
-                                <a href="{{ $payUrl }}" class="flex-1 text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition inline-block text-sm">
-                                    💳 Bayar Sekarang
+                                <a href="{{ $payUrl }}" class="flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm cursor-pointer hover:-translate-y-0.5">
+                                    💳 Lanjutkan Pembayaran
                                 </a>
                             @endif
                         </div>
                     </div>
                 </div>
             @empty
-                <div class="bg-white border border-gray-200 rounded-lg p-12 text-center text-gray-500">
-                    <p class="font-medium text-base">Belum ada pesanan.</p>
-                    <p class="text-xs text-gray-400 mt-1">Silakan cari mobil untuk mulai menyewa.</p>
+                <!-- Empty State -->
+                <div class="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm max-w-xl mx-auto">
+                    <div class="bg-blue-50 text-blue-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-1">Belum Ada Pesanan Aktif</h3>
+                    <p class="text-sm text-slate-500 mb-6 max-w-sm mx-auto">Semua transaksi sewa yang sedang aktif atau menunggu penyelesaian pembayaran akan ditampilkan di halaman ini.</p>
+                    <a href="#cari-mobil" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-3 rounded-xl transition text-sm shadow-md shadow-blue-500/10 cursor-pointer">
+                        Cari & Sewa Mobil Sekarang
+                    </a>
                 </div>
             @endforelse
         </div>
     </section>
 
     <!-- Search & Filter Section -->
-    <section class="bg-gray-50 py-8 border-t border-gray-200">
+    <section id="cari-mobil" class="bg-slate-50/70 py-10 border-t border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Pesan Kendaraan Baru</h2>
+            <div class="max-w-3xl mb-8">
+                <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Pesan Mobil</span>
+                <h2 class="text-2xl font-bold text-slate-900 mt-1">Pesan Kendaraan Baru</h2>
+                <p class="text-slate-500 text-sm mt-1">Tentukan tanggal mulai dan budget harian Anda untuk menemukan mobil terbaik yang siap disewa.</p>
+            </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-                <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 md:p-8">
+                <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Tanggal -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">📅 Tanggal Mulai</label>
-                        <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">📅 Tanggal Mulai</label>
+                        <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
                     </div>
 
                     <!-- Harga -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">💰 Harga Maksimal (Budget)</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">💰 Harga Maksimal (Budget)</label>
                         <div class="relative flex items-center">
-                            <span class="absolute left-3 text-gray-500 text-sm">Rp</span>
-                            <input type="number" name="max_price" placeholder="Contoh: 500000" value="{{ request('max_price') }}" class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <span class="absolute left-4 text-slate-400 text-sm">Rp</span>
+                            <input type="number" name="max_price" placeholder="Contoh: 500000" value="{{ request('max_price') }}" class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
                         </div>
                     </div>
 
                     <!-- Search Button -->
                     <div class="flex items-end">
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                            🔍 Cari Kendaraan
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-blue-500/20 text-sm cursor-pointer flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Cari Kendaraan
                         </button>
                     </div>
                 </form>
@@ -307,96 +320,121 @@
     </section>
 
     <!-- Featured Vehicles Section -->
-    <section id="armada" class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">Armada Unggulan</h2>
-            <a href="#" class="text-blue-600 hover:text-blue-700 font-semibold">Lihat Semua →</a>
+    <section id="armada" class="max-w-7xl mx-auto px-4 lg:px-8 py-12">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Katalog</span>
+                <h2 class="text-2xl font-bold text-slate-900 mt-1">Armada Unggulan</h2>
+                <p class="text-slate-500 text-sm mt-1">Jajaran mobil terbaik kami yang siap menemani perjalanan bisnis maupun wisata Anda.</p>
+            </div>
+            <a href="{{ route('armada') }}" class="text-blue-600 hover:text-blue-700 font-semibold text-sm transition flex items-center gap-1 cursor-pointer">
+                Lihat Semua <span>&rarr;</span>
+            </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @forelse($cars as $car)
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col justify-between">
+                <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
                     <div>
-                        <div class="bg-gray-200 h-48 flex items-center justify-center overflow-hidden">
-                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                        <div class="relative h-48 bg-slate-100 overflow-hidden">
+                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <span class="absolute top-4 left-4 bg-white/95 text-slate-800 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm uppercase tracking-wide">
+                                {{ $car->vehicle_type->label() }}
+                            </span>
                         </div>
-                        <div class="p-4">
-                            <h3 class="font-bold text-lg mb-1">{{ $car->name }}</h3>
-                            <p class="text-gray-600 text-sm mb-3">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="text-sm text-gray-600">⭐ {{ $car->rating ?? '4.8' }}/5</span>
-                                <span class="text-sm text-gray-600">👥 {{ $car->seat_count }} penumpang</span>
+                        <div class="p-5">
+                            <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">{{ $car->brand }}</span>
+                            <h3 class="font-extrabold text-slate-800 text-lg mt-0.5 mb-3">{{ $car->name }}</h3>
+                            <div class="flex justify-between items-center py-2.5 border-t border-b border-slate-50 mb-4 text-sm text-slate-600">
+                                <span class="flex items-center gap-1">⭐ {{ $car->rating ?? '4.8' }}/5</span>
+                                <span class="flex items-center gap-1">👥 {{ $car->seat_count }} Penumpang</span>
                             </div>
-                            <p class="text-2xl font-bold text-blue-600 mb-4">Rp {{ number_format($car->daily_rate, 0, ',', '.') }} / hari</p>
+                            <p class="text-2xl font-extrabold text-blue-600">Rp {{ number_format($car->daily_rate, 0, ',', '.') }}<span class="text-xs text-slate-400 font-normal"> / hari</span></p>
                         </div>
                     </div>
-                    <div class="p-4 pt-0">
-                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: 'available', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition cursor-pointer">
+                    <div class="p-5 pt-0">
+                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: 'available', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition cursor-pointer text-sm shadow-md shadow-blue-500/10 hover:shadow-blue-500/20">
                             Pesan Sekarang
                         </button>
                     </div>
                 </div>
             @empty
-                <div class="col-span-3 text-center py-12 bg-white rounded-xl border border-gray-200">
-                    <p class="text-gray-500">Tidak ada mobil yang tersedia.</p>
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-100">
+                    <p class="text-slate-500">Tidak ada mobil yang tersedia saat ini.</p>
                 </div>
             @endforelse
         </div>
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimoni" class="bg-gray-50 py-12 border-t border-gray-200">
+    <section id="testimoni" class="bg-slate-50/50 py-16 border-t border-slate-100">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
-            <h2 class="text-2xl font-bold text-gray-900 text-center mb-8">Kesan Eksklusif dari Pengguna Lain</h2>
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Testimoni</span>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mt-1">Kesan Eksklusif dari Pengguna Kami</h2>
+                <p class="text-slate-500 text-sm mt-1">Simak pengalaman langsung dari pelanggan yang mempercayakan perjalanan mereka kepada HD Rental Car.</p>
+            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
                 <!-- Testimonial 1 -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="flex gap-1 mb-4">
-                        <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex gap-0.5 text-amber-400 mb-4">
+                            ★ ★ ★ ★ ★
+                        </div>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
+                            "Layanan HD Rental Car sangat memuaskan. Mobil dalam kondisi prima, bersih, dan stafnya sangat profesional dalam memandu serah terima!"
+                        </p>
                     </div>
-                    <p class="text-gray-700 mb-4">
-                        "Layanan HD Rental Car sangat memuaskan. Mobil dalam kondisi prima dan stafnya sangat profesional!"
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                    <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
+                        <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                            BS
+                        </div>
                         <div>
-                            <p class="font-semibold text-gray-900">Budi Santoso</p>
-                            <p class="text-sm text-gray-600">Pengusaha Jakarta</p>
+                            <p class="font-bold text-slate-800 text-sm">Budi Santoso</p>
+                            <p class="text-xs text-slate-400">Pengusaha Jakarta</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Testimonial 2 - Featured -->
-                <div class="bg-blue-600 text-white rounded-xl p-6 md:scale-105 shadow-lg">
-                    <div class="flex gap-1 mb-4">
-                        <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-6 shadow-md shadow-blue-500/10 flex flex-col justify-between">
+                    <div>
+                        <div class="flex gap-0.5 text-yellow-300 mb-4">
+                            ★ ★ ★ ★ ★
+                        </div>
+                        <p class="text-white/95 text-base leading-relaxed mb-6 font-light">
+                            "Sangat puas dengan harga dan kualitas mobil. Proses booking online cepat & verifikasi wajahnya modern sekali. Rekomendasi untuk semua traveler!"
+                        </p>
                     </div>
-                    <p class="mb-4 text-lg">
-                        "Sangat puas dengan harga dan kualitas. Proses booking mudah. Rekomendasi untuk semua!"
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-blue-400 rounded-full"></div>
+                    <div class="flex items-center gap-3 border-t border-white/10 pt-4">
+                        <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                            SM
+                        </div>
                         <div>
-                            <p class="font-semibold">Siti Maya</p>
-                            <p class="text-sm text-blue-100">Travel Blogger</p>
+                            <p class="font-bold text-sm">Siti Maya</p>
+                            <p class="text-xs text-blue-200">Travel Blogger</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Testimonial 3 -->
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <div class="flex gap-1 mb-4">
-                        <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex gap-0.5 text-amber-400 mb-4">
+                            ★ ★ ★ ★ ★
+                        </div>
+                        <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
+                            "Terbaik di kelasnya! Armada sangat terawat, lokasi serah terima strategis, dan harganya sangat kompetitif dibanding sewa konvensional lainnya."
+                        </p>
                     </div>
-                    <p class="text-gray-700 mb-4">
-                        "Terbaik di kelasnya! Armada terawat, lokasi strategis, dan harga sangat kompetitif!"
-                    </p>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gray-300 rounded-full"></div>
+                    <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
+                        <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                            AR
+                        </div>
                         <div>
-                            <p class="font-semibold text-gray-900">Ahmad Rizki</p>
-                            <p class="text-sm text-gray-600">Konsultan Bisnis</p>
+                            <p class="font-bold text-slate-800 text-sm">Ahmad Rizki</p>
+                            <p class="text-xs text-slate-400">Konsultan Bisnis</p>
                         </div>
                     </div>
                 </div>
