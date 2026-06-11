@@ -10,10 +10,20 @@ use RuntimeException;
 
 class FaceVerificationService
 {
+    private function mockResponse(): array
+    {
+        return [
+            'verified' => true,
+            'nik' => '3273123456789001',
+            'payload' => ['mock' => true, 'verified' => true, 'nik' => '3273123456789001', 'confidence' => 0.95],
+        ];
+    }
+
     public function verify(UploadedFile $ktpFile, UploadedFile $selfieFile): array
     {
         $baseUrl = rtrim((string) config('services.face_verify.base_url'), '/');
         $timeout = (int) config('services.face_verify.timeout', 60);
+        $useMock = (bool) config('services.face_verify.mock', false);
 
         try {
             $response = Http::timeout($timeout)
@@ -30,25 +40,16 @@ class FaceVerificationService
                 ];
             }
         } catch (\Exception $e) {
-            if (config('app.env') === 'local') {
-                return [
-                    'verified' => true,
-                    'nik' => '3273123456789001',
-                    'payload' => ['mock' => true, 'verified' => true, 'nik' => '3273123456789001', 'confidence' => 0.95],
-                ];
+            if ($useMock) {
+                return $this->mockResponse();
             }
             throw $e;
         }
 
-        if (config('app.env') === 'local') {
-            return [
-                'verified' => true,
-                'nik' => '3273123456789001',
-                'payload' => ['mock' => true, 'verified' => true, 'nik' => '3273123456789001', 'confidence' => 0.95],
-            ];
+        if ($useMock) {
+            return $this->mockResponse();
         }
 
         throw new RuntimeException('Face verification service unavailable.');
     }
 }
-

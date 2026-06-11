@@ -44,6 +44,9 @@ class MidtransService
                     'name' => trim(($rental->car->brand ?? '').' '.($rental->car->name ?? '')),
                 ],
             ],
+            'callbacks' => [
+                'finish' => route('booking.detail', ['rental' => $rental->id]),
+            ],
         ];
 
         $response = Http::acceptJson()

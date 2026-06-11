@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Semua Riwayat Pemesanan - HD RENTAL CAR</title>
+    <title>Semua Riwayat Pemesanan - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -115,16 +115,47 @@
                 @php
                     $car = $rental->car;
                     $latestPayment = $rental->paymentHistories()->latest()->first();
+                    $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
                     
-                    // Determine Status State
+                    // Determine Status State and Label
+                    $state = 'dibatalkan';
+                    $statusLabel = 'Dibatalkan';
+                    $badgeColor = 'bg-gray-500';
+
                     if ($rental->status === \App\Enums\RentalStatus::ONGOING) {
                         $state = 'aktif';
-                    } elseif ($rental->status === \App\Enums\RentalStatus::RETURNED && $latestPayment && $latestPayment->status === \App\Enums\PaymentStatus::PAID) {
+                        $statusLabel = 'Aktif / Lunas';
+                        $badgeColor = 'bg-[#1E50DD]';
+                    } elseif ($rental->status === \App\Enums\RentalStatus::RETURNED) {
                         $state = 'selesai';
+                        $statusLabel = 'Selesai';
+                        $badgeColor = 'bg-[#10B981]';
+                    } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION) {
+                        if ($rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+                            $state = 'need_pay';
+                            $statusLabel = 'Menunggu Pembayaran';
+                            $badgeColor = 'bg-[#F59E0B]';
+                        } elseif (! $hasIdentityDocs) {
+                            $state = 'waiting_docs';
+                            $statusLabel = 'Menunggu Kelengkapan Data Penyewa';
+                            $badgeColor = 'bg-sky-500';
+                        } else {
+                            $state = 'verifying';
+                            $statusLabel = 'Menunggu Verifikasi Data Penyewa';
+                            $badgeColor = 'bg-amber-500';
+                        }
                     } elseif ($rental->status === \App\Enums\RentalStatus::PREPAID) {
-                        $state = 'pending';
-                    } else {
+                        $state = 'pending_pay';
+                        $statusLabel = 'Menunggu Pembayaran';
+                        $badgeColor = 'bg-[#F59E0B]';
+                    } elseif ($rental->status === \App\Enums\RentalStatus::CANCELLED) {
                         $state = 'dibatalkan';
+                        $statusLabel = 'Dibatalkan';
+                        $badgeColor = 'bg-red-600';
+                    } elseif ($rental->status === \App\Enums\RentalStatus::EXPIRED) {
+                        $state = 'expired';
+                        $statusLabel = 'Waktu Habis';
+                        $badgeColor = 'bg-gray-600';
                     }
                 @endphp
                 <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md transition">
@@ -133,24 +164,16 @@
                         <div class="relative bg-gray-100 h-44 overflow-hidden flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                             
-                            @if($state === 'pending')
-                                <span class="absolute top-4 right-4 bg-[#F59E0B] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Pending</span>
-                            @elseif($state === 'selesai')
-                                <span class="absolute top-4 right-4 bg-[#10B981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Selesai</span>
-                            @elseif($state === 'aktif')
-                                <span class="absolute top-4 right-4 bg-[#1E50DD] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Aktif</span>
-                            @else
-                                <span class="absolute top-4 right-4 bg-gray-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">Dibatalkan</span>
-                            @endif
+                            <span class="absolute top-4 right-4 {{ $badgeColor }} text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">{{ $statusLabel }}</span>
                         </div>
-
+ 
                         <!-- Card Details -->
                         <div class="p-5 space-y-4">
                             <div>
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">RESI: {{ $car->license_plate ?? 'B 1234 XYZ' }}</span>
                                 <h3 class="text-base font-bold text-gray-900 mt-0.5">{{ $car->brand }} {{ $car->name }}</h3>
                             </div>
-
+ 
                             <div class="space-y-2 text-xs text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <span>📅</span>
@@ -166,25 +189,44 @@
                             </div>
                         </div>
                     </div>
-
+ 
                     <!-- Card Footer -->
                     <div class="p-5 border-t border-gray-50 flex items-center justify-between">
                         <div>
                             <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Total Biaya</span>
-                            @if($state === 'pending')
-                                <span class="text-sm font-bold text-yellow-600">Menunggu</span>
+                            @if($state === 'waiting_docs')
+                                <span class="text-xs font-bold text-sky-500">Lengkapi Data</span>
+                            @elseif($state === 'verifying')
+                                <span class="text-xs font-bold text-amber-500">Ditinjau</span>
+                            @elseif($state === 'need_pay' || $state === 'pending_pay')
+                                <span class="text-xs font-bold text-yellow-600">Menunggu Pembayaran</span>
                             @else
                                 <span class="text-sm font-bold text-gray-900">Rp {{ number_format($rental->total_price, 0, ',', '.') }}</span>
                             @endif
                         </div>
-
+ 
                         <div class="flex gap-2">
-                            @if($state === 'pending')
+                            @if($state === 'need_pay')
+                                <form action="{{ route('booking.pay', $rental->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="bg-[#F59E0B] hover:bg-yellow-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition cursor-pointer">
+                                        Lanjutkan Pembayaran
+                                    </button>
+                                </form>
+                            @elseif($state === 'pending_pay')
                                 @php
                                     $payUrl = $latestPayment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                                 @endphp
                                 <a href="{{ $payUrl }}" class="bg-[#F59E0B] hover:bg-yellow-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition cursor-pointer">
                                     Bayar Sekarang
+                                </a>
+                            @elseif($state === 'verifying')
+                                <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-4 rounded-xl transition">
+                                    Lihat Status
+                                </a>
+                            @elseif($state === 'waiting_docs')
+                                <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-sky-200 hover:bg-sky-50 text-sky-700 font-bold text-xs py-2 px-4 rounded-xl transition">
+                                    Lengkapi Data
                                 </a>
                             @elseif($state === 'selesai')
                                 <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-3 rounded-xl transition">
@@ -250,7 +292,7 @@
 
     <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 mt-12">
         <div class="max-w-7xl mx-auto px-4 lg:px-8 text-center text-xs">
-            <p>&copy; 2026 HD Rental Car. All rights reserved.</p>
+            <p>&copy; 2026 MD CAR RENTAL. All rights reserved.</p>
         </div>
     </footer>
 

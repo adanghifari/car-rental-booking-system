@@ -140,7 +140,7 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Avanza Murah');
         $response->assertSee('Fortuner Mahal');
-        $response->assertSee('HD RENTAL CAR');
+        $response->assertSee('MD CAR RENTAL');
     }
 
     public function test_booking_detail_page_is_accessible_to_owner(): void

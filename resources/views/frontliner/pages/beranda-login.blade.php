@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HD Rental Car - Dashboard</title>
+    <title>MD CAR RENTAL - Dashboard</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&family=inter:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -55,7 +55,7 @@
                     Selamat datang kembali, <br class="hidden sm:inline"><span class="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{{ $user->name ?? 'User' }}</span>! 👋
                 </h1>
                 <p class="text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed">
-                    Lanjutkan perjalanan Anda dengan HD Rental Car. Nikmati berkendara aman dan nyaman dengan armada pilihan terbaik yang terawat.
+                    Lanjutkan perjalanan Anda dengan MD CAR RENTAL. Nikmati berkendara aman dan nyaman dengan armada pilihan terbaik yang terawat.
                 </p>
                 <div class="flex flex-wrap gap-4">
                     <a href="#cari-mobil" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 shadow-lg shadow-blue-600/35 text-sm cursor-pointer">
@@ -372,7 +372,7 @@
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Testimoni</span>
                 <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mt-1">Kesan Eksklusif dari Pengguna Kami</h2>
-                <p class="text-slate-500 text-sm mt-1">Simak pengalaman langsung dari pelanggan yang mempercayakan perjalanan mereka kepada HD Rental Car.</p>
+                <p class="text-slate-500 text-sm mt-1">Simak pengalaman langsung dari pelanggan yang mempercayakan perjalanan mereka kepada MD CAR RENTAL.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
@@ -383,7 +383,7 @@
                             ★ ★ ★ ★ ★
                         </div>
                         <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
-                            "Layanan HD Rental Car sangat memuaskan. Mobil dalam kondisi prima, bersih, dan stafnya sangat profesional dalam memandu serah terima!"
+                            "Layanan MD CAR RENTAL sangat memuaskan. Mobil dalam kondisi prima, bersih, dan stafnya sangat profesional dalam memandu serah terima!"
                         </p>
                     </div>
                     <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
@@ -448,7 +448,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <!-- Company Info -->
                 <div>
-                    <h3 class="text-white font-bold text-lg mb-4">HD RENTAL CAR</h3>
+                    <h3 class="text-white font-bold text-lg mb-4">MD CAR RENTAL</h3>
                     <p class="text-sm text-gray-400">
                         Penyewaan mobil terpercaya dengan armada terlengkap dan harga terjangkau.
                     </p>
@@ -491,7 +491,7 @@
             <hr class="border-gray-700 mb-8">
 
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">&copy; 2024 HD Rental Car. All rights reserved.</p>
+                <p class="text-sm text-gray-400">&copy; 2024 MD CAR RENTAL. All rights reserved.</p>
                 <div class="flex gap-4 mt-4 md:mt-0">
                     <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
                     <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>

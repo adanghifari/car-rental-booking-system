@@ -67,16 +67,26 @@ class BackofficeController extends Controller
             ->get()
             ->map(function (Rental $rental) {
                 $activity = match ($rental->status) {
-                    RentalStatus::PREPAID => 'Booking dibuat',
+                    RentalStatus::PENDING_VERIFICATION => ($rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW) 
+                        ? 'Verifikasi butuh review' 
+                        : 'Menunggu verifikasi',
+                    RentalStatus::PREPAID => 'Menunggu pembayaran',
                     RentalStatus::ONGOING => 'Mobil disewa',
                     RentalStatus::RETURNED => 'Mobil dikembalikan',
+                    RentalStatus::CANCELLED => 'Rental dibatalkan',
+                    RentalStatus::EXPIRED => 'Waktu rental habis',
                     default => 'Aktivitas rental',
                 };
 
                 $status = match ($rental->status) {
+                    RentalStatus::PENDING_VERIFICATION => ($rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW)
+                        ? ['label' => 'Butuh Review', 'tone' => 'amber']
+                        : ['label' => 'Verifikasi', 'tone' => 'indigo'],
                     RentalStatus::PREPAID => ['label' => 'Prepaid', 'tone' => 'amber'],
                     RentalStatus::ONGOING => ['label' => 'Berjalan', 'tone' => 'green'],
                     RentalStatus::RETURNED => ['label' => 'Selesai', 'tone' => 'blue'],
+                    RentalStatus::CANCELLED => ['label' => 'Batal', 'tone' => 'red'],
+                    RentalStatus::EXPIRED => ['label' => 'Expired', 'tone' => 'gray'],
                     default => ['label' => 'Update', 'tone' => 'slate'],
                 };
 
@@ -100,6 +110,18 @@ class BackofficeController extends Controller
                     ->where('created_at', '>=', $monthStart)
                     ->sum('amount'),
                 'bookings_today' => Rental::whereDate('created_at', $now->toDateString())->count(),
+                'waiting_verification' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
+                    ->where('verification_status', \App\Enums\VerificationStatus::PENDING)
+                    ->count(),
+                'needs_review' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
+                    ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
+                    ->count(),
+                'verified_waiting_pay' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
+                    ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
+                    ->count(),
+                'waiting_payment' => Rental::where('status', RentalStatus::PREPAID)->count(),
+                'active_rentals' => Rental::where('status', RentalStatus::ONGOING)->count(),
+                'cancelled_expired' => Rental::whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED])->count(),
             ],
             'fleet' => [
                 'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
@@ -172,7 +194,7 @@ class BackofficeController extends Controller
     public function cars(Request $request): View
     {
         $activeRentalCarIds = Rental::query()
-            ->whereIn('status', [RentalStatus::PREPAID, RentalStatus::ONGOING])
+            ->where('status', RentalStatus::ONGOING)
             ->pluck('car_id')
             ->filter()
             ->unique()
@@ -411,15 +433,61 @@ class BackofficeController extends Controller
 
     public function reservations(Request $request): View
     {
+        $filter = $request->query('status_filter');
+
+        $query = Rental::query();
+
+        if ($filter === 'waiting_review') {
+            $query->where('status', RentalStatus::PENDING_VERIFICATION)
+                  ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW);
+        } elseif ($filter === 'verified_no_pay') {
+            $query->where('status', RentalStatus::PENDING_VERIFICATION)
+                  ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED);
+        } elseif ($filter === 'waiting_pay') {
+            $query->where('status', RentalStatus::PREPAID);
+        } elseif ($filter === 'active') {
+            $query->where('status', RentalStatus::ONGOING);
+        } elseif ($filter === 'cancelled_expired') {
+            $query->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+        }
+
         $totalReservations = Rental::count();
         $pendingReservations = Rental::where('status', RentalStatus::PREPAID)->count();
         $completedReservations = Rental::where('status', RentalStatus::RETURNED)->count();
+        $needsReviewCount = Rental::where('status', RentalStatus::PENDING_VERIFICATION)
+            ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
+            ->count();
 
-        $rentals = Rental::with(['user:id,name', 'car:id,brand,name'])
+        $rentals = $query->with(['user:id,name', 'car'])
             ->latest()
             ->paginate(6)
             ->withQueryString()
             ->through(function (Rental $rental) {
+                $statusLabel = 'Menunggu';
+                if ($rental->status === RentalStatus::PENDING_VERIFICATION) {
+                    if ($rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW) {
+                        $statusLabel = 'Butuh Review Admin';
+                    } elseif ($rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+                        $statusLabel = 'Terverifikasi (Belum Payment)';
+                    } else {
+                        $statusLabel = 'Menunggu Verifikasi';
+                    }
+                } elseif ($rental->status === RentalStatus::PREPAID) {
+                    $statusLabel = 'Menunggu Pembayaran';
+                } elseif ($rental->status === RentalStatus::ONGOING) {
+                    $statusLabel = 'Aktif';
+                } elseif ($rental->status === RentalStatus::RETURNED) {
+                    $statusLabel = 'Selesai';
+                } elseif ($rental->status === RentalStatus::CANCELLED) {
+                    if ($rental->verification_status === \App\Enums\VerificationStatus::REJECTED) {
+                        $statusLabel = 'Ditolak';
+                    } else {
+                        $statusLabel = 'Dibatalkan';
+                    }
+                } elseif ($rental->status === RentalStatus::EXPIRED) {
+                    $statusLabel = 'Expired';
+                }
+
                 return [
                     'id' => $rental->id,
                     'booking_id' => $rental->id,
@@ -428,7 +496,23 @@ class BackofficeController extends Controller
                     'start_date' => $rental->start_date?->toDateString(),
                     'end_date' => $rental->end_date?->toDateString(),
                     'total_price' => (int) ($rental->total_price ?? 0),
-                    'status' => $rental->status instanceof RentalStatus ? $rental->status->value : (string) $rental->status,
+                    'status' => $statusLabel,
+                    'status_raw' => $rental->status->value,
+                    'verification_status' => $rental->verification_status ? $rental->verification_status->value : null,
+                    'ktp_url' => $rental->ktp_path ? route('backoffice.rentals.document', ['rental' => $rental->id, 'type' => 'ktp']) : null,
+                    'selfie_url' => $rental->selfie_path ? route('backoffice.rentals.document', ['rental' => $rental->id, 'type' => 'selfie']) : null,
+                    'car_details' => $rental->car ? [
+                        'brand' => $rental->car->brand,
+                        'name' => $rental->car->name,
+                        'license_plate' => $rental->car->license_plate,
+                        'transmission' => str($rental->car->transmission->value)->headline(),
+                        'seat_count' => $rental->car->seat_count . ' Kursi',
+                        'year' => $rental->car->year,
+                        'cc' => number_format($rental->car->cc) . ' cc',
+                        'vehicle_type' => str($rental->car->vehicle_type->value)->headline(),
+                        'color' => $rental->car->color,
+                        'daily_rate' => 'Rp ' . number_format($rental->car->daily_rate, 0, ',', '.'),
+                    ] : null,
                 ];
             });
 
@@ -455,7 +539,9 @@ class BackofficeController extends Controller
                 'total' => $totalReservations,
                 'pending' => $pendingReservations,
                 'completed' => $completedReservations,
+                'needs_review' => $needsReviewCount,
             ],
+            'current_filter' => $filter,
         ]);
     }
 
