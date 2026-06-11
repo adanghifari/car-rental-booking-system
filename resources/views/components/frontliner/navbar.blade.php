@@ -1,7 +1,7 @@
 <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
         <!-- Logo with Back Button -->
-        <div class="flex items-center gap-3 flex-1 min-w-0">
+        <div class="flex items-center gap-3 w-1/4 min-w-0">
             <div id="nav-back-container" class="flex items-center gap-3">
                 <button id="nav-back-button" onclick="window.history.back()"
                     class="group flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200/60 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200 cursor-pointer"
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Navigation - Hidden on mobile -->
-        <nav class="hidden lg:flex items-center gap-8 justify-center">
+        <nav class="hidden lg:flex items-center justify-center gap-8 w-1/2 flex-shrink-0">
             @guest
                 <a href="{{ route('home') }}" class="{{ Route::currentRouteName() === 'home' || Route::currentRouteName() === 'beranda' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
                 <a href="{{ route('armada') }}" class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
@@ -32,7 +32,7 @@
         </nav>
 
         <!-- Right Section (Auth / Guest Buttons) -->
-        <div class="flex items-center gap-4 flex-1 justify-end min-w-0">
+        <div class="flex items-center gap-4 w-1/4 justify-end min-w-0">
             @guest
                 <div class="flex items-center gap-3">
                     <a href="{{ route('login') }}" class="px-4 py-2.5 text-blue-600 hover:text-blue-700 font-semibold text-sm transition">
