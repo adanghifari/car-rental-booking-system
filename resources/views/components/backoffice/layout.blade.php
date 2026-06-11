@@ -48,6 +48,7 @@
             min-height: 100vh;
             display: grid;
             grid-template-columns: 240px 1fr;
+            align-items: start;
         }
 
         .sidebar {
@@ -56,6 +57,11 @@
             padding: 28px 22px;
             display: flex;
             flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
             border-right: 1px solid rgba(255, 255, 255, 0.06);
             box-shadow: 24px 0 60px rgba(15, 29, 51, 0.16);
         }
@@ -1598,6 +1604,10 @@
             }
 
             .sidebar {
+                position: relative;
+                top: auto;
+                height: auto;
+                overflow: visible;
                 padding-bottom: 18px;
             }
 
@@ -1717,7 +1727,7 @@
                 </svg>
                 <span>Manajemen Mobil</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="{{ route('backoffice.reservations') }}" class="nav-item {{ $active === 'reservations' ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M8 2v4m8-4v4M3 10h18"/>
                     <rect x="3" y="4" width="18" height="18" rx="2"/>
