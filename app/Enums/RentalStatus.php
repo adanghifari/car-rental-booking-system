@@ -4,9 +4,12 @@ namespace App\Enums;
 
 enum RentalStatus: string
 {
+    case PENDING_VERIFICATION = 'pending_verification';
     case PREPAID = 'prepaid';
     case ONGOING = 'ongoing';
     case RETURNED = 'returned';
+    case CANCELLED = 'cancelled';
+    case EXPIRED = 'expired';
 
     /**
      * Get all enum values.

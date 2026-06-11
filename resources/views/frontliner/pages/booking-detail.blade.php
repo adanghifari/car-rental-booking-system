@@ -22,10 +22,60 @@
         $driverCost = ($rental->type === \App\Enums\RentalType::WITH_DRIVER) ? 150000 * $days : 0;
         $serviceCost = 100000;
         $totalPrice = $rental->total_price;
+
+        $targetTime = null;
+        if ($rental->status === \App\Enums\RentalStatus::PREPAID) {
+            $targetTime = $rental->prepaid_expires_at;
+        } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
+        }
     @endphp
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full space-y-6">
+        <!-- Step Indicator -->
+        <div class="mb-8 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
+                <!-- Step 1: Detail Sewa -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                    <span class="hidden sm:inline">Detail Sewa</span>
+                    <span class="sm:hidden">Detail</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-blue-600"></div>
+
+                <!-- Step 2: Verifikasi Booking -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
+                    <span class="hidden sm:inline">Verifikasi Booking</span>
+                    <span class="sm:hidden">Booking</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-blue-600"></div>
+
+                <!-- Step 3: Verifikasi Data Penyewa -->
+                @php
+                    $step3Active = in_array($rental->status, [\App\Enums\RentalStatus::PENDING_VERIFICATION, \App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]);
+                    $step3Completed = in_array($rental->status, [\App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]) || ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED);
+                @endphp
+                <div class="flex items-center gap-2 {{ $step3Active ? 'text-blue-600' : 'text-gray-400' }}">
+                    <span class="w-6 h-6 rounded-full {{ $step3Completed ? 'bg-blue-600 text-white' : ($step3Active ? 'border-2 border-blue-600 text-blue-600' : 'bg-gray-200 text-gray-600') }} flex items-center justify-center text-xs">3</span>
+                    <span class="hidden sm:inline">Verifikasi Data Penyewa</span>
+                    <span class="sm:hidden">Identitas</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 {{ $step3Completed ? 'bg-blue-600' : 'bg-gray-200' }}"></div>
+
+                <!-- Step 4: Pembayaran -->
+                @php
+                    $step4Active = in_array($rental->status, [\App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]) || ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED);
+                    $step4Completed = in_array($rental->status, [\App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]);
+                @endphp
+                <div class="flex items-center gap-2 {{ $step4Active ? 'text-blue-600' : 'text-gray-400' }}">
+                    <span class="w-6 h-6 rounded-full {{ $step4Completed ? 'bg-blue-600 text-white' : ($step4Active ? 'border-2 border-blue-600 text-blue-600' : 'bg-gray-200 text-gray-600') }} flex items-center justify-center text-xs">4</span>
+                    <span class="hidden sm:inline">Pembayaran</span>
+                    <span class="sm:hidden">Bayar</span>
+                </div>
+            </div>
+        </div>
         
         <!-- Flash Message -->
         @if (session('success'))
@@ -35,8 +85,46 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
+                ⚠️ {{ session('error') }}
+            </div>
+        @endif
+
         <!-- Banner Status Pemesanan -->
-        @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+        @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
+            <!-- Menunggu Review Admin -->
+            <div class="bg-amber-500 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ⏱️
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Verifikasi Sedang Ditinjau</h2>
+                        <p class="text-xs text-amber-50 mt-0.5">Verifikasi identitas Anda sedang ditinjau. Mobil sementara kami amankan untuk Anda. Pembayaran dapat dilakukan setelah verifikasi disetujui.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Menunggu Verifikasi
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED)
+            <!-- Terverifikasi Manual - Menunggu Pembayaran diinisiasi -->
+            <div id="countdown-banner" class="bg-[#1E50DD] text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md transition-colors duration-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ⏱️
+                    </div>
+                    <div>
+                        <h2 id="countdown-text" class="text-base font-bold">Verifikasi Identitas Disetujui</h2>
+                        <p class="text-xs text-blue-100 mt-0.5">Selesaikan pembayaran sebelum batas waktu habis untuk mengaktifkan rental Anda.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2.5 rounded-full font-bold text-2xl tracking-wider min-w-[100px] text-center" id="countdown-timer">
+                    04:00:00
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
             <!-- Skenario Belum Lunas (Countdown Banner) -->
             <div id="countdown-banner" class="bg-[#1E50DD] text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md transition-colors duration-300">
                 <div class="flex items-center gap-3">
@@ -44,15 +132,15 @@
                         ⏱️
                     </div>
                     <div>
-                        <h2 id="countdown-text" class="text-base font-bold">Pesanan Anda telah dikunci</h2>
+                        <h2 id="countdown-text" class="text-base font-bold">Menunggu Pembayaran</h2>
                         <p class="text-xs text-blue-100 mt-0.5">Selesaikan pembayaran sebelum waktu habis untuk menjamin ketersediaan armada.</p>
                     </div>
                 </div>
                 <div class="bg-white/20 px-6 py-2.5 rounded-full font-bold text-2xl tracking-wider min-w-[100px] text-center" id="countdown-timer">
-                    15:00
+                    04:00:00
                 </div>
             </div>
-        @else
+        @elseif($rental->status === \App\Enums\RentalStatus::ONGOING)
             <!-- Skenario Lunas / Aktif -->
             <div class="bg-green-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
                 <div class="flex items-center gap-3">
@@ -65,7 +153,61 @@
                     </div>
                 </div>
                 <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
-                    Lunas (Aktif)
+                    Aktif / Lunas
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::RETURNED)
+            <!-- Skenario Selesai -->
+            <div class="bg-blue-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✓
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Rental Selesai</h2>
+                        <p class="text-xs text-blue-100 mt-0.5">Terima kasih telah menyewa kendaraan di HD RENTAL CAR.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Selesai
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::CANCELLED || $rental->verification_status === \App\Enums\VerificationStatus::REJECTED || $rental->verification_status === \App\Enums\VerificationStatus::CANCELLED)
+            <!-- Skenario Dibatalkan -->
+            <div class="bg-red-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✕
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Pemesanan Dibatalkan</h2>
+                        <p class="text-xs text-red-100 mt-0.5">
+                            @if($rental->verification_status === \App\Enums\VerificationStatus::REJECTED)
+                                Verifikasi identitas belum dapat disetujui. Pengajuan dibatalkan dan mobil kembali tersedia.
+                            @else
+                                Pemesanan telah dibatalkan.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Dibatalkan
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::EXPIRED)
+            <!-- Skenario Expired -->
+            <div class="bg-gray-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✕
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Waktu Pembayaran Habis</h2>
+                        <p class="text-xs text-gray-100 mt-0.5">Waktu Anda untuk menyelesaikan proses pembayaran telah habis. Mobil kembali tersedia.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Waktu Habis
                 </div>
             </div>
         @endif
@@ -171,7 +313,15 @@
                 </div>
 
                 <div class="space-y-4 mt-6">
-                    @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+                    @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED)
+                        <form action="{{ route('booking.pay', $rental->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <span>💳</span>
+                                <span>Lanjutkan Pembayaran</span>
+                            </button>
+                        </form>
+                    @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
                         @php
                             $payUrl = $payment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                         @endphp
@@ -179,10 +329,35 @@
                             <span>💳</span>
                             <span>Bayar Sekarang via Midtrans</span>
                         </a>
-                    @else
+                    @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
                         <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
-                            ✓ Pembayaran Lunas
+                            ⏱️ Menunggu Verifikasi Disetujui
                         </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::ONGOING)
+                        <button type="button" disabled class="w-full text-center block bg-emerald-100 text-emerald-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✓ Pembayaran Lunas / Rental Aktif
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::RETURNED)
+                        <button type="button" disabled class="w-full text-center block bg-blue-100 text-blue-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✓ Rental Selesai
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::CANCELLED)
+                        <button type="button" disabled class="w-full text-center block bg-red-100 text-red-500 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✕ Dibatalkan
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::EXPIRED)
+                        <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✕ Waktu Habis
+                        </button>
+                    @endif
+
+                    @if(in_array($rental->status, [\App\Enums\RentalStatus::PENDING_VERIFICATION, \App\Enums\RentalStatus::PREPAID]))
+                        <form action="{{ route('booking.cancel', $rental->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pemesanan ini? Data identitas KTP dan selfie Anda akan dihapus demi privasi.');">
+                            @csrf
+                            <button type="submit" class="w-full text-center block border border-red-500 hover:bg-red-50 text-red-500 font-bold py-2.5 px-6 rounded-xl transition text-xs">
+                                ✕ Batalkan & Hapus Data
+                            </button>
+                        </form>
                     @endif
                     <p class="text-center text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
                         Secure Payment Encrypted By Rental Mobil Vault
@@ -198,19 +373,18 @@
         </div>
     </footer>
 
-    @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+    @if($targetTime)
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // End time is created_at + 15 minutes
-                const createdAt = new Date("{{ $rental->created_at->toIso8601String() }}");
-                const endTime = new Date(createdAt.getTime() + 15 * 60 * 1000);
+                const endTime = new Date("{{ $targetTime->toIso8601String() }}");
 
                 function updateCountdown() {
                     const now = new Date();
                     const diff = endTime - now;
 
                     if (diff <= 0) {
-                        document.getElementById('countdown-timer').innerText = "00:00";
+                        const timerEl = document.getElementById('countdown-timer');
+                        if (timerEl) timerEl.innerText = "00:00:00";
                         const banner = document.getElementById('countdown-banner');
                         if (banner) {
                             banner.classList.add('bg-red-600');
@@ -228,17 +402,26 @@
                             payBtn.classList.remove('bg-[#1E50DD]', 'hover:bg-blue-700');
                             payBtn.innerText = "Waktu Pembayaran Habis";
                         }
+                        // Refresh page to transition state in DB
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
                         clearInterval(timerInterval);
                         return;
                     }
 
-                    const minutes = Math.floor(diff / (1000 * 60));
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+                    const hoursStr = String(hours).padStart(2, '0');
                     const minutesStr = String(minutes).padStart(2, '0');
                     const secondsStr = String(seconds).padStart(2, '0');
 
-                    document.getElementById('countdown-timer').innerText = `${minutesStr}:${secondsStr}`;
+                    const timerEl = document.getElementById('countdown-timer');
+                    if (timerEl) {
+                        timerEl.innerText = `${hoursStr}:${minutesStr}:${secondsStr}`;
+                    }
                 }
 
                 const timerInterval = setInterval(updateCountdown, 1000);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\RentalStatus;
 use App\Enums\RentalType;
+use App\Enums\VerificationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,7 @@ class Rental extends Model
         'selfie_path',
         'verification_passed',
         'verified_at',
+        'verification_status',
     ];
 
     /**
@@ -49,6 +51,7 @@ class Rental extends Model
         'total_price' => 'integer',
         'status' => RentalStatus::class,
         'type' => RentalType::class,
+        'verification_status' => VerificationStatus::class,
     ];
 
     public function user(): BelongsTo

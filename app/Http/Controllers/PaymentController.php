@@ -46,7 +46,7 @@ class PaymentController extends Controller
             return ApiResponse::error('Rental has expired.', 409);
         }
 
-        if (! $rental->verification_passed) {
+        if ($rental->verification_status !== \App\Enums\VerificationStatus::VERIFIED) {
             return ApiResponse::error('Verification is required before payment.', 409);
         }
 
@@ -96,7 +96,8 @@ class PaymentController extends Controller
             $paymentStatus = match ($transactionStatus) {
                 'settlement', 'capture' => PaymentStatus::PAID,
                 'pending' => PaymentStatus::PENDING,
-                'deny', 'cancel', 'expire', 'failure' => PaymentStatus::CANCELLED,
+                'expire' => PaymentStatus::EXPIRED,
+                'deny', 'cancel', 'failure' => PaymentStatus::CANCELLED,
                 default => PaymentStatus::PENDING,
             };
 
@@ -106,14 +107,34 @@ class PaymentController extends Controller
 
             $rental = $payment->rental;
 
-            if ($rental && $paymentStatus === PaymentStatus::PAID) {
-                $rental->status = RentalStatus::ONGOING;
-                $rental->save();
+            if ($rental) {
+                if ($paymentStatus === PaymentStatus::PAID) {
+                    $rental->status = RentalStatus::ONGOING;
+                    $rental->save();
 
-                $car = $rental->car;
-                if ($car) {
-                    $car->status = CarStatus::UNAVAILABLE;
-                    $car->save();
+                    $car = $rental->car;
+                    if ($car) {
+                        $car->status = CarStatus::UNAVAILABLE;
+                        $car->save();
+                    }
+                } elseif ($paymentStatus === PaymentStatus::EXPIRED) {
+                    $rental->status = RentalStatus::EXPIRED;
+                    $rental->save();
+
+                    $car = $rental->car;
+                    if ($car) {
+                        $car->status = CarStatus::AVAILABLE;
+                        $car->save();
+                    }
+                } elseif ($paymentStatus === PaymentStatus::CANCELLED) {
+                    $rental->status = RentalStatus::CANCELLED;
+                    $rental->save();
+
+                    $car = $rental->car;
+                    if ($car) {
+                        $car->status = CarStatus::AVAILABLE;
+                        $car->save();
+                    }
                 }
             }
 

@@ -53,6 +53,42 @@
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full">
+        <!-- Step Indicator -->
+        <div class="mb-8 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
+                <!-- Step 1: Detail Sewa -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                    <span class="hidden sm:inline">Detail Sewa</span>
+                    <span class="sm:hidden">Detail</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-blue-600"></div>
+
+                <!-- Step 2: Verifikasi Booking (Active) -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
+                    <span class="hidden sm:inline">Verifikasi Booking</span>
+                    <span class="sm:hidden">Booking</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-gray-200"></div>
+
+                <!-- Step 3: Verifikasi Data Penyewa -->
+                <div class="flex items-center gap-2 text-gray-400">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs">3</span>
+                    <span class="hidden sm:inline">Verifikasi Data Penyewa</span>
+                    <span class="sm:hidden">Identitas</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-gray-200"></div>
+
+                <!-- Step 4: Pembayaran -->
+                <div class="flex items-center gap-2 text-gray-400">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs">4</span>
+                    <span class="hidden sm:inline">Pembayaran</span>
+                    <span class="sm:hidden">Bayar</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Breadcrumbs -->
         <nav class="flex text-xs text-gray-500 mb-6 gap-2 items-center">
             <a href="{{ route('armada') }}" class="hover:text-blue-600">Fleet</a>
@@ -63,7 +99,7 @@
         </nav>
 
         <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">Konfirmasi Detail Pemesanan</h1>
-        <p class="text-sm text-gray-600 mb-8 font-medium">Periksa rincian pemesanan Anda dan lakukan verifikasi identitas untuk melanjutkan pembayaran.</p>
+        <p class="text-sm text-gray-600 mb-8 font-medium">Periksa rincian pemesanan Anda sebelum melanjutkan ke verifikasi data penyewa.</p>
 
         <!-- Grid Container -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -77,7 +113,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('booking.submit') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form action="{{ route('booking.identity') }}" method="POST" class="space-y-6">
                     @csrf
                     <input type="hidden" name="car_id" value="{{ $car->id }}">
                     <input type="hidden" name="start_date" value="{{ $start_date }}">
@@ -156,115 +192,11 @@
                         </div>
                     </div>
 
-                    <!-- Dokumen Identitas KTP -->
-                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-                                🪪
-                            </div>
-                            <h2 class="text-base font-bold text-gray-900">Dokumen Identitas (KTP)</h2>
-                        </div>
-
-                        <!-- Drag and Drop Area -->
-                        <div class="relative border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl bg-gray-50/30 transition duration-200 p-8 flex flex-col items-center justify-center text-center cursor-pointer"
-                             onclick="document.getElementById('ktp-input').click()">
-                            
-                            <input type="file" name="ktp" id="ktp-input" accept="image/*" class="hidden" onchange="handleKtpSelected(this)">
-                            
-                            <div id="ktp-placeholder" class="space-y-3">
-                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
-                                    📤
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-800">Klik untuk unggah KTP</p>
-                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
-                                </div>
-                            </div>
-
-                            <!-- Uploaded Preview -->
-                            <div id="ktp-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
-                                    <img id="ktp-preview-image" src="" alt="Pratinjau KTP" class="w-full object-contain max-h-24">
-                                </div>
-                                <div>
-                                    <p id="ktp-filename" class="text-xs font-bold text-gray-800 max-w-[250px] truncate mx-auto"></p>
-                                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase">KTP Dipilih</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- OCR Result Loading / Results Mock -->
-                        <div id="ocr-loader" class="hidden p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 justify-center text-xs font-bold text-blue-700">
-                            <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Mengekstrak data identitas (OCR)...
-                        </div>
-
-                        <div id="ocr-result" class="hidden p-4 bg-emerald-50 border border-emerald-100 rounded-xl space-y-2 text-xs">
-                            <p class="font-bold text-emerald-800 text-center uppercase tracking-wider text-[10px]">✓ Hasil Ekstraksi OCR KTP Berhasil</p>
-                            <div class="grid grid-cols-3 gap-1 pt-1.5 border-t border-emerald-100/50">
-                                <span class="text-emerald-600/70 font-semibold">NIK:</span>
-                                <span class="col-span-2 font-bold text-emerald-900">3273123456789001</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-1">
-                                <span class="text-emerald-600/70 font-semibold">Nama:</span>
-                                <span class="col-span-2 font-bold text-emerald-900 uppercase">{{ auth()->user()->name }}</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-1">
-                                <span class="text-emerald-600/70 font-semibold">Status:</span>
-                                <span class="col-span-2 font-bold text-emerald-900 uppercase">Valid & Terverifikasi</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Foto Selfie (Verifikasi Wajah) -->
-                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-                                📸
-                            </div>
-                            <h2 class="text-base font-bold text-gray-900">Verifikasi Wajah (Selfie)</h2>
-                        </div>
-
-                        <!-- Drag and Drop Area -->
-                        <div class="relative border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl bg-gray-50/30 transition duration-200 p-8 flex flex-col items-center justify-center text-center cursor-pointer"
-                             onclick="document.getElementById('selfie-input').click()">
-                            
-                            <input type="file" name="selfie" id="selfie-input" accept="image/*" class="hidden" onchange="handleSelfieSelected(this)">
-                            
-                            <div id="selfie-placeholder" class="space-y-3">
-                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
-                                    🤳
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-800">Klik untuk unggah Selfie</p>
-                                    <p class="text-xs text-gray-400 mt-1">Format JPG, PNG (Maks. 5MB) - Opsional</p>
-                                </div>
-                            </div>
-
-                            <!-- Uploaded Preview -->
-                            <div id="selfie-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
-                                    <img id="selfie-preview-image" src="" alt="Pratinjau Selfie" class="w-full object-contain max-h-24">
-                                </div>
-                                <div>
-                                    <p id="selfie-filename" class="text-xs font-bold text-gray-800 max-w-[250px] truncate mx-auto"></p>
-                                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase">Selfie Dipilih</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Submit Button -->
                     <div class="space-y-4">
                         <button type="submit" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-blue-200 flex items-center justify-center gap-2">
-                            💳 Konfirmasi & Bayar Sekarang
+                            Lanjut ke Verifikasi Data Penyewa
                         </button>
-                        <p class="text-xs text-center text-gray-400 flex items-center justify-center gap-1.5">
-                            🔒 Pemesanan Anda diproses dengan enkripsi keamanan tinggi.
-                        </p>
                     </div>
                 </form>
             </div>
@@ -276,7 +208,7 @@
                     <div class="rounded-2xl overflow-hidden h-48 bg-gray-50 relative">
                         <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}"
                              alt="{{ $car->name }}" class="w-full h-full object-cover">
-                        <span class="absolute top-4 left-4 bg-emerald-500 text-white text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                        <span class="absolute top-4 left-4 bg-emerald-500 text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
                             Premium Tier
                         </span>
                     </div>
@@ -333,64 +265,5 @@
     <footer class="bg-white border-t border-gray-200 py-6 text-center text-xs text-gray-500">
         <p>&copy; 2026 HD RENTAL CAR. Hak Cipta Dilindungi Undang-Undang.</p>
     </footer>
-
-    <script>
-        function handleKtpSelected(input) {
-            const file = input.files[0];
-            const placeholder = document.getElementById('ktp-placeholder');
-            const preview = document.getElementById('ktp-preview-container');
-            const previewImage = document.getElementById('ktp-preview-image');
-            const filenameEl = document.getElementById('ktp-filename');
-            const ocrLoader = document.getElementById('ocr-loader');
-            const ocrResult = document.getElementById('ocr-result');
-
-            if (file) {
-                // Show Image Preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    placeholder.classList.add('hidden');
-                    preview.classList.remove('hidden');
-                    
-                    // Mock OCR Extraction loading and feedback
-                    ocrResult.classList.add('hidden');
-                    ocrLoader.classList.remove('hidden');
-                    setTimeout(() => {
-                        ocrLoader.classList.add('hidden');
-                        ocrResult.classList.remove('hidden');
-                    }, 1200);
-                }
-                reader.readAsDataURL(file);
-                filenameEl.textContent = file.name;
-            } else {
-                placeholder.classList.remove('hidden');
-                preview.classList.add('hidden');
-                ocrLoader.classList.add('hidden');
-                ocrResult.classList.add('hidden');
-            }
-        }
-
-        function handleSelfieSelected(input) {
-            const file = input.files[0];
-            const placeholder = document.getElementById('selfie-placeholder');
-            const preview = document.getElementById('selfie-preview-container');
-            const previewImage = document.getElementById('selfie-preview-image');
-            const filenameEl = document.getElementById('selfie-filename');
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    placeholder.classList.add('hidden');
-                    preview.classList.remove('hidden');
-                }
-                reader.readAsDataURL(file);
-                filenameEl.textContent = file.name;
-            } else {
-                placeholder.classList.remove('hidden');
-                preview.classList.add('hidden');
-            }
-        }
-    </script>
 </body>
 </html>
