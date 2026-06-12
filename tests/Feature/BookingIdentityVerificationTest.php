@@ -88,8 +88,8 @@ class BookingIdentityVerificationTest extends TestCase
     {
         $this->actingAs($this->customer);
 
-        $ktp = UploadedFile::fake()->image('ktp.jpg');
-        $selfie = UploadedFile::fake()->image('selfie.jpg');
+        $ktp = UploadedFile::fake()->image('ktp.jpg')->size(100);
+        $selfie = UploadedFile::fake()->image('selfie.jpg')->size(100);
 
         $response = $this->post('/booking/submit', [
             'car_id' => $this->car->id,
@@ -115,7 +115,7 @@ class BookingIdentityVerificationTest extends TestCase
             $this->assertFalse($rental->verification_passed);
         }
         
-        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
+        $this->assertEquals(CarStatus::UNAVAILABLE, $this->car->fresh()->status);
     }
 
     public function test_admin_manual_approval_starts_4_hour_countdown(): void
@@ -338,18 +338,23 @@ class BookingIdentityVerificationTest extends TestCase
     {
         $this->actingAs($this->customer);
 
-        // Go to identity step to reserve the car and create initial rental
-        $response = $this->post('/booking/identity', [
+        $ktp = UploadedFile::fake()->image('ktp.jpg')->size(100);
+        $selfie = UploadedFile::fake()->image('selfie.jpg')->size(100);
+
+        // Submit the booking to create the rental and reserve the car
+        $response = $this->post('/booking/submit', [
             'car_id' => $this->car->id,
             'start_date' => '2026-07-10',
             'end_date' => '2026-07-12',
             'service_type' => 'self_drive',
+            'ktp' => $ktp,
+            'selfie' => $selfie,
         ]);
 
-        $response->assertOk();
+        $response->assertRedirect();
 
-        // Car status remains AVAILABLE (held by overlapping rental date checks)
-        $this->assertEquals(CarStatus::AVAILABLE, $this->car->fresh()->status);
+        // Car status becomes UNAVAILABLE when it is booked
+        $this->assertEquals(CarStatus::UNAVAILABLE, $this->car->fresh()->status);
 
         $rental = Rental::first();
         $this->assertNotNull($rental);

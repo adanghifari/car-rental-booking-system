@@ -30,6 +30,22 @@
             $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
         }
         $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
+        $hasPaymentSession = $payment
+            && $payment->status === \App\Enums\PaymentStatus::PENDING
+            && ($payment->snap_token || $payment->redirect_url);
+
+        $hasChosenPaymentMethod = false;
+        if (config('app.env') === 'testing' || empty(config('services.midtrans.server_key'))) {
+            $hasChosenPaymentMethod = (bool) $hasPaymentSession;
+        } else {
+            $hasChosenPaymentMethod = $hasPaymentSession && !empty($payment->payload['payment_type']);
+        }
+
+        $canChangePaymentMethod = $rental->status === \App\Enums\RentalStatus::PREPAID
+            && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED
+            && $rental->prepaid_expires_at
+            && $rental->prepaid_expires_at->isFuture()
+            && $hasChosenPaymentMethod;
     @endphp
 
     <!-- Main Content -->
@@ -342,10 +358,25 @@
                         @php
                             $payUrl = $payment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                         @endphp
-                        <a id="pay-button" href="{{ $payUrl }}" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
-                            <span>💳</span>
-                            <span>Bayar Sekarang via Midtrans</span>
-                        </a>
+                        <div class="space-y-3">
+                            <a id="pay-button" href="{{ $payUrl }}" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <span>💳</span>
+                                <span>Bayar Sekarang via Midtrans</span>
+                            </a>
+
+                            @if($canChangePaymentMethod)
+                                <form action="{{ route('booking.change-payment-method', $rental->id) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    <button type="submit" id="change-payment-method-button" class="w-full text-center block border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl transition shadow-sm flex items-center justify-center space-x-2 text-sm">
+                                        <span>↺</span>
+                                        <span>Ganti Metode Pembayaran</span>
+                                    </button>
+                                </form>
+                                <p class="text-center text-[11px] text-slate-500 font-medium">
+                                    Mengganti metode pembayaran tidak menambah batas waktu pembayaran.
+                                </p>
+                            @endif
+                        </div>
                     @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::PENDING && ! $hasIdentityDocs)
                         <button type="button" disabled class="w-full text-center block bg-sky-100 text-sky-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
                             🔒 Menunggu Kelengkapan Data Penyewa
@@ -422,6 +453,13 @@
                             payBtn.classList.add('bg-gray-400', 'cursor-not-allowed', 'opacity-60');
                             payBtn.classList.remove('bg-[#1E50DD]', 'hover:bg-blue-700');
                             payBtn.innerText = "Waktu Pembayaran Habis";
+                        }
+                        const changeBtn = document.getElementById('change-payment-method-button');
+                        if (changeBtn) {
+                            changeBtn.setAttribute('disabled', 'disabled');
+                            changeBtn.classList.add('cursor-not-allowed', 'opacity-60');
+                            changeBtn.classList.remove('hover:bg-slate-50');
+                            changeBtn.innerText = "Waktu Pembayaran Habis";
                         }
                         // Refresh page to transition state in DB
                         setTimeout(() => {

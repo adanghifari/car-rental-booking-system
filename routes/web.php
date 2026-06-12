@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BackofficeController;
 use App\Http\Controllers\CustomerNotificationController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Http\RedirectResponse;
 use App\Models\User;
 use App\Models\Car;
@@ -435,6 +436,7 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             return $rental;
         });
     } catch (\Throwable $e) {
+        dd($e);
         return $renderIdentityPage([
             'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
         ]);
@@ -592,6 +594,10 @@ Route::post('/booking/detail/{rental}/cancel', function (Rental $rental) {
     return redirect()->route('pesanan-saya')->with('success', 'Pemesanan Anda berhasil dibatalkan.');
 })->middleware(['token.cookie', 'auth'])->name('booking.cancel');
 
+Route::post('/booking/detail/{rental}/change-payment-method', [PaymentController::class, 'changePaymentMethod'])
+    ->middleware(['token.cookie', 'auth'])
+    ->name('booking.change-payment-method');
+
 Route::post('/dashboard/reservations/{rental}/verify', function (Request $request, Rental $rental) {
     $user = auth()->user();
     if (!$user || $user->role !== User::ROLE_ADMIN) {
@@ -729,73 +735,80 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
     $latestPayment = $rental->paymentHistories()->latest()->first();
 
     // Direct Midtrans status check if still prepaid and we have a transaction
-    if ($rental->status === RentalStatus::PREPAID && $latestPayment && $latestPayment->provider_order_id) {
+    if ($rental->status === RentalStatus::PREPAID && $latestPayment && $latestPayment->status === \App\Enums\PaymentStatus::PENDING && $latestPayment->provider_order_id) {
         try {
-            $status = $midtrans->getTransactionStatus($latestPayment->provider_order_id);
-            if ($status === 'settlement' || $status === 'capture') {
-                DB::transaction(function () use ($rental, $latestPayment) {
-                    $latestPayment->status = \App\Enums\PaymentStatus::PAID;
-                    $latestPayment->save();
+            $details = $midtrans->getTransactionDetails($latestPayment->provider_order_id);
+            if ($details) {
+                // Update local payload in DB so we know chosen payment method details
+                $latestPayment->payload = array_merge($latestPayment->payload ?? [], $details);
+                $latestPayment->save();
 
-                    $rental->status = RentalStatus::ONGOING;
-                    $rental->save();
+                $status = $details['transaction_status'] ?? null;
+                if ($status === 'settlement' || $status === 'capture') {
+                    DB::transaction(function () use ($rental, $latestPayment) {
+                        $latestPayment->status = \App\Enums\PaymentStatus::PAID;
+                        $latestPayment->save();
 
-                    $car = $rental->car;
-                    if ($car) {
-                        $car->status = CarStatus::UNAVAILABLE;
-                        $car->save();
-                    }
-                });
+                        $rental->status = RentalStatus::ONGOING;
+                        $rental->save();
 
-                app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
+                        $car = $rental->car;
+                        if ($car) {
+                            $car->status = CarStatus::UNAVAILABLE;
+                            $car->save();
+                        }
+                    });
 
-                // Reload relations
-                $rental->refresh();
-                $latestPayment = $rental->paymentHistories()->latest()->first();
-            } elseif ($status === 'expire') {
-                DB::transaction(function () use ($rental, $latestPayment) {
-                    $latestPayment->status = \App\Enums\PaymentStatus::EXPIRED;
-                    $latestPayment->save();
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
 
-                    $rental->status = RentalStatus::EXPIRED;
-                    $rental->prepaid_expires_at = null;
-                    booking_release_identity_files($rental);
-                    $rental->save();
+                    // Reload relations
+                    $rental->refresh();
+                    $latestPayment = $rental->paymentHistories()->latest()->first();
+                } elseif ($status === 'expire') {
+                    DB::transaction(function () use ($rental, $latestPayment) {
+                        $latestPayment->status = \App\Enums\PaymentStatus::EXPIRED;
+                        $latestPayment->save();
 
-                    $car = $rental->car;
-                    if ($car) {
-                        $car->status = CarStatus::AVAILABLE;
-                        $car->save();
-                    }
-                });
+                        $rental->status = RentalStatus::EXPIRED;
+                        $rental->prepaid_expires_at = null;
+                        booking_release_identity_files($rental);
+                        $rental->save();
 
-                app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
+                        $car = $rental->car;
+                        if ($car) {
+                            $car->status = CarStatus::AVAILABLE;
+                            $car->save();
+                        }
+                    });
 
-                // Reload relations
-                $rental->refresh();
-                $latestPayment = $rental->paymentHistories()->latest()->first();
-            } elseif (in_array($status, ['deny', 'cancel', 'failure'])) {
-                DB::transaction(function () use ($rental, $latestPayment) {
-                    $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
-                    $latestPayment->save();
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
 
-                    $rental->status = RentalStatus::CANCELLED;
-                    $rental->prepaid_expires_at = null;
-                    booking_release_identity_files($rental);
-                    $rental->save();
+                    // Reload relations
+                    $rental->refresh();
+                    $latestPayment = $rental->paymentHistories()->latest()->first();
+                } elseif (in_array($status, ['deny', 'cancel', 'failure'])) {
+                    DB::transaction(function () use ($rental, $latestPayment) {
+                        $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
+                        $latestPayment->save();
 
-                    $car = $rental->car;
-                    if ($car) {
-                        $car->status = CarStatus::AVAILABLE;
-                        $car->save();
-                    }
-                });
+                        $rental->status = RentalStatus::CANCELLED;
+                        $rental->prepaid_expires_at = null;
+                        booking_release_identity_files($rental);
+                        $rental->save();
 
-                app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
+                        $car = $rental->car;
+                        if ($car) {
+                            $car->status = CarStatus::AVAILABLE;
+                            $car->save();
+                        }
+                    });
 
-                // Reload relations
-                $rental->refresh();
-                $latestPayment = $rental->paymentHistories()->latest()->first();
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
+
+                    // Reload relations
+                    $rental->refresh();
+                    $latestPayment = $rental->paymentHistories()->latest()->first();
+                }
             }
         } catch (\Exception $e) {
             // Ignore API failures and proceed with stored DB status
@@ -823,7 +836,7 @@ Route::get('/pesanan-saya', function (Request $request) {
 
     foreach ($prepaidRentals as $rental) {
         $latestPayment = $rental->paymentHistories()->latest()->first();
-        if ($latestPayment && $latestPayment->provider_order_id) {
+        if ($latestPayment && $latestPayment->status === \App\Enums\PaymentStatus::PENDING && $latestPayment->provider_order_id) {
             try {
                 $status = $midtrans->getTransactionStatus($latestPayment->provider_order_id);
                 if ($status === 'settlement' || $status === 'capture') {

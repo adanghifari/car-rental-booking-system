@@ -82,8 +82,8 @@ class CustomerNotificationsTest extends TestCase
             'start_date' => '2026-07-10',
             'end_date' => '2026-07-12',
             'service_type' => 'self_drive',
-            'ktp' => UploadedFile::fake()->image('ktp.jpg'),
-            'selfie' => UploadedFile::fake()->image('selfie.jpg'),
+            'ktp' => UploadedFile::fake()->image('ktp.jpg')->size(100),
+            'selfie' => UploadedFile::fake()->image('selfie.jpg')->size(100),
         ]);
 
         $response->assertRedirect();
