@@ -149,13 +149,71 @@ class BackofficeController extends Controller
         ]);
     }
 
-    public function users(): View
+    public function users(Request $request): View
     {
-        $users = User::query()
+        $usersQuery = User::query()
             ->withCount('rentals')
-            ->withSum('rentals', 'total_price')
-            ->latest()
-            ->paginate(10)
+            ->withSum('rentals', 'total_price');
+
+        // Search Filter
+        if ($request->filled('search')) {
+            $search = trim($request->input('search'));
+            $usersQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%");
+            });
+        }
+
+        // Status Filter
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if ($status === 'aktif') {
+                $usersQuery->where(function ($q) {
+                    $q->where('role', User::ROLE_ADMIN)
+                      ->orWhereHas('rentals')
+                      ->orWhere('created_at', '>=', now()->subMonths(2));
+                });
+            } elseif ($status === 'suspend') {
+                $usersQuery->where('role', '!=', User::ROLE_ADMIN)
+                    ->whereDoesntHave('rentals')
+                    ->where('created_at', '<', now()->subMonths(2));
+            }
+        }
+
+        // Membership Filter
+        if ($request->filled('membership')) {
+            $membership = $request->input('membership');
+            $usersQuery->where(function ($q) use ($membership) {
+                $sumQuery = "(SELECT COALESCE(SUM(total_price), 0) FROM rentals WHERE rentals.user_id = users.id)";
+
+                if ($membership === 'platinum') {
+                    $q->whereRaw("$sumQuery >= 40000000");
+                } elseif ($membership === 'gold') {
+                    $q->whereRaw("$sumQuery >= 20000000")
+                      ->whereRaw("$sumQuery < 40000000");
+                } elseif ($membership === 'silver') {
+                    $q->whereRaw("$sumQuery < 20000000");
+                }
+            });
+        }
+
+        // Sorting
+        $sort = $request->query('sort', 'latest');
+        if ($sort === 'oldest') {
+            $usersQuery->orderBy('created_at', 'asc');
+        } elseif ($sort === 'name_asc') {
+            $usersQuery->orderBy('name', 'asc');
+        } elseif ($sort === 'name_desc') {
+            $usersQuery->orderBy('name', 'desc');
+        } elseif ($sort === 'transactions_desc') {
+            $usersQuery->orderByRaw('(SELECT COALESCE(SUM(total_price), 0) FROM rentals WHERE rentals.user_id = users.id) DESC');
+        } else {
+            $usersQuery->orderBy('created_at', 'desc');
+        }
+
+        $users = $usersQuery->paginate(10)
+            ->withQueryString()
             ->through(function (User $user, int $index) {
                 $totalTransactions = (int) ($user->rentals_sum_total_price ?? 0);
 
@@ -176,6 +234,8 @@ class BackofficeController extends Controller
                 ];
 
                 return [
+                    'id' => $user->id,
+                    'role' => $user->role,
                     'name' => $user->name,
                     'email' => $user->email,
                     'username' => $user->username ?? 'user'.$user->id,
@@ -198,6 +258,20 @@ class BackofficeController extends Controller
             'pagination' => $this->paginationWindow($users->currentPage(), $users->lastPage()),
         ]);
     }
+
+    public function deleteUser(User $user): RedirectResponse
+    {
+        if ($user->role === User::ROLE_ADMIN) {
+            return back()->with('error', 'User admin tidak dapat dihapus.');
+        }
+
+        $user->delete();
+
+        return redirect()
+            ->route('backoffice.users')
+            ->with('success', 'User berhasil dihapus.');
+    }
+
 
     public function cars(Request $request): View
     {
