@@ -29,6 +29,7 @@ class BackofficeController extends Controller
         $monthStart = $now->copy()->startOfMonth();
         $months = collect(range(5, 0))->map(fn (int $offset) => $now->copy()->subMonths($offset)->startOfMonth());
         $monthLabels = $months->map(fn (Carbon $date) => $date->translatedFormat('M'));
+        $lockingStatuses = $this->lockingRentalStatuses();
 
         $rentalCounts = Rental::query()
             ->where('created_at', '>=', $months->first())
@@ -105,7 +106,9 @@ class BackofficeController extends Controller
                 'total_users' => User::count(),
                 'total_cars' => Car::count(),
                 'available_cars' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented_cars' => Car::where('status', CarStatus::UNAVAILABLE)->count(),
+                'rented_cars' => Car::query()
+                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                    ->count(),
                 'monthly_revenue' => PaymentHistory::where('status', PaymentStatus::PAID)
                     ->where('created_at', '>=', $monthStart)
                     ->sum('amount'),
@@ -125,8 +128,13 @@ class BackofficeController extends Controller
             ],
             'fleet' => [
                 'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented' => Car::where('status', CarStatus::UNAVAILABLE)->count(),
-                'maintenance' => 0,
+                'rented' => Car::query()
+                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                    ->count(),
+                'maintenance' => Car::query()
+                    ->where('status', CarStatus::UNAVAILABLE)
+                    ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                    ->count(),
             ],
             'chartRentals' => $chartRentals,
             'chartRevenue' => $chartRevenue,
@@ -193,12 +201,7 @@ class BackofficeController extends Controller
 
     public function cars(Request $request): View
     {
-        $activeRentalCarIds = Rental::query()
-            ->where('status', RentalStatus::ONGOING)
-            ->pluck('car_id')
-            ->filter()
-            ->unique()
-            ->values();
+        $lockingStatuses = $this->lockingRentalStatuses();
 
         $filters = [
             'search' => trim((string) $request->query('search', '')),
@@ -209,9 +212,13 @@ class BackofficeController extends Controller
 
         $totalCars = Car::count();
         $availableCars = Car::where('status', CarStatus::AVAILABLE)->count();
-        $unavailableCars = Car::where('status', CarStatus::UNAVAILABLE)->count();
-        $rentedCars = Car::query()->whereIn('id', $activeRentalCarIds)->count();
-        $maintenanceCars = max($unavailableCars - $rentedCars, 0);
+        $rentedCars = Car::query()
+            ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+            ->count();
+        $maintenanceCars = Car::query()
+            ->where('status', CarStatus::UNAVAILABLE)
+            ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+            ->count();
 
         $carsQuery = Car::query()
             ->with(['rentals' => fn ($query) => $query->latest()])
@@ -226,19 +233,19 @@ class BackofficeController extends Controller
             })
             ->when($filters['type'] !== '', fn ($query) => $query->where('vehicle_type', $filters['type']))
             ->when($filters['transmission'] !== '', fn ($query) => $query->where('transmission', $filters['transmission']))
-            ->when($filters['status'] !== '', function ($query) use ($filters, $activeRentalCarIds) {
+            ->when($filters['status'] !== '', function ($query) use ($filters, $lockingStatuses) {
                 if ($filters['status'] === 'available') {
                     $query->where('status', CarStatus::AVAILABLE);
                 }
 
                 if ($filters['status'] === 'rented') {
-                    $query->whereIn('id', $activeRentalCarIds);
+                    $query->whereHas('rentals', fn ($rentalQuery) => $rentalQuery->whereIn('status', $lockingStatuses));
                 }
 
                 if ($filters['status'] === 'maintenance') {
                     $query
                         ->where('status', CarStatus::UNAVAILABLE)
-                        ->whereNotIn('id', $activeRentalCarIds);
+                        ->whereDoesntHave('rentals', fn ($rentalQuery) => $rentalQuery->whereIn('status', $lockingStatuses));
                 }
             })
             ->latest();
@@ -246,8 +253,14 @@ class BackofficeController extends Controller
         $cars = $carsQuery
             ->paginate(6)
             ->withQueryString()
-            ->through(function (Car $car) use ($activeRentalCarIds) {
-                $status = $this->carStatusMeta($car, $activeRentalCarIds->contains($car->id));
+            ->through(function (Car $car) use ($lockingStatuses) {
+                $lockingRental = $car->rentals
+                    ->first(fn (Rental $rental) => in_array($rental->status, $lockingStatuses, true));
+                $status = $this->carStatusMeta($car, $lockingRental);
+                $services = array_values(array_filter([
+                    $car->self_drive_available ? 'Lepas Kunci' : null,
+                    $car->driver_available ? 'Dengan Driver' : null,
+                ]));
 
                 return [
                     'id' => $car->id,
@@ -264,6 +277,13 @@ class BackofficeController extends Controller
                     'status' => $status['label'],
                     'status_tone' => $status['tone'],
                     'status_note' => $status['note'],
+                    'locking_rental_id' => $lockingRental?->id,
+                    'locking_rental_status' => $lockingRental?->status?->value,
+                    'locking_rental_verification_status' => $lockingRental?->verification_status?->value,
+                    'can_change_status' => $status['can_change_status'],
+                    'status_action_label' => $status['action_label'],
+                    'status_action_kind' => $status['action_kind'],
+                    'status_action_value' => $status['action_value'],
                     'transmission' => $car->transmission instanceof TransmissionType ? $car->transmission->label() : (string) $car->transmission,
                     'transmission_raw' => $car->transmission instanceof TransmissionType ? $car->transmission->value : (string) $car->transmission,
                     'seat' => $car->seat_count.' Kursi',
@@ -276,6 +296,8 @@ class BackofficeController extends Controller
                     'type_raw' => $car->vehicle_type instanceof VehicleType ? $car->vehicle_type->value : (string) $car->vehicle_type,
                     'self_drive_available' => (bool) $car->self_drive_available,
                     'driver_available' => (bool) $car->driver_available,
+                    'services' => $services,
+                    'services_label' => $services !== [] ? implode(', ', $services) : 'Tidak ada',
                     'plate' => strtoupper($car->license_plate),
                     'plate_raw' => $car->license_plate,
                     'image_url' => $this->resolveCarImageUrl($car->image),
@@ -300,8 +322,24 @@ class BackofficeController extends Controller
             ],
             'filters' => $filters,
             'cars' => $cars,
-            'typeOptions' => VehicleType::values(),
-            'transmissionOptions' => TransmissionType::values(),
+            'typeOptions' => collect(VehicleType::cases())
+                ->map(fn (VehicleType $type) => [
+                    'value' => $type->value,
+                    'label' => $type->label(),
+                ])
+                ->values()
+                ->all(),
+            'transmissionOptions' => collect(TransmissionType::cases())
+                ->map(fn (TransmissionType $type) => [
+                    'value' => $type->value,
+                    'label' => $type->label(),
+                ])
+                ->values()
+                ->all(),
+            'serviceOptions' => [
+                ['name' => 'self_drive_available', 'label' => 'Lepas Kunci'],
+                ['name' => 'driver_available', 'label' => 'Dengan Driver'],
+            ],
             'pagination' => $this->paginationWindow($cars->currentPage(), $cars->lastPage()),
         ]);
     }
@@ -323,9 +361,15 @@ class BackofficeController extends Controller
             'image' => ['required', 'file', 'image', 'max:5120'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
-            'self_drive_available' => ['nullable', 'boolean'],
-            'driver_available' => ['nullable', 'boolean'],
+            'self_drive_available' => ['boolean'],
+            'driver_available' => ['boolean'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            if (! $request->boolean('self_drive_available') && ! $request->boolean('driver_available')) {
+                $validator->errors()->add('service_selection', 'Pilih minimal satu layanan: Lepas Kunci atau Dengan Driver.');
+            }
+        });
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -352,6 +396,10 @@ class BackofficeController extends Controller
 
     public function updateCar(Request $request, Car $car): RedirectResponse
     {
+        $imageRules = ($request->boolean('remove_image') || blank($car->image))
+            ? ['required', 'file', 'image', 'max:5120']
+            : ['nullable', 'file', 'image', 'max:5120'];
+
         $validator = Validator::make($request->all(), [
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
@@ -364,14 +412,20 @@ class BackofficeController extends Controller
             'color' => ['required', 'string', 'max:50'],
             'daily_rate' => ['required', 'integer', 'min:0'],
             'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate,' . $car->id],
-            'image' => ['nullable', 'file', 'image', 'max:5120'],
+            'image' => $imageRules,
             'remove_image' => ['nullable', 'boolean'],
             'remove_gallery_images' => ['nullable', 'string'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
-            'self_drive_available' => ['nullable', 'boolean'],
-            'driver_available' => ['nullable', 'boolean'],
+            'self_drive_available' => ['boolean'],
+            'driver_available' => ['boolean'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            if (! $request->boolean('self_drive_available') && ! $request->boolean('driver_available')) {
+                $validator->errors()->add('service_selection', 'Pilih minimal satu layanan: Lepas Kunci atau Dengan Driver.');
+            }
+        });
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -421,6 +475,54 @@ class BackofficeController extends Controller
             ->with('success', 'Mobil berhasil diperbarui.');
     }
 
+    public function updateCarStatus(Request $request, Car $car): RedirectResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', Rule::in(CarStatus::values())],
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $desiredStatus = CarStatus::tryFrom((string) $validator->validated()['status']);
+        if (! $desiredStatus) {
+            return back()->with('error', 'Status mobil tidak valid.')->withInput();
+        }
+
+        $lockingStatuses = $this->lockingRentalStatuses();
+        $lockingRental = $car->rentals()
+            ->whereIn('status', $lockingStatuses)
+            ->latest('created_at')
+            ->first();
+
+        if ($desiredStatus === CarStatus::AVAILABLE) {
+            if ($lockingRental) {
+                return redirect()
+                    ->route('backoffice.reservations', ['rental_id' => $lockingRental->id])
+                    ->with('warning', $this->lockingRentalWarningMessage($lockingRental));
+            }
+
+            $car->status = CarStatus::AVAILABLE;
+            $car->save();
+
+            return redirect()
+                ->route('backoffice.cars')
+                ->with('success', 'Mobil berhasil diaktifkan kembali.');
+        }
+
+        if ($desiredStatus === CarStatus::UNAVAILABLE) {
+            $car->status = CarStatus::UNAVAILABLE;
+            $car->save();
+
+            return redirect()
+                ->route('backoffice.cars')
+                ->with('success', 'Mobil berhasil diset ke maintenance.');
+        }
+
+        return back()->with('error', 'Status mobil tidak dapat diubah.')->withInput();
+    }
+
     public function deleteCar(Car $car): RedirectResponse
     {
         $this->deleteStoredCarMedia($car);
@@ -434,6 +536,7 @@ class BackofficeController extends Controller
     public function reservations(Request $request): View
     {
         $filter = $request->query('status_filter');
+        $highlightRentalId = (int) $request->query('rental_id', $request->query('highlight', 0));
 
         $query = Rental::query();
 
@@ -542,6 +645,7 @@ class BackofficeController extends Controller
                 'needs_review' => $needsReviewCount,
             ],
             'current_filter' => $filter,
+            'highlightRentalId' => $highlightRentalId > 0 ? $highlightRentalId : null,
         ]);
     }
 
@@ -621,17 +725,86 @@ class BackofficeController extends Controller
         return [1, 2, 3, '...', $lastPage];
     }
 
-    private function carStatusMeta(Car $car, bool $isRented): array
+    private function carStatusMeta(Car $car, ?Rental $lockingRental = null): array
     {
         if ($car->status === CarStatus::AVAILABLE) {
-            return ['label' => 'TERSEDIA', 'tone' => 'green', 'note' => 'Optimal'];
+            return [
+                'label' => 'TERSEDIA',
+                'tone' => 'green',
+                'note' => 'Mobil siap disewa dan tidak sedang digunakan.',
+                'can_change_status' => true,
+                'action_label' => 'Set Maintenance',
+                'action_kind' => 'toggle',
+                'action_value' => CarStatus::UNAVAILABLE->value,
+            ];
         }
 
-        if ($isRented) {
-            return ['label' => 'DISEWA', 'tone' => 'blue', 'note' => 'Aktif'];
+        if ($lockingRental?->status === RentalStatus::PENDING_VERIFICATION) {
+            $needsReview = $lockingRental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW;
+
+            return [
+                'label' => $needsReview ? 'BUTUH REVIEW' : 'MENUNGGU VERIFIKASI',
+                'tone' => $needsReview ? 'amber' : 'indigo',
+                'note' => 'Mobil sedang ditahan oleh proses verifikasi customer.',
+                'can_change_status' => false,
+                'action_label' => 'Lihat Reservasi',
+                'action_kind' => 'view_reservation',
+                'action_value' => null,
+            ];
         }
 
-        return ['label' => 'MAINTENANCE', 'tone' => 'red', 'note' => 'Perlu tindakan'];
+        if ($lockingRental?->status === RentalStatus::PREPAID) {
+            return [
+                'label' => 'MENUNGGU PEMBAYARAN',
+                'tone' => 'amber',
+                'note' => 'Mobil sedang menunggu pembayaran customer.',
+                'can_change_status' => false,
+                'action_label' => 'Lihat Reservasi',
+                'action_kind' => 'view_reservation',
+                'action_value' => null,
+            ];
+        }
+
+        if ($lockingRental?->status === RentalStatus::ONGOING) {
+            return [
+                'label' => 'DISEWA',
+                'tone' => 'blue',
+                'note' => 'Mobil sedang dipakai pelanggan pada periode rental aktif.',
+                'can_change_status' => false,
+                'action_label' => 'Lihat Reservasi',
+                'action_kind' => 'view_reservation',
+                'action_value' => null,
+            ];
+        }
+
+        return [
+            'label' => 'MAINTENANCE',
+            'tone' => 'red',
+            'note' => 'Mobil tidak tersedia secara manual untuk pemeriksaan atau perbaikan.',
+            'can_change_status' => true,
+            'action_label' => 'Aktifkan',
+            'action_kind' => 'toggle',
+            'action_value' => CarStatus::AVAILABLE->value,
+        ];
+    }
+
+    private function lockingRentalStatuses(): array
+    {
+        return [
+            RentalStatus::PENDING_VERIFICATION,
+            RentalStatus::PREPAID,
+            RentalStatus::ONGOING,
+        ];
+    }
+
+    private function lockingRentalWarningMessage(Rental $rental): string
+    {
+        return match ($rental->status) {
+            RentalStatus::ONGOING => 'Mobil ini sedang disewa customer dan tidak dapat dibuat tersedia sebelum rental selesai.',
+            RentalStatus::PREPAID => 'Mobil ini sedang menunggu pembayaran customer. Silakan cek detail reservasi.',
+            RentalStatus::PENDING_VERIFICATION => 'Mobil ini sedang ditahan untuk proses verifikasi customer. Silakan cek detail reservasi.',
+            default => 'Mobil ini masih terkait dengan reservasi aktif, sehingga tidak dapat diubah menjadi tersedia secara manual.',
+        };
     }
 
     private function resolveCarImageUrl(?string $image): ?string

@@ -76,6 +76,8 @@ class ExpirePrepaidRentals extends Command
                 $rental->ktp_path = '';
                 $rental->selfie_path = '';
                 $rental->save();
+
+                app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
             }
         });
 

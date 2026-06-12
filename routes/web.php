@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BackofficeController;
+use App\Http\Controllers\CustomerNotificationController;
 use Illuminate\Http\RedirectResponse;
 use App\Models\User;
 use App\Models\Car;
@@ -191,6 +192,7 @@ Route::get('/frontliner', function (Request $request) {
                                 $car->save();
                             }
                         });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                         $rental->refresh();
                     } elseif ($status === 'expire') {
                         DB::transaction(function () use ($rental, $latestPayment) {
@@ -206,6 +208,7 @@ Route::get('/frontliner', function (Request $request) {
                                 $car->save();
                             }
                         });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
                         $rental->refresh();
                     } elseif (in_array($status, ['deny', 'cancel', 'failure'])) {
                         DB::transaction(function () use ($rental, $latestPayment) {
@@ -221,6 +224,7 @@ Route::get('/frontliner', function (Request $request) {
                                 $car->save();
                             }
                         });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
                         $rental->refresh();
                     }
                 } catch (\Exception $e) {
@@ -426,6 +430,8 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $car->status = CarStatus::UNAVAILABLE;
             $car->save();
 
+            app(\App\Services\CustomerNotificationService::class)->notifyBookingVerificationStarted($rental);
+
             return $rental;
         });
     } catch (\Throwable $e) {
@@ -433,6 +439,8 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
         ]);
     }
+
+    app(\App\Services\CustomerNotificationService::class)->notifyVerificationSubmitted($rental);
 
     if ($autoVerifyPassed) {
         DB::transaction(function () use ($rental) {
@@ -443,6 +451,8 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $rental->prepaid_expires_at = now()->addHours(4);
             $rental->save();
         });
+
+        app(\App\Services\CustomerNotificationService::class)->notifyVerificationApproved($rental);
 
         try {
             $orderId = 'rental-' . $rental->id . '-' . now()->format('YmdHis');
@@ -458,6 +468,8 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
                 'redirect_url' => $midtransResponse['redirect_url'] ?? null,
                 'payload' => $midtransResponse,
             ]);
+
+            app(\App\Services\CustomerNotificationService::class)->notifyPaymentAvailable($rental);
         } catch (\Throwable $e) {
             return redirect()->route('booking.detail', ['rental' => $rental->id])
                 ->with('error', 'Verifikasi selesai, tetapi inisialisasi pembayaran gagal: ' . $e->getMessage());
@@ -468,6 +480,8 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $rental->prepaid_expires_at = null;
             $rental->save();
         });
+
+        app(\App\Services\CustomerNotificationService::class)->notifyVerificationNeedsReview($rental);
     }
 
     return redirect()->route('booking.detail', ['rental' => $rental->id]);
@@ -526,6 +540,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
             ]);
         });
 
+        app(\App\Services\CustomerNotificationService::class)->notifyPaymentAvailable($rental);
+
         return redirect()->route('booking.detail', ['rental' => $rental->id]);
     } catch (\Exception $e) {
         return back()->with('error', 'Gagal memulai gerbang pembayaran: ' . $e->getMessage());
@@ -571,6 +587,8 @@ Route::post('/booking/detail/{rental}/cancel', function (Rental $rental) {
         }
     });
 
+    app(\App\Services\CustomerNotificationService::class)->notifyRentalCancelled($rental);
+
     return redirect()->route('pesanan-saya')->with('success', 'Pemesanan Anda berhasil dibatalkan.');
 })->middleware(['token.cookie', 'auth'])->name('booking.cancel');
 
@@ -593,6 +611,8 @@ Route::post('/dashboard/reservations/{rental}/verify', function (Request $reques
             $rental->verification_passed = true;
             $rental->save();
         });
+
+        app(\App\Services\CustomerNotificationService::class)->notifyVerificationApproved($rental);
 
         return back()->with('success', 'Verifikasi identitas disetujui. Customer dipersilakan melanjutkan pembayaran.');
     } elseif ($action === 'reject') {
@@ -617,11 +637,13 @@ Route::post('/dashboard/reservations/{rental}/verify', function (Request $reques
             }
 
             $latestPayment = $rental->paymentHistories()->latest()->first();
-            if ($latestPayment) {
-                $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
-                $latestPayment->save();
-            }
-        });
+        if ($latestPayment) {
+            $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
+            $latestPayment->save();
+        }
+    });
+
+    app(\App\Services\CustomerNotificationService::class)->notifyVerificationRejected($rental);
 
         return back()->with('success', 'Verifikasi identitas ditolak. Pemesanan dibatalkan.');
     }
@@ -650,6 +672,8 @@ Route::post('/dashboard/reservations/{rental}/return', function (Rental $rental)
             $car->save();
         }
     });
+
+    app(\App\Services\CustomerNotificationService::class)->notifyRentalReturned($rental);
 
     return back()->with('success', 'Mobil berhasil dikembalikan. Pemesanan selesai.');
 })->middleware(['auth', 'admin'])->name('backoffice.reservations.return');
@@ -723,6 +747,8 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                     }
                 });
 
+                app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
+
                 // Reload relations
                 $rental->refresh();
                 $latestPayment = $rental->paymentHistories()->latest()->first();
@@ -743,6 +769,8 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                     }
                 });
 
+                app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
+
                 // Reload relations
                 $rental->refresh();
                 $latestPayment = $rental->paymentHistories()->latest()->first();
@@ -762,6 +790,8 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                         $car->save();
                     }
                 });
+
+                app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
 
                 // Reload relations
                 $rental->refresh();
@@ -810,6 +840,7 @@ Route::get('/pesanan-saya', function (Request $request) {
                             $car->save();
                         }
                     });
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                 } elseif ($status === 'expire') {
                     DB::transaction(function () use ($rental, $latestPayment) {
                         $latestPayment->status = \App\Enums\PaymentStatus::EXPIRED;
@@ -826,6 +857,7 @@ Route::get('/pesanan-saya', function (Request $request) {
                             $car->save();
                         }
                     });
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
                 } elseif (in_array($status, ['deny', 'cancel', 'failure'])) {
                     DB::transaction(function () use ($rental, $latestPayment) {
                         $latestPayment->status = \App\Enums\PaymentStatus::CANCELLED;
@@ -842,6 +874,7 @@ Route::get('/pesanan-saya', function (Request $request) {
                             $car->save();
                         }
                     });
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
                 }
             } catch (\Exception $e) {
                 // Ignore API failures
@@ -908,6 +941,18 @@ Route::get('/pesanan-saya', function (Request $request) {
     ]);
 })->middleware(['token.cookie', 'auth'])->name('pesanan-saya');
 
+Route::get('/notifications', [CustomerNotificationController::class, 'index'])
+    ->middleware('auth')
+    ->name('notifications.index');
+
+Route::post('/notifications/{notification}/read', [CustomerNotificationController::class, 'markRead'])
+    ->middleware('auth')
+    ->name('notifications.read');
+
+Route::post('/notifications/read-all', [CustomerNotificationController::class, 'markAllRead'])
+    ->middleware('auth')
+    ->name('notifications.read-all');
+
 Route::get('/booking/simulate-payment', function (Request $request) {
     $rentalId = $request->query('rental_id');
     $rental = Rental::with(['car', 'user'])->findOrFail($rentalId);
@@ -939,6 +984,8 @@ Route::post('/booking/simulate-payment', function (Request $request) {
         }
     });
 
+    app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
+
     return redirect()->route('booking.detail', ['rental' => $rental->id])->with('success', 'Pembayaran Berhasil! Rental Anda telah aktif.');
 })->name('booking.simulate-payment.submit');
 
@@ -961,6 +1008,10 @@ Route::get('/dashboard/cars', [BackofficeController::class, 'cars'])
 Route::post('/dashboard/cars', [BackofficeController::class, 'storeCar'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars.store');
+
+Route::patch('/dashboard/cars/{car}/status', [BackofficeController::class, 'updateCarStatus'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.cars.update-status');
 
 Route::get('/dashboard/reservations', [BackofficeController::class, 'reservations'])
     ->middleware(['auth', 'admin'])

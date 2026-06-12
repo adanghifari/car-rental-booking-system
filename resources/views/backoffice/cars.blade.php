@@ -48,7 +48,6 @@
                         <path d="m9 12 2 2 4-4"/>
                     </svg>
                 </div>
-                <span class="delta up">Optimal</span>
             </div>
             <div class="stat-label">Tersedia</div>
             <div class="stat-value" style="color: var(--green);">{{ number_format($stats['available']) }}</div>
@@ -139,7 +138,7 @@
                     <select id="type_filter" name="type" class="form-select">
                         <option value="">Semua tipe</option>
                         @foreach ($typeOptions as $typeOption)
-                            <option value="{{ $typeOption }}" @selected($filters['type'] === $typeOption)>{{ str($typeOption)->headline() }}</option>
+                            <option value="{{ $typeOption['value'] }}" @selected($filters['type'] === $typeOption['value'])>{{ $typeOption['label'] }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -149,7 +148,7 @@
                     <select id="transmission_filter" name="transmission" class="form-select">
                         <option value="">Semua transmisi</option>
                         @foreach ($transmissionOptions as $transmissionOption)
-                            <option value="{{ $transmissionOption }}" @selected($filters['transmission'] === $transmissionOption)>{{ str($transmissionOption)->headline() }}</option>
+                            <option value="{{ $transmissionOption['value'] }}" @selected($filters['transmission'] === $transmissionOption['value'])>{{ $transmissionOption['label'] }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -213,6 +212,29 @@
                                 </form>
                             </div>
                         </div>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(248, 250, 252, 0.92); border: 1px solid rgba(226, 232, 240, 0.9);">
+                        <div style="min-width: 0;">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; margin-bottom: 4px;">Status Mobil</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #202636; line-height: 1.35;">{{ $car['status'] }}</div>
+                            <div style="font-size: 12px; line-height: 1.45; color: #64748b; margin-top: 4px;">{{ $car['status_note'] }}</div>
+                        </div>
+
+                        @if (($car['status_action_kind'] ?? '') === 'toggle')
+                            <form method="POST" action="{{ route('backoffice.cars.update-status', ['car' => $car['id']]) }}" style="margin: 0; flex: 0 0 auto;">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="{{ $car['status_action_value'] }}">
+                                <button type="submit" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px;">
+                                    {{ $car['status_action_label'] }}
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('backoffice.reservations', ['rental_id' => $car['locking_rental_id']]) }}" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px; flex: 0 0 auto; white-space: nowrap;">
+                                {{ $car['status_action_label'] }}
+                            </a>
+                        @endif
                     </div>
 
                     <div class="fleet-specs">
@@ -363,6 +385,10 @@
                         </div>
                     @endif
 
+                    @php
+                        $oldCar = old('car_id') ? collect($cars->items())->firstWhere('id', (int) old('car_id')) : null;
+                    @endphp
+
                     <section class="modal-card">
                         <div class="section-head">
                             <div>
@@ -400,8 +426,8 @@
                                 <label class="form-label" for="transmission">Transmisi</label>
                                 <select id="transmission" name="transmission" class="form-select" data-car-field="transmission">
                                     <option value="">Pilih transmisi</option>
-                                    @foreach (\App\Enums\TransmissionType::cases() as $type)
-                                        <option value="{{ $type->value }}" @selected(old('transmission') === $type->value)>{{ $type->label() }}</option>
+                                    @foreach ($transmissionOptions as $type)
+                                        <option value="{{ $type['value'] }}" @selected(old('transmission') === $type['value'])>{{ $type['label'] }}</option>
                                     @endforeach
                                 </select>
                                 @error('transmission')
@@ -437,8 +463,8 @@
                                 <label class="form-label" for="vehicle_type">Tipe Mobil</label>
                                 <select id="vehicle_type" name="vehicle_type" class="form-select" data-car-field="type">
                                     <option value="">Pilih tipe</option>
-                                    @foreach (\App\Enums\VehicleType::cases() as $type)
-                                        <option value="{{ $type->value }}" @selected(old('vehicle_type') === $type->value)>{{ $type->label() }}</option>
+                                    @foreach ($typeOptions as $type)
+                                        <option value="{{ $type['value'] }}" @selected(old('vehicle_type') === $type['value'])>{{ $type['label'] }}</option>
                                     @endforeach
                                 </select>
                                 @error('vehicle_type')
@@ -465,15 +491,17 @@
                             <div class="form-field full">
                                 <label class="form-label" style="margin-bottom: 8px; display: block;">Layanan Tersedia</label>
                                 <div style="display: flex; gap: 24px; align-items: center; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.95); background: rgba(255, 255, 255, 0.92);">
-                                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #202636;">
-                                        <input type="checkbox" name="self_drive_available" value="1" @checked(old('self_drive_available')) data-car-field="self_drive_available" style="width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid rgba(219, 227, 239, 0.95); accent-color: var(--blue);">
-                                        <span>Lepas Kunci</span>
-                                    </label>
-                                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #202636;">
-                                        <input type="checkbox" name="driver_available" value="1" @checked(old('driver_available')) data-car-field="driver_available" style="width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid rgba(219, 227, 239, 0.95); accent-color: var(--blue);">
-                                        <span>Dengan Driver</span>
-                                    </label>
+                                    @foreach ($serviceOptions as $serviceOption)
+                                        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #202636;">
+                                            <input type="hidden" name="{{ $serviceOption['name'] }}" value="0">
+                                            <input type="checkbox" name="{{ $serviceOption['name'] }}" value="1" @checked(old($serviceOption['name'], false)) data-car-field="{{ $serviceOption['name'] }}" style="width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid rgba(219, 227, 239, 0.95); accent-color: var(--blue);">
+                                            <span>{{ $serviceOption['label'] }}</span>
+                                        </label>
+                                    @endforeach
                                 </div>
+                                @error('service_selection')
+                                    <div class="error-text">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="form-field full">
@@ -624,7 +652,7 @@
                             <div class="detail-value" data-detail-services>-</div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label">Keterangan Status</div>
+                            <div class="detail-label">Penjelasan Status</div>
                             <div class="detail-value" data-detail-status-note>-</div>
                         </div>
                     </div>
@@ -708,6 +736,7 @@
                     gallery: detailModal.querySelector('[data-detail-gallery]'),
                 };
                 const detailImageShell = detailModal.querySelector('.detail-image-shell');
+                const oldCarPreview = @json($oldCar);
                 let existingGalleryItems = [];
                 let selectedGalleryFiles = [];
                 let mainImageLocked = false;
@@ -851,10 +880,7 @@
                     detailFields.seat.textContent = car.seat ?? '-';
                     detailFields.cc.textContent = car.cc ?? '-';
                     detailFields.price.textContent = `Rp ${car.price_label ?? '-'} / hari`;
-                    const servicesList = [];
-                    if (car.self_drive_available) servicesList.push('Lepas Kunci');
-                    if (car.driver_available) servicesList.push('Dengan Driver');
-                    detailFields.services.textContent = servicesList.length > 0 ? servicesList.join(', ') : 'Tidak ada';
+                    detailFields.services.textContent = car.services_label ?? 'Tidak ada';
                     detailFields.statusNote.textContent = car.status_note ?? '-';
                     detailFields.description.textContent = buildDetailHtml(car.description);
 
@@ -902,6 +928,29 @@
                 };
 
                 const createImageUrl = (file) => URL.createObjectURL(file);
+
+                const renderStoredMainImagePreview = (car) => {
+                    if (!car?.image_url) {
+                        return;
+                    }
+
+                    mainImageLocked = true;
+                    mainImageInput.disabled = true;
+                    mainImagePreview.classList.add('has-image');
+                    mainImagePreview.innerHTML = `
+                        <button type="button" class="upload-remove-image" data-remove-main-image aria-label="Hapus foto utama">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18"/>
+                                <path d="m6 6 12 12"/>
+                            </svg>
+                        </button>
+                        <img src="${car.image_url}" alt="Preview foto utama">
+                        <div class="upload-image-label">
+                            <span>Foto utama saat ini</span>
+                            <strong>${car.model ?? 'Mobil'}</strong>
+                        </div>
+                    `;
+                };
 
                 const createGalleryItemNode = ({
                     src,
@@ -1098,6 +1147,11 @@
                             return;
                         }
 
+                        if (element.type === 'checkbox') {
+                            element.checked = false;
+                            return;
+                        }
+
                         element.value = '';
                     });
                     removeImageFlag.value = '0';
@@ -1124,6 +1178,22 @@
                     formTitle.textContent = 'Edit Mobil';
                     formSubtitle.textContent = 'Perbarui informasi unit, foto utama, dan galeri pendukung.';
                     submitButton.querySelector('span').textContent = 'Simpan Perubahan';
+
+                    if (oldCarPreview?.id && oldCarPreview.image_url && removeImageFlag.value !== '1') {
+                        renderStoredMainImagePreview(oldCarPreview);
+                    } else {
+                        mainImageLocked = false;
+                        mainImageInput.disabled = false;
+                        renderMainImagePreview();
+                    }
+
+                    existingGalleryItems = Array.isArray(oldCarPreview?.gallery_urls)
+                        ? oldCarPreview.gallery_urls.map((url, index) => ({
+                            path: oldCarPreview.gallery_paths?.[index] ?? '',
+                            url,
+                        }))
+                        : [];
+                    renderGalleryPreview();
                 };
 
                 openButtons.forEach((button) => {

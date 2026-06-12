@@ -12,6 +12,7 @@ use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
@@ -63,6 +64,8 @@ class PaymentController extends Controller
             'redirect_url' => $midtransResponse['redirect_url'] ?? null,
             'payload' => $midtransResponse,
         ]);
+
+        app(\App\Services\CustomerNotificationService::class)->notifyPaymentAvailable($rental);
 
         return ApiResponse::created([
             'payment' => $payment,
@@ -117,6 +120,8 @@ class PaymentController extends Controller
                         $car->status = CarStatus::UNAVAILABLE;
                         $car->save();
                     }
+
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                 } elseif ($paymentStatus === PaymentStatus::EXPIRED) {
                     $rental->status = RentalStatus::EXPIRED;
                     $rental->prepaid_expires_at = null;
@@ -135,6 +140,8 @@ class PaymentController extends Controller
                         $car->status = CarStatus::AVAILABLE;
                         $car->save();
                     }
+
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
                 } elseif ($paymentStatus === PaymentStatus::CANCELLED) {
                     $rental->status = RentalStatus::CANCELLED;
                     $rental->prepaid_expires_at = null;
@@ -153,6 +160,8 @@ class PaymentController extends Controller
                         $car->status = CarStatus::AVAILABLE;
                         $car->save();
                     }
+
+                    app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
                 }
             }
 
