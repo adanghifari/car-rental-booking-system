@@ -226,12 +226,12 @@
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="{{ $car['status_action_value'] }}">
-                                <button type="submit" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px;">
+                                <button type="submit" class="{{ $car['action_class'] ?? 'status-action status-action-maintenance' }}">
                                     {{ $car['status_action_label'] }}
                                 </button>
                             </form>
                         @else
-                            <a href="{{ route('backoffice.reservations', ['rental_id' => $car['locking_rental_id']]) }}" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px; flex: 0 0 auto; white-space: nowrap;">
+                            <a href="{{ route('backoffice.reservations', ['rental_id' => $car['locking_rental_id']]) }}" class="{{ $car['action_class'] ?? 'status-action status-action-verification' }}" style="flex: 0 0 auto; white-space: nowrap;">
                                 {{ $car['status_action_label'] }}
                             </a>
                         @endif
