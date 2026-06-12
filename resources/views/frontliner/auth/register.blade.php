@@ -136,8 +136,6 @@
                 <p class="switch-link">Sudah memiliki akun? <a href="{{ route('login') }}">Masuk Sekarang</a></p>
             </section>
         </main>
-
-        <footer class="footer">&copy; {{ date('Y') }} Rental Mobil. The Art of Kinetic Luxury.</footer>
     </div>
 
     <script>

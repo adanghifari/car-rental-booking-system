@@ -232,6 +232,11 @@
                                 <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-3 rounded-xl transition">
                                     Detail
                                 </a>
+                                @if(!$rental->review)
+                                    <a href="{{ route('booking.review', ['rental' => $rental->id]) }}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-3 rounded-xl transition">
+                                        Tulis Ulasan
+                                    </a>
+                                @endif
                                 <a href="{{ route('car-detail', ['car' => $car->id]) }}" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white font-bold text-xs py-2 px-3 rounded-xl transition">
                                     Pesan Lagi
                                 </a>

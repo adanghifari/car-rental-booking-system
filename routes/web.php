@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\BackofficeController;
 use App\Http\Controllers\CustomerNotificationController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\CustomerAccountController;
 use Illuminate\Http\RedirectResponse;
 use App\Models\User;
 use App\Models\Car;
@@ -68,7 +70,7 @@ Route::get('/', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query();
+    $query = Car::query()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -89,10 +91,12 @@ Route::get('/', function (Request $request) {
         }
     }
 
-    $cars = $query->get();
+    $cars = $query->limit(3)->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('home');
 
@@ -107,7 +111,7 @@ Route::get('/beranda', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query();
+    $query = Car::query()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -128,10 +132,12 @@ Route::get('/beranda', function (Request $request) {
         }
     }
 
-    $cars = $query->get();
+    $cars = $query->limit(3)->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('beranda');
 
@@ -163,7 +169,7 @@ Route::get('/frontliner', function (Request $request) {
         }
     }
 
-    $cars = $query->get();
+    $cars = $query->limit(3)->get();
 
     $rentals = Rental::with(['car'])
         ->where('user_id', $user->id)
@@ -234,10 +240,13 @@ Route::get('/frontliner', function (Request $request) {
         }
     }
 
+    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
+
     return view('frontliner.pages.beranda-login', [
         'user' => $user,
         'cars' => $cars,
         'rentals' => $rentals,
+        'reviews' => $reviews,
     ]);
 })->middleware('auth')->name('frontliner');
 
@@ -809,6 +818,15 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
     ]);
 })->middleware(['token.cookie', 'auth'])->name('booking.detail');
 
+Route::get('/rentals/{rental}/review', [ReviewController::class, 'create'])->middleware(['token.cookie', 'auth'])->name('booking.review');
+Route::post('/rentals/{rental}/review', [ReviewController::class, 'store'])->middleware(['token.cookie', 'auth'])->name('booking.review.store');
+
+Route::get('/profile', [CustomerAccountController::class, 'profile'])->middleware(['token.cookie', 'auth'])->name('customer.profile');
+Route::put('/profile', [CustomerAccountController::class, 'updateProfile'])->middleware(['token.cookie', 'auth'])->name('customer.profile.update');
+Route::get('/settings', [CustomerAccountController::class, 'settings'])->middleware(['token.cookie', 'auth'])->name('customer.settings');
+Route::put('/settings/password', [CustomerAccountController::class, 'updatePassword'])->middleware(['token.cookie', 'auth'])->name('customer.settings.password');
+Route::get('/payments', [CustomerAccountController::class, 'payments'])->middleware(['token.cookie', 'auth'])->name('customer.payments');
+
 Route::get('/pesanan-saya', function (Request $request) {
     $user = auth()->user();
     if (!$user) {
@@ -883,7 +901,7 @@ Route::get('/pesanan-saya', function (Request $request) {
     }
 
     // Build the query
-    $query = Rental::with(['car', 'paymentHistories'])
+    $query = Rental::with(['car', 'paymentHistories', 'review'])
         ->where('user_id', $user->id);
 
     // Apply search filter (car name, brand, or license plate)
@@ -1190,6 +1208,8 @@ Route::get('/car-detail/{car}', function (Car $car) {
             ->get();
         $similarCars = $similarCars->concat($additionalCars);
     }
+
+    $car->load(['reviews.user']);
 
     return view('frontliner.pages.car-detail', [
         'car' => $car,
