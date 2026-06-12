@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -58,5 +60,31 @@ class User extends Authenticatable
     public function rentals(): HasMany
     {
         return $this->hasMany(Rental::class);
+    }
+
+    public function hasNotificationsTable(): bool
+    {
+        return Schema::hasTable('notifications');
+    }
+
+    public function recentNotifications(int $limit = 6): Collection
+    {
+        if (! $this->hasNotificationsTable()) {
+            return collect();
+        }
+
+        return $this->notifications()
+            ->latest()
+            ->take($limit)
+            ->get();
+    }
+
+    public function unreadNotificationCount(): int
+    {
+        if (! $this->hasNotificationsTable()) {
+            return 0;
+        }
+
+        return $this->unreadNotifications()->count();
     }
 }

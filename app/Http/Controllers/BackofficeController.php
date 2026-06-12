@@ -248,6 +248,10 @@ class BackofficeController extends Controller
             ->withQueryString()
             ->through(function (Car $car) use ($activeRentalCarIds) {
                 $status = $this->carStatusMeta($car, $activeRentalCarIds->contains($car->id));
+                $services = array_values(array_filter([
+                    $car->self_drive_available ? 'Lepas Kunci' : null,
+                    $car->driver_available ? 'Dengan Driver' : null,
+                ]));
 
                 return [
                     'id' => $car->id,
@@ -276,6 +280,8 @@ class BackofficeController extends Controller
                     'type_raw' => $car->vehicle_type instanceof VehicleType ? $car->vehicle_type->value : (string) $car->vehicle_type,
                     'self_drive_available' => (bool) $car->self_drive_available,
                     'driver_available' => (bool) $car->driver_available,
+                    'services' => $services,
+                    'services_label' => $services !== [] ? implode(', ', $services) : 'Tidak ada',
                     'plate' => strtoupper($car->license_plate),
                     'plate_raw' => $car->license_plate,
                     'image_url' => $this->resolveCarImageUrl($car->image),
@@ -300,8 +306,24 @@ class BackofficeController extends Controller
             ],
             'filters' => $filters,
             'cars' => $cars,
-            'typeOptions' => VehicleType::values(),
-            'transmissionOptions' => TransmissionType::values(),
+            'typeOptions' => collect(VehicleType::cases())
+                ->map(fn (VehicleType $type) => [
+                    'value' => $type->value,
+                    'label' => $type->label(),
+                ])
+                ->values()
+                ->all(),
+            'transmissionOptions' => collect(TransmissionType::cases())
+                ->map(fn (TransmissionType $type) => [
+                    'value' => $type->value,
+                    'label' => $type->label(),
+                ])
+                ->values()
+                ->all(),
+            'serviceOptions' => [
+                ['name' => 'self_drive_available', 'label' => 'Lepas Kunci'],
+                ['name' => 'driver_available', 'label' => 'Dengan Driver'],
+            ],
             'pagination' => $this->paginationWindow($cars->currentPage(), $cars->lastPage()),
         ]);
     }
@@ -323,9 +345,15 @@ class BackofficeController extends Controller
             'image' => ['required', 'file', 'image', 'max:5120'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
-            'self_drive_available' => ['nullable', 'boolean'],
-            'driver_available' => ['nullable', 'boolean'],
+            'self_drive_available' => ['boolean'],
+            'driver_available' => ['boolean'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            if (! $request->boolean('self_drive_available') && ! $request->boolean('driver_available')) {
+                $validator->errors()->add('service_selection', 'Pilih minimal satu layanan: Lepas Kunci atau Dengan Driver.');
+            }
+        });
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -352,6 +380,10 @@ class BackofficeController extends Controller
 
     public function updateCar(Request $request, Car $car): RedirectResponse
     {
+        $imageRules = ($request->boolean('remove_image') || blank($car->image))
+            ? ['required', 'file', 'image', 'max:5120']
+            : ['nullable', 'file', 'image', 'max:5120'];
+
         $validator = Validator::make($request->all(), [
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
@@ -364,14 +396,20 @@ class BackofficeController extends Controller
             'color' => ['required', 'string', 'max:50'],
             'daily_rate' => ['required', 'integer', 'min:0'],
             'license_plate' => ['required', 'string', 'max:30', 'unique:cars,license_plate,' . $car->id],
-            'image' => ['nullable', 'file', 'image', 'max:5120'],
+            'image' => $imageRules,
             'remove_image' => ['nullable', 'boolean'],
             'remove_gallery_images' => ['nullable', 'string'],
             'gallery_images' => ['nullable', 'array', 'max:8'],
             'gallery_images.*' => ['file', 'image', 'max:5120'],
-            'self_drive_available' => ['nullable', 'boolean'],
-            'driver_available' => ['nullable', 'boolean'],
+            'self_drive_available' => ['boolean'],
+            'driver_available' => ['boolean'],
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            if (! $request->boolean('self_drive_available') && ! $request->boolean('driver_available')) {
+                $validator->errors()->add('service_selection', 'Pilih minimal satu layanan: Lepas Kunci atau Dengan Driver.');
+            }
+        });
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
