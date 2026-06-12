@@ -287,4 +287,118 @@ class PaymentController extends Controller
             Str::upper((string) Str::ulid())
         );
     }
+
+    public static function syncUserPendingRentals(\App\Models\User $user): void
+    {
+        $midtrans = app(MidtransService::class);
+        $prepaidRentals = Rental::where('user_id', $user->id)
+            ->where('status', RentalStatus::PREPAID)
+            ->get();
+
+        if ($prepaidRentals->isEmpty()) {
+            return;
+        }
+
+        $instance = new self();
+
+        foreach ($prepaidRentals as $rental) {
+            $latestPayment = $rental->paymentHistories()->latest()->first();
+            if ($latestPayment && $latestPayment->status === PaymentStatus::PENDING && $latestPayment->provider_order_id) {
+                try {
+                    $status = $midtrans->getTransactionStatus($latestPayment->provider_order_id);
+                    if ($status === 'settlement' || $status === 'capture') {
+                        DB::transaction(function () use ($rental, $latestPayment) {
+                            $latestPayment->status = PaymentStatus::PAID;
+                            $latestPayment->save();
+
+                            $rental->status = RentalStatus::ONGOING;
+                            $rental->save();
+
+                            $car = $rental->car;
+                            if ($car) {
+                                $car->status = CarStatus::UNAVAILABLE;
+                                $car->save();
+                            }
+                        });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
+                    } elseif ($status === 'expire') {
+                        DB::transaction(function () use ($rental, $latestPayment, $instance) {
+                            $latestPayment->status = PaymentStatus::EXPIRED;
+                            $latestPayment->save();
+
+                            $instance->expireRental($rental);
+                        });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
+                    } elseif (in_array($status, ['deny', 'cancel', 'failure'])) {
+                        DB::transaction(function () use ($rental, $latestPayment, $instance) {
+                            $latestPayment->status = PaymentStatus::CANCELLED;
+                            $latestPayment->save();
+
+                            $instance->cancelRental($rental);
+                        });
+                        app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
+                    }
+                } catch (\Exception $e) {
+                    // Ignore API failures
+                }
+            }
+        }
+    }
+
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        // Sync pending rentals first to ensure accuracy
+        self::syncUserPendingRentals($user);
+
+        // Build the query
+        $query = PaymentHistory::whereHas('rental', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->with(['rental.car']);
+
+        // Apply search query
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where(function ($q) use ($search) {
+                $q->where('provider_order_id', 'like', "%{$search}%")
+                  ->orWhereHas('rental.car', function ($carQuery) use ($search) {
+                      $carQuery->where('name', 'like', "%{$search}%")
+                               ->orWhere('brand', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            if (in_array($status, ['pending', 'paid', 'cancelled', 'expired'])) {
+                $query->where('status', $status);
+            }
+        }
+
+        // Compute statistics for the user
+        $statsQuery = PaymentHistory::whereHas('rental', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        });
+
+        $totalSpend = (clone $statsQuery)->where('status', PaymentStatus::PAID)->sum('amount');
+        $pendingCount = (clone $statsQuery)->where('status', PaymentStatus::PENDING)->count();
+        $totalCount = (clone $statsQuery)->count();
+
+        // Paginate results (9 per page for a 3x3 layout)
+        $payments = $query->orderBy('created_at', 'desc')->paginate(9)->withQueryString();
+
+        return view('frontliner.pages.pembayaran', [
+            'payments' => $payments,
+            'totalSpend' => $totalSpend,
+            'pendingCount' => $pendingCount,
+            'totalCount' => $totalCount,
+        ]);
+    }
 }
+
