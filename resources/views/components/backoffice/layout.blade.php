@@ -1769,13 +1769,24 @@
 
     <main class="main">
         <div class="topbar">
-            <label class="search">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b869b" stroke-width="2">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <path d="m20 20-3.5-3.5"></path>
-                </svg>
-                <input type="text" placeholder="{{ $searchPlaceholder }}" />
-            </label>
+            <form method="GET" action="" style="margin: 0; display: block; flex: 1; max-width: min(100%, 520px);">
+                @foreach (request()->except('search', 'page') as $key => $value)
+                    @if (is_array($value))
+                        @foreach ($value as $val)
+                            <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
+                        @endforeach
+                    @else
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+                <label class="search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b869b" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-3.5-3.5"></path>
+                    </svg>
+                    <input type="text" name="search" placeholder="{{ $searchPlaceholder }}" value="{{ request('search') }}" />
+                </label>
+            </form>
 
             <div class="topbar-right">
                 <div class="icon-button">

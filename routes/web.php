@@ -614,6 +614,11 @@ Route::get('/dashboard/users', [BackofficeController::class, 'users'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.users');
 
+Route::delete('/dashboard/users/{user}', [BackofficeController::class, 'deleteUser'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.users.destroy');
+
+
 Route::get('/dashboard/cars', [BackofficeController::class, 'cars'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars');
