@@ -214,6 +214,29 @@
                         </div>
                     </div>
 
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(248, 250, 252, 0.92); border: 1px solid rgba(226, 232, 240, 0.9);">
+                        <div style="min-width: 0;">
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; margin-bottom: 4px;">Status Mobil</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #202636; line-height: 1.35;">{{ $car['status'] }}</div>
+                            <div style="font-size: 12px; line-height: 1.45; color: #64748b; margin-top: 4px;">{{ $car['status_note'] }}</div>
+                        </div>
+
+                        @if (($car['status_action_kind'] ?? '') === 'toggle')
+                            <form method="POST" action="{{ route('backoffice.cars.update-status', ['car' => $car['id']]) }}" style="margin: 0; flex: 0 0 auto;">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="{{ $car['status_action_value'] }}">
+                                <button type="submit" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px;">
+                                    {{ $car['status_action_label'] }}
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('backoffice.reservations', ['rental_id' => $car['locking_rental_id']]) }}" class="secondary-button" style="padding: 9px 14px; border-radius: 999px; font-size: 12px; min-height: 36px; flex: 0 0 auto; white-space: nowrap;">
+                                {{ $car['status_action_label'] }}
+                            </a>
+                        @endif
+                    </div>
+
                     <div class="fleet-specs">
                         <div class="fleet-spec-item">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -629,7 +652,7 @@
                             <div class="detail-value" data-detail-services>-</div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label">Keterangan Status</div>
+                            <div class="detail-label">Penjelasan Status</div>
                             <div class="detail-value" data-detail-status-note>-</div>
                         </div>
                     </div>

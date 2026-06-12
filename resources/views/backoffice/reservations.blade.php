@@ -38,6 +38,18 @@
 		</div>
 	@endif
 
+	@if (session('warning'))
+		<div class="flash-banner" style="background: rgba(245, 158, 11, 0.10); border-color: rgba(245, 158, 11, 0.22); color: #92400e;">
+			<span>{{ session('warning') }}</span>
+			<button type="button" class="modal-close" data-dismiss-flash aria-label="Tutup notifikasi" style="color: #92400e;">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M18 6 6 18"/>
+					<path d="m6 6 12 12"/>
+				</svg>
+			</button>
+		</div>
+	@endif
+
 	<section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 18px; margin-bottom: 18px;">
 		<div class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px;">
 			<div style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(63, 94, 215, 0.10); color: var(--blue); flex: 0 0 auto;">
@@ -131,7 +143,12 @@
 				</thead>
 				<tbody>
 					@forelse ($rentals as $rental)
-						<tr>
+						<tr
+							data-reservation-row="{{ $rental['id'] }}"
+							@if (!empty($highlightRentalId) && (int) $highlightRentalId === (int) ($rental['id'] ?? 0))
+								style="background: rgba(245, 158, 11, 0.08);"
+							@endif
+						>
 							<td>{{ $rental['booking_id'] ?? $rental['id'] }}</td>
 							<td>{{ $rental['customer_name'] ?? $rental['customer'] ?? '-' }}</td>
 							<td>{{ $rental['car_model'] ?? $rental['car'] ?? '-' }}</td>
@@ -379,6 +396,7 @@
 				const formModal = document.querySelector('[data-reservation-modal]');
 				const detailModal = document.querySelector('[data-reservation-detail-modal]');
 				if (!formModal && !detailModal) return;
+				const highlightRentalId = @json($highlightRentalId ?? null);
 
 				const openButtons = document.querySelectorAll('[data-open-reservation-modal]');
 				const closeFormButtons = document.querySelectorAll('[data-close-reservation-modal]');
@@ -578,6 +596,17 @@
 					});
 				});
 
+				if (highlightRentalId) {
+					const targetButton = document.querySelector(`[data-reservation-row="${highlightRentalId}"] [data-reservation-detail]`);
+					if (targetButton) {
+						targetButton.click();
+						const row = targetButton.closest('[data-reservation-row]');
+						if (row) {
+							row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						}
+					}
+				}
+
 				if (formModal && formModal.classList.contains('is-open')) {
 					document.body.style.overflow = 'hidden';
 				}
@@ -586,4 +615,3 @@
 	@endpush
 
 </x-backoffice.layout>
-

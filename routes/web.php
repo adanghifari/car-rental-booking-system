@@ -1009,6 +1009,10 @@ Route::post('/dashboard/cars', [BackofficeController::class, 'storeCar'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars.store');
 
+Route::patch('/dashboard/cars/{car}/status', [BackofficeController::class, 'updateCarStatus'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.cars.update-status');
+
 Route::get('/dashboard/reservations', [BackofficeController::class, 'reservations'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations');
