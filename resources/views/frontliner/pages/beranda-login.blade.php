@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HD Rental Car - Dashboard</title>
+    <title>MD CAR RENTAL - Dashboard</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600&family=inter:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -55,7 +55,7 @@
                     Selamat datang kembali, <br class="hidden sm:inline"><span class="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{{ $user->name ?? 'User' }}</span>! 👋
                 </h1>
                 <p class="text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed">
-                    Lanjutkan perjalanan Anda dengan HD Rental Car. Nikmati berkendara aman dan nyaman dengan armada pilihan terbaik yang terawat.
+                    Lanjutkan perjalanan Anda dengan MD CAR RENTAL. Nikmati berkendara aman dan nyaman dengan armada pilihan terbaik yang terawat.
                 </p>
                 <div class="flex flex-wrap gap-4">
                     <a href="#cari-mobil" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 shadow-lg shadow-blue-600/35 text-sm cursor-pointer">
@@ -345,9 +345,10 @@
                         <div class="p-5">
                             <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">{{ $car->brand }}</span>
                             <h3 class="font-extrabold text-slate-800 text-lg mt-0.5 mb-3">{{ $car->name }}</h3>
-                            <div class="flex justify-between items-center py-2.5 border-t border-b border-slate-50 mb-4 text-sm text-slate-600">
-                                <span class="flex items-center gap-1">⭐ {{ $car->rating ?? '4.8' }}/5</span>
-                                <span class="flex items-center gap-1">👥 {{ $car->seat_count }} Penumpang</span>
+                            <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-500 font-medium mb-6 border-t pt-4 border-gray-50">
+                                <span class="flex items-center">👥 {{ $car->seat_count }} Kursi</span>
+                                <span class="flex items-center">⚙️ {{ $car->transmission->label() }}</span>
+                                <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
                             </div>
                             <p class="text-2xl font-extrabold text-blue-600">Rp {{ number_format($car->daily_rate, 0, ',', '.') }}<span class="text-xs text-slate-400 font-normal"> / hari</span></p>
                         </div>
@@ -372,72 +373,130 @@
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Testimoni</span>
                 <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mt-1">Kesan Eksklusif dari Pengguna Kami</h2>
-                <p class="text-slate-500 text-sm mt-1">Simak pengalaman langsung dari pelanggan yang mempercayakan perjalanan mereka kepada HD Rental Car.</p>
+                <p class="text-slate-500 text-sm mt-1">Simak pengalaman langsung dari pelanggan yang mempercayakan perjalanan mereka kepada MD CAR RENTAL.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                <!-- Testimonial 1 -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex gap-0.5 text-amber-400 mb-4">
-                            ★ ★ ★ ★ ★
+                @forelse($reviews as $index => $review)
+                    @php
+                        $isFeatured = ($index === 1);
+                        $initials = '';
+                        $names = explode(' ', $review->user->name);
+                        foreach (array_slice($names, 0, 2) as $n) {
+                            $initials .= strtoupper(substr($n, 0, 1));
+                        }
+                    @endphp
+                    @if($isFeatured)
+                        <!-- Testimonial Featured -->
+                        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-6 shadow-md shadow-blue-500/10 flex flex-col justify-between">
+                            <div>
+                                <div class="flex gap-0.5 text-yellow-300 mb-4 text-xs font-bold">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        {{ $i <= $review->rating ? '★' : '☆' }}
+                                    @endfor
+                                </div>
+                                <p class="text-white/95 text-sm leading-relaxed mb-6 font-light italic">
+                                    "{{ $review->comment ?? 'Sangat puas dengan layanan MD CAR RENTAL!' }}"
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-3 border-t border-white/10 pt-4">
+                                <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    {{ $initials ?: 'U' }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">{{ $review->user->name }}</p>
+                                    <p class="text-xs text-blue-200">{{ $review->car->name }} ({{ $review->car->brand }})</p>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
-                            "Layanan HD Rental Car sangat memuaskan. Mobil dalam kondisi prima, bersih, dan stafnya sangat profesional dalam memandu serah terima!"
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
-                        <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
-                            BS
+                    @else
+                        <!-- Testimonial Regular -->
+                        <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <div class="flex gap-0.5 text-amber-400 mb-4 text-xs font-bold">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        {{ $i <= $review->rating ? '★' : '☆' }}
+                                    @endfor
+                                </div>
+                                <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light italic">
+                                    "{{ $review->comment ?? 'Layanan yang luar biasa, unit bersih dan terawat!' }}"
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
+                                <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                                    {{ $initials ?: 'U' }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800 text-sm">{{ $review->user->name }}</p>
+                                    <p class="text-xs text-slate-400">{{ $review->car->name }} ({{ $review->car->brand }})</p>
+                                </div>
+                            </div>
                         </div>
+                    @endif
+                @empty
+                    <!-- Testimonial 1 -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                         <div>
-                            <p class="font-bold text-slate-800 text-sm">Budi Santoso</p>
-                            <p class="text-xs text-slate-400">Pengusaha Jakarta</p>
+                            <div class="flex gap-0.5 text-amber-400 mb-4">
+                                ★ ★ ★ ★ ★
+                            </div>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
+                                "Layanan MD CAR RENTAL sangat memuaskan. Mobil dalam kondisi prima, bersih, dan stafnya sangat profesional dalam memandu serah terima!"
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
+                            <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                                BS
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Budi Santoso</p>
+                                <p class="text-xs text-slate-400">Pengusaha Jakarta</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Testimonial 2 - Featured -->
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-6 shadow-md shadow-blue-500/10 flex flex-col justify-between">
-                    <div>
-                        <div class="flex gap-0.5 text-yellow-300 mb-4">
-                            ★ ★ ★ ★ ★
-                        </div>
-                        <p class="text-white/95 text-base leading-relaxed mb-6 font-light">
-                            "Sangat puas dengan harga dan kualitas mobil. Proses booking online cepat & verifikasi wajahnya modern sekali. Rekomendasi untuk semua traveler!"
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3 border-t border-white/10 pt-4">
-                        <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                            SM
-                        </div>
+                    <!-- Testimonial 2 - Featured -->
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-6 shadow-md shadow-blue-500/10 flex flex-col justify-between">
                         <div>
-                            <p class="font-bold text-sm">Siti Maya</p>
-                            <p class="text-xs text-blue-200">Travel Blogger</p>
+                            <div class="flex gap-0.5 text-yellow-300 mb-4">
+                                ★ ★ ★ ★ ★
+                            </div>
+                            <p class="text-white/95 text-base leading-relaxed mb-6 font-light">
+                                "Sangat puas dengan harga & kualitas mobil. Proses booking online cepat & verifikasi wajahnya modern sekali. Rekomendasi untuk semua traveler!"
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3 border-t border-white/10 pt-4">
+                            <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                SM
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm">Siti Maya</p>
+                                <p class="text-xs text-blue-200">Travel Blogger</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Testimonial 3 -->
-                <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex gap-0.5 text-amber-400 mb-4">
-                            ★ ★ ★ ★ ★
-                        </div>
-                        <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
-                            "Terbaik di kelasnya! Armada sangat terawat, lokasi serah terima strategis, dan harganya sangat kompetitif dibanding sewa konvensional lainnya."
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
-                        <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
-                            AR
-                        </div>
+                    <!-- Testimonial 3 -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
                         <div>
-                            <p class="font-bold text-slate-800 text-sm">Ahmad Rizki</p>
-                            <p class="text-xs text-slate-400">Konsultan Bisnis</p>
+                            <div class="flex gap-0.5 text-amber-400 mb-4">
+                                ★ ★ ★ ★ ★
+                            </div>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-6 font-light">
+                                "Terbaik di kelasnya! Armada sangat terawat, lokasi serah terima strategis, dan harganya sangat kompetitif dibanding sewa konvensional lainnya."
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3 border-t border-slate-50 pt-4">
+                            <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                                AR
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Ahmad Rizki</p>
+                                <p class="text-xs text-slate-400">Konsultan Bisnis</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </section>
@@ -448,7 +507,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <!-- Company Info -->
                 <div>
-                    <h3 class="text-white font-bold text-lg mb-4">HD RENTAL CAR</h3>
+                    <h3 class="text-white font-bold text-lg mb-4">MD CAR RENTAL</h3>
                     <p class="text-sm text-gray-400">
                         Penyewaan mobil terpercaya dengan armada terlengkap dan harga terjangkau.
                     </p>
@@ -491,7 +550,7 @@
             <hr class="border-gray-700 mb-8">
 
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">&copy; 2024 HD Rental Car. All rights reserved.</p>
+                <p class="text-sm text-gray-400">&copy; 2024 MD CAR RENTAL. All rights reserved.</p>
                 <div class="flex gap-4 mt-4 md:mt-0">
                     <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
                     <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>

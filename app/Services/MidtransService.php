@@ -27,6 +27,9 @@ class MidtransService
             ? 'https://app.midtrans.com/snap/v1/transactions'
             : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
+        $expiryTime = $rental->prepaid_expires_at ?? ($rental->verified_at ? $rental->verified_at->addHours(4) : now()->addHours(4));
+        $durationInMinutes = max(1, (int) now()->diffInMinutes($expiryTime));
+
         $payload = [
             'transaction_details' => [
                 'order_id' => $orderId,
@@ -43,6 +46,14 @@ class MidtransService
                     'quantity' => 1,
                     'name' => trim(($rental->car->brand ?? '').' '.($rental->car->name ?? '')),
                 ],
+            ],
+            'callbacks' => [
+                'finish' => route('booking.detail', ['rental' => $rental->id]),
+            ],
+            'expiry' => [
+                'start_time' => now()->format('Y-m-d H:i:s O'),
+                'unit' => 'minute',
+                'duration' => $durationInMinutes,
             ],
         ];
 
@@ -79,6 +90,30 @@ class MidtransService
         }
 
         return $response->json('transaction_status');
+    }
+
+    public function getTransactionDetails(string $orderId): ?array
+    {
+        $serverKey = (string) config('services.midtrans.server_key');
+        $isProduction = (bool) config('services.midtrans.is_production', false);
+
+        if ($serverKey === '') {
+            return null;
+        }
+
+        $endpoint = $isProduction
+            ? "https://api.midtrans.com/v2/{$orderId}/status"
+            : "https://api.sandbox.midtrans.com/v2/{$orderId}/status";
+
+        $response = \Illuminate\Support\Facades\Http::acceptJson()
+            ->withBasicAuth($serverKey, '')
+            ->get($endpoint);
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        return $response->json();
     }
 
     public function verifySignature(array $payload): bool

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Pesanan - HD RENTAL CAR</title>
+    <title>Detail Pesanan - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -22,10 +22,77 @@
         $driverCost = ($rental->type === \App\Enums\RentalType::WITH_DRIVER) ? 150000 * $days : 0;
         $serviceCost = 100000;
         $totalPrice = $rental->total_price;
+
+        $targetTime = null;
+        if ($rental->status === \App\Enums\RentalStatus::PREPAID) {
+            $targetTime = $rental->prepaid_expires_at;
+        } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
+        }
+        $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
+        $hasPaymentSession = $payment
+            && $payment->status === \App\Enums\PaymentStatus::PENDING
+            && ($payment->snap_token || $payment->redirect_url);
+
+        $hasChosenPaymentMethod = false;
+        if (config('app.env') === 'testing' || empty(config('services.midtrans.server_key'))) {
+            $hasChosenPaymentMethod = (bool) $hasPaymentSession;
+        } else {
+            $hasChosenPaymentMethod = $hasPaymentSession && !empty($payment->payload['payment_type']);
+        }
+
+        $canChangePaymentMethod = $rental->status === \App\Enums\RentalStatus::PREPAID
+            && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED
+            && $rental->prepaid_expires_at
+            && $rental->prepaid_expires_at->isFuture()
+            && $hasChosenPaymentMethod;
     @endphp
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full space-y-6">
+        <!-- Step Indicator -->
+        <div class="mb-8 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
+                <!-- Step 1: Detail Sewa -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">1</span>
+                    <span class="hidden sm:inline">Detail Sewa</span>
+                    <span class="sm:hidden">Detail</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-blue-600"></div>
+
+                <!-- Step 2: Verifikasi Booking -->
+                <div class="flex items-center gap-2 text-blue-600">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
+                    <span class="hidden sm:inline">Verifikasi Booking</span>
+                    <span class="sm:hidden">Booking</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 bg-blue-600"></div>
+
+                <!-- Step 3: Verifikasi Data Penyewa -->
+                @php
+                    $step3Active = in_array($rental->status, [\App\Enums\RentalStatus::PENDING_VERIFICATION, \App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]);
+                    $step3Completed = in_array($rental->status, [\App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]) || ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED);
+                @endphp
+                <div class="flex items-center gap-2 {{ $step3Active ? 'text-blue-600' : 'text-gray-400' }}">
+                    <span class="w-6 h-6 rounded-full {{ $step3Completed ? 'bg-blue-600 text-white' : ($step3Active ? 'border-2 border-blue-600 text-blue-600' : 'bg-gray-200 text-gray-600') }} flex items-center justify-center text-xs">3</span>
+                    <span class="hidden sm:inline">Verifikasi Data Penyewa</span>
+                    <span class="sm:hidden">Identitas</span>
+                </div>
+                <div class="flex-grow mx-4 h-0.5 {{ $step3Completed ? 'bg-blue-600' : 'bg-gray-200' }}"></div>
+
+                <!-- Step 4: Pembayaran -->
+                @php
+                    $step4Active = in_array($rental->status, [\App\Enums\RentalStatus::PREPAID, \App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]) || ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED);
+                    $step4Completed = in_array($rental->status, [\App\Enums\RentalStatus::ONGOING, \App\Enums\RentalStatus::RETURNED]);
+                @endphp
+                <div class="flex items-center gap-2 {{ $step4Active ? 'text-blue-600' : 'text-gray-400' }}">
+                    <span class="w-6 h-6 rounded-full {{ $step4Completed ? 'bg-blue-600 text-white' : ($step4Active ? 'border-2 border-blue-600 text-blue-600' : 'bg-gray-200 text-gray-600') }} flex items-center justify-center text-xs">4</span>
+                    <span class="hidden sm:inline">Pembayaran</span>
+                    <span class="sm:hidden">Bayar</span>
+                </div>
+            </div>
+        </div>
         
         <!-- Flash Message -->
         @if (session('success'))
@@ -35,8 +102,62 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
+                ⚠️ {{ session('error') }}
+            </div>
+        @endif
+
         <!-- Banner Status Pemesanan -->
-        @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+        @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::PENDING && ! $hasIdentityDocs)
+            <!-- Booking sementara, belum upload identitas -->
+            <div class="bg-sky-500 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        🔒
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Menunggu Kelengkapan Data Penyewa</h2>
+                        <p class="text-xs text-sky-50 mt-0.5">Mobil sudah diamankan sementara untuk Anda. Silakan lengkapi KTP dan selfie untuk melanjutkan proses booking.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Data Belum Lengkap
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
+            <!-- Menunggu Review Admin -->
+            <div class="bg-amber-500 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ⏱️
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Verifikasi Sedang Ditinjau</h2>
+                        <p class="text-xs text-amber-50 mt-0.5">Verifikasi identitas Anda sedang ditinjau. Mobil sementara kami amankan untuk Anda. Pembayaran dapat dilakukan setelah verifikasi disetujui.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Menunggu Verifikasi
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED)
+            <!-- Terverifikasi Manual - Menunggu Pembayaran diinisiasi -->
+            <div id="countdown-banner" class="bg-[#1E50DD] text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md transition-colors duration-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ⏱️
+                    </div>
+                    <div>
+                        <h2 id="countdown-text" class="text-base font-bold">Verifikasi Identitas Disetujui</h2>
+                        <p class="text-xs text-blue-100 mt-0.5">Selesaikan pembayaran sebelum batas waktu habis untuk mengaktifkan rental Anda.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2.5 rounded-full font-bold text-2xl tracking-wider min-w-[100px] text-center" id="countdown-timer">
+                    04:00:00
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
             <!-- Skenario Belum Lunas (Countdown Banner) -->
             <div id="countdown-banner" class="bg-[#1E50DD] text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md transition-colors duration-300">
                 <div class="flex items-center gap-3">
@@ -44,15 +165,15 @@
                         ⏱️
                     </div>
                     <div>
-                        <h2 id="countdown-text" class="text-base font-bold">Pesanan Anda telah dikunci</h2>
+                        <h2 id="countdown-text" class="text-base font-bold">Menunggu Pembayaran</h2>
                         <p class="text-xs text-blue-100 mt-0.5">Selesaikan pembayaran sebelum waktu habis untuk menjamin ketersediaan armada.</p>
                     </div>
                 </div>
                 <div class="bg-white/20 px-6 py-2.5 rounded-full font-bold text-2xl tracking-wider min-w-[100px] text-center" id="countdown-timer">
-                    15:00
+                    04:00:00
                 </div>
             </div>
-        @else
+        @elseif($rental->status === \App\Enums\RentalStatus::ONGOING)
             <!-- Skenario Lunas / Aktif -->
             <div class="bg-green-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
                 <div class="flex items-center gap-3">
@@ -65,7 +186,61 @@
                     </div>
                 </div>
                 <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
-                    Lunas (Aktif)
+                    Aktif / Lunas
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::RETURNED)
+            <!-- Skenario Selesai -->
+            <div class="bg-blue-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✓
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Rental Selesai</h2>
+                        <p class="text-xs text-blue-100 mt-0.5">Terima kasih telah menyewa kendaraan di MD CAR RENTAL.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Selesai
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::CANCELLED || $rental->verification_status === \App\Enums\VerificationStatus::REJECTED || $rental->verification_status === \App\Enums\VerificationStatus::CANCELLED)
+            <!-- Skenario Dibatalkan -->
+            <div class="bg-red-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✕
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Pemesanan Dibatalkan</h2>
+                        <p class="text-xs text-red-100 mt-0.5">
+                            @if($rental->verification_status === \App\Enums\VerificationStatus::REJECTED)
+                                Verifikasi identitas belum dapat disetujui. Pengajuan dibatalkan dan mobil kembali tersedia.
+                            @else
+                                Pemesanan telah dibatalkan.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Dibatalkan
+                </div>
+            </div>
+        @elseif($rental->status === \App\Enums\RentalStatus::EXPIRED)
+            <!-- Skenario Expired -->
+            <div class="bg-gray-600 text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-xl">
+                        ✕
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold">Waktu Pembayaran Habis</h2>
+                        <p class="text-xs text-gray-100 mt-0.5">Waktu Anda untuk menyelesaikan proses pembayaran telah habis. Mobil kembali tersedia.</p>
+                    </div>
+                </div>
+                <div class="bg-white/20 px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wider">
+                    Waktu Habis
                 </div>
             </div>
         @endif
@@ -167,22 +342,149 @@
                                 <span class="bg-[#10B981]/10 text-[#059669] text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Final Price</span>
                             </div>
                         </div>
+
+                        {{-- Informasi Pembayaran --}}
+                        @if($payment)
+                            @php
+                                $paymentMethodLabel = null;
+                                $payload = $payment->payload;
+                                $type = $payload['payment_type'] ?? null;
+                                if ($type === 'bank_transfer') {
+                                    $bank = $payload['va_numbers'][0]['bank'] ?? null;
+                                    if ($bank) {
+                                        $paymentMethodLabel = strtoupper($bank) . ' Virtual Account';
+                                    } elseif (isset($payload['permata_va_number'])) {
+                                        $paymentMethodLabel = 'Permata Virtual Account';
+                                    } else {
+                                        $paymentMethodLabel = 'Transfer Bank (VA)';
+                                    }
+                                } elseif ($type === 'gopay') {
+                                    $paymentMethodLabel = 'GoPay';
+                                } elseif ($type === 'qris') {
+                                    $paymentMethodLabel = 'QRIS';
+                                } elseif ($type === 'cstore') {
+                                    $store = $payload['store'] ?? 'Gerai';
+                                    $paymentMethodLabel = ucfirst($store);
+                                } elseif ($type === 'credit_card') {
+                                    $paymentMethodLabel = 'Kartu Kredit';
+                                } elseif ($type === 'echannel') {
+                                    $paymentMethodLabel = 'Mandiri Bill';
+                                } elseif ($type === 'shopeepay') {
+                                    $paymentMethodLabel = 'ShopeePay';
+                                } elseif ($payment->provider === 'midtrans' && empty(config('services.midtrans.server_key'))) {
+                                    $paymentMethodLabel = 'Simulasi Pembayaran';
+                                }
+                            @endphp
+
+                            @if($paymentMethodLabel || $payment->status === \App\Enums\PaymentStatus::PAID)
+                                <div class="pt-4 border-t border-gray-100 space-y-3">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Detail Pembayaran</span>
+                                    <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                                        @if($paymentMethodLabel)
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Metode:</span>
+                                                <span class="font-bold text-slate-800">{{ $paymentMethodLabel }}</span>
+                                            </div>
+                                        @endif
+                                        
+                                        @if($payment->status === \App\Enums\PaymentStatus::PAID)
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Status:</span>
+                                                <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wide">Lunas</span>
+                                            </div>
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Waktu Bayar:</span>
+                                                <span class="font-bold text-slate-800">
+                                                    {{ $payment->updated_at->translatedFormat('d M Y, H:i') }} WIB
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Status:</span>
+                                                <span class="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wide">Menunggu</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 </div>
 
                 <div class="space-y-4 mt-6">
-                    @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+                    @if($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED)
+                        <form action="{{ route('booking.pay', $rental->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <span>💳</span>
+                                <span>Lanjutkan Pembayaran</span>
+                            </button>
+                        </form>
+                    @elseif($rental->status === \App\Enums\RentalStatus::PREPAID)
                         @php
                             $payUrl = $payment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                         @endphp
-                        <a id="pay-button" href="{{ $payUrl }}" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
-                            <span>💳</span>
-                            <span>Bayar Sekarang via Midtrans</span>
-                        </a>
-                    @else
-                        <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
-                            ✓ Pembayaran Lunas
+                        <div class="space-y-3">
+                            <a id="pay-button" href="{{ $payUrl }}" class="w-full text-center block bg-[#1E50DD] hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-sm">
+                                <span>💳</span>
+                                <span>Bayar Sekarang via Midtrans</span>
+                            </a>
+
+                            @if($canChangePaymentMethod)
+                                <form action="{{ route('booking.change-payment-method', $rental->id) }}" method="POST" class="space-y-2">
+                                    @csrf
+                                    <button type="submit" id="change-payment-method-button" class="w-full text-center block border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl transition shadow-sm flex items-center justify-center space-x-2 text-sm">
+                                        <span>↺</span>
+                                        <span>Ganti Metode Pembayaran</span>
+                                    </button>
+                                </form>
+                                <p class="text-center text-[11px] text-slate-500 font-medium">
+                                    Mengganti metode pembayaran tidak menambah batas waktu pembayaran.
+                                </p>
+                            @endif
+                        </div>
+                    @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::PENDING && ! $hasIdentityDocs)
+                        <button type="button" disabled class="w-full text-center block bg-sky-100 text-sky-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            🔒 Menunggu Kelengkapan Data Penyewa
                         </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && ($rental->verification_status === \App\Enums\VerificationStatus::PENDING || $rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW))
+                        <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ⏱️ Menunggu Verifikasi Disetujui
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::ONGOING)
+                        <button type="button" disabled class="w-full text-center block bg-emerald-100 text-emerald-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✓ Pembayaran Lunas / Rental Aktif
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::RETURNED)
+                        <button type="button" disabled class="w-full text-center block bg-blue-100 text-blue-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm mb-3">
+                            ✓ Rental Selesai
+                        </button>
+                        @if(!$rental->review)
+                            <a href="{{ route('booking.review', ['rental' => $rental->id]) }}" class="w-full text-center block bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-6 rounded-xl transition text-sm">
+                                Tulis Ulasan / Rating
+                            </a>
+                        @else
+                            <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                                ✓ Ulasan Telah Dikirim
+                            </button>
+                        @endif
+                    @elseif($rental->status === \App\Enums\RentalStatus::CANCELLED)
+                        <button type="button" disabled class="w-full text-center block bg-red-100 text-red-500 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✕ Dibatalkan
+                        </button>
+                    @elseif($rental->status === \App\Enums\RentalStatus::EXPIRED)
+                        <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                            ✕ Waktu Habis
+                        </button>
+                    @endif
+
+                    @if(in_array($rental->status, [\App\Enums\RentalStatus::PENDING_VERIFICATION, \App\Enums\RentalStatus::PREPAID]))
+                        <form action="{{ route('booking.cancel', $rental->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pemesanan ini? Data identitas KTP dan selfie Anda akan dihapus demi privasi.');">
+                            @csrf
+                            <button type="submit" class="w-full text-center block border border-red-500 hover:bg-red-50 text-red-500 font-bold py-2.5 px-6 rounded-xl transition text-xs">
+                                ✕ Batalkan & Hapus Data
+                            </button>
+                        </form>
                     @endif
                     <p class="text-center text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
                         Secure Payment Encrypted By Rental Mobil Vault
@@ -194,23 +496,22 @@
 
     <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 mt-12">
         <div class="max-w-7xl mx-auto px-4 lg:px-8 text-center text-xs">
-            <p>&copy; 2026 HD Rental Car. All rights reserved.</p>
+            <p>&copy; 2026 MD CAR RENTAL. All rights reserved.</p>
         </div>
     </footer>
 
-    @if($rental->status === \App\Enums\RentalStatus::PREPAID)
+    @if($targetTime)
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // End time is created_at + 15 minutes
-                const createdAt = new Date("{{ $rental->created_at->toIso8601String() }}");
-                const endTime = new Date(createdAt.getTime() + 15 * 60 * 1000);
+                const endTime = new Date("{{ $targetTime->toIso8601String() }}");
 
                 function updateCountdown() {
                     const now = new Date();
                     const diff = endTime - now;
 
                     if (diff <= 0) {
-                        document.getElementById('countdown-timer').innerText = "00:00";
+                        const timerEl = document.getElementById('countdown-timer');
+                        if (timerEl) timerEl.innerText = "00:00:00";
                         const banner = document.getElementById('countdown-banner');
                         if (banner) {
                             banner.classList.add('bg-red-600');
@@ -228,17 +529,33 @@
                             payBtn.classList.remove('bg-[#1E50DD]', 'hover:bg-blue-700');
                             payBtn.innerText = "Waktu Pembayaran Habis";
                         }
+                        const changeBtn = document.getElementById('change-payment-method-button');
+                        if (changeBtn) {
+                            changeBtn.setAttribute('disabled', 'disabled');
+                            changeBtn.classList.add('cursor-not-allowed', 'opacity-60');
+                            changeBtn.classList.remove('hover:bg-slate-50');
+                            changeBtn.innerText = "Waktu Pembayaran Habis";
+                        }
+                        // Refresh page to transition state in DB
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
                         clearInterval(timerInterval);
                         return;
                     }
 
-                    const minutes = Math.floor(diff / (1000 * 60));
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+                    const hoursStr = String(hours).padStart(2, '0');
                     const minutesStr = String(minutes).padStart(2, '0');
                     const secondsStr = String(seconds).padStart(2, '0');
 
-                    document.getElementById('countdown-timer').innerText = `${minutesStr}:${secondsStr}`;
+                    const timerEl = document.getElementById('countdown-timer');
+                    if (timerEl) {
+                        timerEl.innerText = `${hoursStr}:${minutesStr}:${secondsStr}`;
+                    }
                 }
 
                 const timerInterval = setInterval(updateCountdown, 1000);

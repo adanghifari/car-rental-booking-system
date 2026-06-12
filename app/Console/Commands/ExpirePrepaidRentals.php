@@ -13,15 +13,35 @@ class ExpirePrepaidRentals extends Command
 {
     protected $signature = 'rentals:expire-prepaid';
 
-    protected $description = 'Delete prepaid rentals that passed the 24-hour window.';
+    protected $description = 'Clean up expired prepaid rentals and expired verified rentals, release car status, mark payment as expired, and delete identity files.';
 
     public function handle(): int
     {
         $expired = Rental::query()
-            ->where('status', RentalStatus::PREPAID)
-            ->whereNotNull('prepaid_expires_at')
-            ->where('prepaid_expires_at', '<=', now())
-            ->with('car')
+            ->where(function ($query) {
+                // 1. PREPAID rentals past prepaid_expires_at
+                $query->where(function ($q) {
+                    $q->where('status', RentalStatus::PREPAID)
+                      ->whereNotNull('prepaid_expires_at')
+                      ->where('prepaid_expires_at', '<=', now());
+                })
+                // 2. Verified rentals that never paid/progressed and passed the 4-hour window from verified_at
+                ->orWhere(function ($q) {
+                    $q->where('status', RentalStatus::PENDING_VERIFICATION)
+                      ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
+                      ->whereNotNull('verified_at')
+                      ->where('verified_at', '<=', now()->subHours(4));
+                })
+                // 3. Stale booking holds that never received identity uploads
+                ->orWhere(function ($q) {
+                    $q->where('status', RentalStatus::PENDING_VERIFICATION)
+                      ->where('verification_status', \App\Enums\VerificationStatus::PENDING)
+                      ->where('ktp_path', '')
+                      ->where('selfie_path', '')
+                      ->where('created_at', '<=', now()->subHour());
+                });
+            })
+            ->with(['car', 'paymentHistories'])
             ->get();
 
         if ($expired->isEmpty()) {
@@ -44,11 +64,24 @@ class ExpirePrepaidRentals extends Command
                     $rental->car->save();
                 }
 
-                $rental->delete();
+                $latestPayment = $rental->paymentHistories()->latest()->first();
+                if ($latestPayment) {
+                    $latestPayment->status = \App\Enums\PaymentStatus::EXPIRED;
+                    $latestPayment->save();
+                }
+
+                $rental->status = RentalStatus::EXPIRED;
+                $rental->verification_status = \App\Enums\VerificationStatus::CANCELLED;
+                $rental->prepaid_expires_at = null;
+                $rental->ktp_path = '';
+                $rental->selfie_path = '';
+                $rental->save();
+
+                app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
             }
         });
 
-        $this->info('Expired rentals cleaned up.');
+        $this->info('Expired rentals cleaned up successfully.');
 
         return self::SUCCESS;
     }

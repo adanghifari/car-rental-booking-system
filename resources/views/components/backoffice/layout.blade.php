@@ -1309,6 +1309,45 @@
             cursor: pointer;
         }
 
+        .status-action {
+            box-shadow: none;
+            border-radius: 999px;
+            min-height: 36px;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-action-maintenance {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+        }
+
+        .status-action-available {
+            background: rgba(29, 187, 132, 0.12);
+            color: #0f7f5c;
+            border: 1px solid rgba(29, 187, 132, 0.18);
+        }
+
+        .status-action-verification {
+            background: rgba(99, 102, 241, 0.12);
+            color: #4f46e5;
+            border: 1px solid rgba(99, 102, 241, 0.18);
+        }
+
+        .status-action-payment {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+        }
+
+        .status-action-rented {
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.18);
+        }
+
         .modal-summary {
             display: grid;
             gap: 12px;
@@ -1769,13 +1808,24 @@
 
     <main class="main">
         <div class="topbar">
-            <label class="search">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b869b" stroke-width="2">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <path d="m20 20-3.5-3.5"></path>
-                </svg>
-                <input type="text" placeholder="{{ $searchPlaceholder }}" />
-            </label>
+            <form method="GET" action="" style="margin: 0; display: block; flex: 1; max-width: min(100%, 520px);">
+                @foreach (request()->except('search', 'page') as $key => $value)
+                    @if (is_array($value))
+                        @foreach ($value as $val)
+                            <input type="hidden" name="{{ $key }}[]" value="{{ $val }}">
+                        @endforeach
+                    @else
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+                <label class="search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b869b" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-3.5-3.5"></path>
+                    </svg>
+                    <input type="text" name="search" placeholder="{{ $searchPlaceholder }}" value="{{ request('search') }}" />
+                </label>
+            </form>
 
             <div class="topbar-right">
                 <div class="icon-button">

@@ -60,4 +60,19 @@ class Car extends Model
     {
         return $this->hasMany(Rental::class);
     }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function getAverageRatingAttribute(): float
+    {
+        return round($this->reviews()->avg('rating') ?? 0.0, 1);
+    }
+
+    public function getTotalReviewsAttribute(): int
+    {
+        return $this->reviews()->count();
+    }
 }
