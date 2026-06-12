@@ -215,11 +215,22 @@
                                 </form>
                             @elseif($state === 'pending_pay')
                                 @php
+                                    $detailUrl = route('booking.detail', array_merge(['rental' => $rental->id], $latestPayment?->provider_order_id ? [
+                                        'order_id' => $latestPayment->provider_order_id,
+                                        'status_code' => 201,
+                                        'transaction_status' => 'pending',
+                                        'action' => 'back',
+                                    ] : []));
                                     $payUrl = $latestPayment?->redirect_url ?? route('booking.simulate-payment', ['rental_id' => $rental->id]);
                                 @endphp
-                                <a href="{{ $payUrl }}" class="bg-[#F59E0B] hover:bg-yellow-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition cursor-pointer">
-                                    Bayar Sekarang
-                                </a>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <a href="{{ $detailUrl }}" class="border border-[#0B3C9B] text-[#0B3C9B] hover:bg-blue-50 font-bold text-xs py-2 px-4 rounded-xl transition cursor-pointer text-center">
+                                        Lihat Detail
+                                    </a>
+                                    <a href="{{ $payUrl }}" class="bg-[#F59E0B] hover:bg-yellow-600 text-white font-bold text-xs py-2 px-4 rounded-xl transition cursor-pointer text-center">
+                                        Bayar Sekarang
+                                    </a>
+                                </div>
                             @elseif($state === 'verifying')
                                 <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}" class="border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-4 rounded-xl transition">
                                     Lihat Status

@@ -94,6 +94,7 @@ class CarValidationTest extends TestCase
                 'daily_rate' => 300000,
                 'license_plate' => 'B ' . rand(1000, 9999) . ' bo ' . str_replace('_', '', $type),
                 'image' => $image,
+                'self_drive_available' => true,
             ]);
 
             $response->assertRedirect(route('backoffice.cars'));
