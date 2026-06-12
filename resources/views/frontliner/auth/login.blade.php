@@ -321,17 +321,6 @@
                 <p class="register-link">Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a></p>
             </section>
         </main>
-
-        <footer class="footer">
-            <div>Rental Mobil</div>
-            <div class="links">
-                <span>Privacy Policy</span>
-                <span>Terms &amp; Service</span>
-                <span>Luxury Standards</span>
-                <span>Contact Us</span>
-            </div>
-            <div>&copy; {{ date('Y') }} Rental Mobil</div>
-        </footer>
     </div>
 
     <script>

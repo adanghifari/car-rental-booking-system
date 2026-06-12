@@ -390,9 +390,18 @@
                             ✓ Pembayaran Lunas / Rental Aktif
                         </button>
                     @elseif($rental->status === \App\Enums\RentalStatus::RETURNED)
-                        <button type="button" disabled class="w-full text-center block bg-blue-100 text-blue-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                        <button type="button" disabled class="w-full text-center block bg-blue-100 text-blue-600 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm mb-3">
                             ✓ Rental Selesai
                         </button>
+                        @if(!$rental->review)
+                            <a href="{{ route('booking.review', ['rental' => $rental->id]) }}" class="w-full text-center block bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-6 rounded-xl transition text-sm">
+                                Tulis Ulasan / Rating
+                            </a>
+                        @else
+                            <button type="button" disabled class="w-full text-center block bg-gray-100 text-gray-400 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
+                                ✓ Ulasan Telah Dikirim
+                            </button>
+                        @endif
                     @elseif($rental->status === \App\Enums\RentalStatus::CANCELLED)
                         <button type="button" disabled class="w-full text-center block bg-red-100 text-red-500 font-bold py-3.5 px-6 rounded-xl cursor-not-allowed text-sm">
                             ✕ Dibatalkan

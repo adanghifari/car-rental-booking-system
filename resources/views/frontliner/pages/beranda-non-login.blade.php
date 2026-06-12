@@ -149,60 +149,116 @@
             <p class="text-gray-500 max-w-xl mx-auto text-sm">Apa yang dikatakan oleh para pelanggan setia kami tentang standar pelayanan Azure Velocity.</p>
         </div>
 
-        <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
-                <div>
-                    <div class="flex text-[#10B981] space-x-1 mb-4">
-                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+        <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            @forelse($reviews as $index => $review)
+                @php
+                    $isFeatured = ($index === 1);
+                    $initials = '';
+                    $names = explode(' ', $review->user->name);
+                    foreach (array_slice($names, 0, 2) as $n) {
+                        $initials .= strtoupper(substr($n, 0, 1));
+                    }
+                @endphp
+                @if($isFeatured)
+                    <div class="bg-[#0B3C9B] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[280px] md:-translate-y-4 transition">
+                        <div>
+                            <div class="flex text-[#10B981] space-x-1 mb-4 text-xs font-bold">
+                                @for($i = 1; $i <= 5; $i++)
+                                    {{ $i <= $review->rating ? '★' : '☆' }}
+                                @endfor
+                            </div>
+                            <p class="text-blue-100 italic text-sm leading-relaxed mb-6 font-light">
+                                "{{ $review->comment ?? 'Sangat puas dengan layanan MD CAR RENTAL!' }}"
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-3 border-t border-white/10 pt-4">
+                            <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                {{ $initials ?: 'U' }}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">{{ $review->user->name }}</h4>
+                                <p class="text-[10px] text-blue-300">{{ $review->car->name }} ({{ $review->car->brand }})</p>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-gray-600 italic text-sm leading-relaxed mb-6">
-                        "Pelayanan yang benar-benar presisi. Mobil dalam kondisi sempurna saat dikirim ke hotel saya di Bali. Tidak ada yang menandingi standar ini."
-                    </p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Adrian" class="w-10 h-10 rounded-full object-cover">
+                @else
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
+                        <div>
+                            <div class="flex text-[#10B981] space-x-1 mb-4 text-xs font-bold">
+                                @for($i = 1; $i <= 5; $i++)
+                                    {{ $i <= $review->rating ? '★' : '☆' }}
+                                @endfor
+                            </div>
+                            <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
+                                "{{ $review->comment ?? 'Layanan yang luar biasa, unit bersih dan terawat!' }}"
+                            </p>
+                        </div>
+                        <div class="flex items-center space-x-3 border-t border-gray-50 pt-4">
+                            <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
+                                {{ $initials ?: 'U' }}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-gray-900">{{ $review->user->name }}</h4>
+                                <p class="text-[10px] text-gray-400">{{ $review->car->name }} ({{ $review->car->brand }})</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @empty
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
                     <div>
-                        <h4 class="text-sm font-bold text-gray-900">Adrian Prasetya</h4>
-                        <p class="text-[10px] text-gray-400">CEO, Tech Global</p>
+                        <div class="flex text-[#10B981] space-x-1 mb-4">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
+                            "Pelayanan yang benar-benar presisi. Mobil dalam kondisi sempurna saat dikirim ke hotel saya di Bali. Tidak ada yang menandingi standar ini."
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Adrian" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900">Adrian Prasetya</h4>
+                            <p class="text-[10px] text-gray-400">CEO, Tech Global</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-[#0B3C9B] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[280px] md:-translate-y-4 transition">
-                <div>
-                    <div class="flex text-[#10B981] space-x-1 mb-4">
-                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                    </div>
-                    <p class="text-blue-100 italic text-sm leading-relaxed mb-6">
-                        "Azure Velocity memahami arti dari 'Precision Concierge'. Setiap detail dari proses pemesanan hingga pengembalian berjalan sangat mulus."
-                    </p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Siska" class="w-10 h-10 rounded-full object-cover">
+                <div class="bg-[#0B3C9B] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[280px] md:-translate-y-4 transition">
                     <div>
-                        <h4 class="text-sm font-bold text-white">Siska Wijaya</h4>
-                        <p class="text-[10px] text-blue-300">Lifestyle Influencer</p>
+                        <div class="flex text-[#10B981] space-x-1 mb-4">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-blue-100 italic text-sm leading-relaxed mb-6 font-light">
+                            "Azure Velocity memahami arti dari 'Precision Concierge'. Setiap detail dari proses pemesanan hingga pengembalian berjalan sangat mulus."
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Siska" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Siska Wijaya</h4>
+                            <p class="text-[10px] text-blue-300">Lifestyle Influencer</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
-                <div>
-                    <div class="flex text-[#10B981] space-x-1 mb-4">
-                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                    </div>
-                    <p class="text-gray-600 italic text-sm leading-relaxed mb-6">
-                        "Menyewa supercar biasanya rumit, tapi di sini sangat mudah. Verifikasi cepat dan unit selalu terbaru. Sangat direkomendasikan!"
-                    </p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="Bima" class="w-10 h-10 rounded-full object-cover">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
                     <div>
-                        <h4 class="text-sm font-bold text-gray-900">Bima Arya</h4>
-                        <p class="text-[10px] text-gray-400">Entrepreneur</p>
+                        <div class="flex text-[#10B981] space-x-1 mb-4">
+                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                        </div>
+                        <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
+                            "Menyewa supercar biasanya rumit, tapi di sini sangat mudah. Verifikasi cepat dan unit selalu terbaru. Sangat direkomendasikan!"
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="Bima" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-900">Bima Arya</h4>
+                            <p class="text-[10px] text-gray-400">Entrepreneur</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endforelse
         </div>
     </section>
 

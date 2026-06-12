@@ -154,41 +154,48 @@
         <section class="border-t border-gray-200 pt-10 mb-16">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-gray-900">Ulasan Pengguna</h2>
-                <span class="text-xs font-bold text-amber-500">★ 4.9 <span class="text-gray-400 font-normal">({{ 10 + ($car->id % 90) }} Ulasan)</span></span>
+                @if($car->total_reviews > 0)
+                    <span class="text-xs font-bold text-amber-500">★ {{ $car->average_rating }} <span class="text-gray-400 font-normal">({{ $car->total_reviews }} Ulasan)</span></span>
+                @else
+                    <span class="text-xs text-gray-400">Belum ada ulasan</span>
+                @endif
             </div>
 
             <div class="space-y-4">
-                <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center space-x-3">
-                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&q=80" alt="Reza Avatar" class="w-9 h-9 rounded-full object-cover">
-                            <div>
-                                <h4 class="text-xs font-bold text-gray-900">Reza Ardiansyah</h4>
-                                <p class="text-[10px] text-gray-400">2 hari yang lalu</p>
+                @forelse($car->reviews as $review)
+                    @php
+                        $initials = '';
+                        $names = explode(' ', $review->user->name);
+                        foreach (array_slice($names, 0, 2) as $n) {
+                            $initials .= strtoupper(substr($n, 0, 1));
+                        }
+                    @endphp
+                    <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-xs">
+                                    {{ $initials ?: 'U' }}
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-900">{{ $review->user->name }}</h4>
+                                    <p class="text-[10px] text-gray-400">{{ $review->created_at->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                            <div class="text-amber-400 text-xs font-bold">
+                                @for($i = 1; $i <= 5; $i++)
+                                    {{ $i <= $review->rating ? '★' : '☆' }}
+                                @endfor
                             </div>
                         </div>
-                        <div class="text-amber-400 text-xs">★★★★★</div>
+                        <p class="text-gray-600 text-xs leading-relaxed italic">
+                            "{{ $review->comment ?? 'Pengguna tidak menulis komentar.' }}"
+                        </p>
                     </div>
-                    <p class="text-gray-600 text-xs leading-relaxed italic">
-                        "Pengalaman luar biasa dengan rental mobil ini. Unit terawat dengan sangat baik, bersih, dan wanginya luar biasa saat serah terima. Respon admin juga sangat ramah dan cepat."
-                    </p>
-                </div>
-
-                <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center space-x-3">
-                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&q=80" alt="Amanda Avatar" class="w-9 h-9 rounded-full object-cover">
-                            <div>
-                                <h4 class="text-xs font-bold text-gray-900">Amanda Wijaya</h4>
-                                <p class="text-[10px] text-gray-400">1 minggu yang lalu</p>
-                            </div>
-                        </div>
-                        <div class="text-amber-400 text-xs">★★★★★</div>
+                @empty
+                    <div class="text-center py-8 bg-white rounded-xl border border-gray-100 shadow-sm text-gray-400 text-xs">
+                        Belum ada ulasan untuk mobil ini. Jadilah yang pertama memberikan ulasan!
                     </div>
-                    <p class="text-gray-600 text-xs leading-relaxed italic">
-                        "Pelayanan MD CAR RENTAL sangat profesional. Mobil diantar tepat waktu, sopir sopan, dan unitnya benar-benar terasa seperti mobil baru."
-                    </p>
-                </div>
+                @endforelse
             </div>
         </section>
 
