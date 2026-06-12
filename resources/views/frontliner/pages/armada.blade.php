@@ -106,6 +106,68 @@
                         </div>
                     @endforelse
                 </div>
+
+                @if ($cars->hasPages())
+                    @php
+                        $currentPage = $cars->currentPage();
+                        $lastPage = $cars->lastPage();
+                        $windowStart = max(1, $currentPage - 1);
+                        $windowEnd = min($lastPage, $currentPage + 1);
+
+                        if ($lastPage <= 5) {
+                            $pageItems = range(1, $lastPage);
+                        } else {
+                            $pageItems = [1];
+
+                            if ($windowStart > 2) {
+                                $pageItems[] = '...';
+                            }
+
+                            for ($page = $windowStart; $page <= $windowEnd; $page++) {
+                                if ($page > 1 && $page < $lastPage) {
+                                    $pageItems[] = $page;
+                                }
+                            }
+
+                            if ($windowEnd < $lastPage - 1) {
+                                $pageItems[] = '...';
+                            }
+
+                            $pageItems[] = $lastPage;
+                            $pageItems = array_values(array_unique($pageItems, SORT_REGULAR));
+                        }
+                    @endphp
+
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-4 flex items-center justify-between gap-4">
+                        <p class="text-sm text-gray-500">
+                            Menampilkan {{ $cars->firstItem() ?? 0 }}-{{ $cars->lastItem() ?? 0 }} dari {{ $cars->total() }} armada
+                        </p>
+
+                        <div class="flex items-center gap-2">
+                            @if ($cars->onFirstPage())
+                                <span class="px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-blue-300 text-sm font-semibold">‹</span>
+                            @else
+                                <a href="{{ $cars->previousPageUrl() }}" class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">‹</a>
+                            @endif
+
+                            @foreach ($pageItems as $pageItem)
+                                @if ($pageItem === '...')
+                                    <span class="px-3 py-2 rounded-xl border border-transparent text-blue-300 text-sm font-semibold">...</span>
+                                @elseif ($pageItem === $currentPage)
+                                    <span class="px-3 py-2 rounded-xl bg-[#0B3C9B] text-white text-sm font-semibold">{{ $pageItem }}</span>
+                                @else
+                                    <a href="{{ $cars->url($pageItem) }}" class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">{{ $pageItem }}</a>
+                                @endif
+                            @endforeach
+
+                            @if ($cars->hasMorePages())
+                                <a href="{{ $cars->nextPageUrl() }}" class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">›</a>
+                            @else
+                                <span class="px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-blue-300 text-sm font-semibold">›</span>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </section>
 
         </div>

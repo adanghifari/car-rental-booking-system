@@ -1159,7 +1159,10 @@ Route::get('/search-result', function (Request $request) {
     ]);
 })->middleware('token.cookie')->name('search-result');
 Route::get('/armada', function (Request $request) {
-    $cars = Car::all();
+    $cars = Car::query()
+        ->orderByDesc('created_at')
+        ->paginate(8)
+        ->withQueryString();
 
     return view('frontliner.pages.armada', [
         'cars' => $cars,
