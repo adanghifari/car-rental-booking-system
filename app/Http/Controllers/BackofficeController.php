@@ -736,6 +736,7 @@ class BackofficeController extends Controller
                 'action_label' => 'Set Maintenance',
                 'action_kind' => 'toggle',
                 'action_value' => CarStatus::UNAVAILABLE->value,
+                'action_class' => 'status-action status-action-maintenance',
             ];
         }
 
@@ -750,6 +751,7 @@ class BackofficeController extends Controller
                 'action_label' => 'Lihat Reservasi',
                 'action_kind' => 'view_reservation',
                 'action_value' => null,
+                'action_class' => 'status-action status-action-verification',
             ];
         }
 
@@ -762,6 +764,7 @@ class BackofficeController extends Controller
                 'action_label' => 'Lihat Reservasi',
                 'action_kind' => 'view_reservation',
                 'action_value' => null,
+                'action_class' => 'status-action status-action-payment',
             ];
         }
 
@@ -774,6 +777,7 @@ class BackofficeController extends Controller
                 'action_label' => 'Lihat Reservasi',
                 'action_kind' => 'view_reservation',
                 'action_value' => null,
+                'action_class' => 'status-action status-action-rented',
             ];
         }
 
@@ -785,6 +789,7 @@ class BackofficeController extends Controller
             'action_label' => 'Aktifkan',
             'action_kind' => 'toggle',
             'action_value' => CarStatus::AVAILABLE->value,
+            'action_class' => 'status-action status-action-available',
         ];
     }
 

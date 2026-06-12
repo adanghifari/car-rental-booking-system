@@ -1309,6 +1309,45 @@
             cursor: pointer;
         }
 
+        .status-action {
+            box-shadow: none;
+            border-radius: 999px;
+            min-height: 36px;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-action-maintenance {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+        }
+
+        .status-action-available {
+            background: rgba(29, 187, 132, 0.12);
+            color: #0f7f5c;
+            border: 1px solid rgba(29, 187, 132, 0.18);
+        }
+
+        .status-action-verification {
+            background: rgba(99, 102, 241, 0.12);
+            color: #4f46e5;
+            border: 1px solid rgba(99, 102, 241, 0.18);
+        }
+
+        .status-action-payment {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b45309;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+        }
+
+        .status-action-rented {
+            background: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.18);
+        }
+
         .modal-summary {
             display: grid;
             gap: 12px;
