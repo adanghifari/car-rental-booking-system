@@ -48,7 +48,6 @@
                         <path d="m9 12 2 2 4-4"/>
                     </svg>
                 </div>
-                <span class="delta up">Optimal</span>
             </div>
             <div class="stat-label">Tersedia</div>
             <div class="stat-value" style="color: var(--green);">{{ number_format($stats['available']) }}</div>
