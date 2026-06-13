@@ -1773,7 +1773,7 @@
                 </svg>
                 <span>Reservasi</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="{{ route('backoffice.reports') }}" class="nav-item {{ $active === 'reports' ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M3 3v18h18"/>
                     <path d="M7 14l4-4 3 3 5-7"/>

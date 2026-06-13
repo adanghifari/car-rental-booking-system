@@ -47,8 +47,8 @@
     @endif
 
     <section
-        style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 18px; margin-bottom: 18px;">
-        <div class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px;">
+        style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; margin-top: 18px; margin-bottom: 18px;">
+        <a href="{{ route('backoffice.reservations') }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--blue)'; this.style.boxShadow='0 4px 12px rgba(63, 94, 215, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
             <div
                 style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(63, 94, 215, 0.10); color: var(--blue); flex: 0 0 auto;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -64,9 +64,9 @@
                 <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1;">
                     {{ number_format($summary['total'] ?? 0) }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px;">
+        <a href="{{ route('backoffice.reservations', ['status_filter' => 'waiting_review']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--red)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
             <div
                 style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(239, 68, 68, 0.12); color: var(--red); flex: 0 0 auto;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,9 +82,9 @@
                 <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1;">
                     {{ number_format($summary['needs_review'] ?? 0) }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px;">
+        <a href="{{ route('backoffice.reservations', ['status_filter' => 'waiting_pay']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='#d97706'; this.style.boxShadow='0 4px 12px rgba(217, 119, 6, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
             <div
                 style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(255, 193, 7, 0.16); color: #d97706; flex: 0 0 auto;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -99,9 +99,9 @@
                 <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1;">
                     {{ number_format($summary['pending'] ?? 0) }}</div>
             </div>
-        </div>
+        </a>
 
-        <div class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px;">
+        <a href="{{ route('backoffice.reservations', ['status_filter' => 'returned']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--green)'; this.style.boxShadow='0 4px 12px rgba(29, 187, 132, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
             <div
                 style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(29, 187, 132, 0.12); color: var(--green); flex: 0 0 auto;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,7 +116,25 @@
                 <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1;">
                     {{ number_format($summary['completed'] ?? 0) }}</div>
             </div>
-        </div>
+        </a>
+
+        <a href="{{ route('backoffice.reservations', ['status_filter' => 'overdue']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.04); transition: all 0.2s;" onmouseover="this.style.borderColor='var(--amber)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.08)'" onmouseout="this.style.borderColor='rgba(245, 158, 11, 0.2)'; this.style.boxShadow='none'">
+            <div
+                style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(245, 158, 11, 0.15); color: #b96e00; flex: 0 0 auto;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+            </div>
+            <div>
+                <div class="page-subtitle"
+                    style="margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #b96e00;">
+                    Terlambat</div>
+                <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1; color: #b96e00;">
+                    {{ number_format($summary['overdue'] ?? 0) }}</div>
+            </div>
+        </a>
     </section>
 
     <section class="card" style="
@@ -159,17 +177,19 @@
                     Aktif
                 </option>
 
+                <option value="overdue" {{ request('status_filter') === 'overdue' ? 'selected' : '' }}>
+                    Terlambat
+                </option>
+
                 <option value="cancelled_expired"
                     {{ request('status_filter') === 'cancelled_expired' ? 'selected' : '' }}>
                     Dibatalkan
                 </option>
 
-                <option value="returned" {{ request('status_filter') === 'returned' ? 'selected' : '' }}
-                    {{ request('status_filter') === 'cancelled_expired' ? 'selected' : '' }}>
+                <option value="returned" {{ request('status_filter') === 'returned' ? 'selected' : '' }}>
                     Selesai
                 </option>
-
-                < </select>
+            </select>
 
                     <select name="car_type" onchange="this.form.submit()" style="
                 min-width:200px;
@@ -252,7 +272,12 @@
                         <td>{{ $rental['car_model'] ?? $rental['car'] ?? '-' }}</td>
                         <td>{{ $rental['start_date'] ?? '-' }} — {{ $rental['end_date'] ?? '-' }}</td>
                         <td>Rp {{ number_format($rental['total_price'] ?? ($rental['total'] ?? 0), 0, ',', '.') }}</td>
-                        <td>{{ $rental['status'] ?? '-' }}</td>
+                        <td>
+                            {{ $rental['status'] ?? '-' }}
+                            @if (!empty($rental['is_overdue']))
+                                <span class="pill amber" style="margin-left: 6px; font-size: 10px; padding: 2px 6px;">Terlambat</span>
+                            @endif
+                        </td>
                         <td>
                             <button type="button" class="text-action detail" data-reservation-detail
                                 data-reservation='@json($rental)'>Lihat</button>
@@ -416,6 +441,18 @@
             </div>
 
             <div class="modal-body" data-reservation-detail-body>
+                <div id="overdue-warning-banner" class="flash-banner"
+                    style="display: none; background: rgba(245, 158, 11, 0.10); border-color: rgba(245, 158, 11, 0.22); color: #92400e; margin-bottom: 18px; margin-top: 0; padding: 12px 14px; border-radius: 12px; font-weight: 500;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <span>Pengembalian terlambat selama <strong id="overdue-warning-days">0</strong> hari! Segera hubungi customer untuk konfirmasi pengembalian armada.</span>
+                    </div>
+                </div>
+
                 <dl style="display:grid; gap:8px; grid-template-columns: 140px 1fr;">
                     <dt>ID Reservasi</dt>
                     <dd data-detail-booking>-</dd>
@@ -701,6 +738,17 @@
                             data.total) : '0'));
                     (document.querySelector('[data-detail-status]') || {}).textContent = data
                         .status || '-';
+
+                    const overdueBanner = document.getElementById('overdue-warning-banner');
+                    const overdueDaysEl = document.getElementById('overdue-warning-days');
+                    if (overdueBanner && overdueDaysEl) {
+                        if (data.is_overdue) {
+                            overdueDaysEl.textContent = data.overdue_days || '0';
+                            overdueBanner.style.display = 'block';
+                        } else {
+                            overdueBanner.style.display = 'none';
+                        }
+                    }
 
                     const verSection = document.getElementById('verification-section');
                     const ktpImg = document.getElementById('detail-ktp-img');

@@ -25,41 +25,7 @@ class BackofficeController extends Controller
 {
     public function index(): View
     {
-        $now = now();
-        $monthStart = $now->copy()->startOfMonth();
-        $months = collect(range(5, 0))->map(fn (int $offset) => $now->copy()->subMonths($offset)->startOfMonth());
-        $monthLabels = $months->map(fn (Carbon $date) => $date->translatedFormat('M'));
         $lockingStatuses = $this->lockingRentalStatuses();
-
-        $rentalCounts = Rental::query()
-            ->where('created_at', '>=', $months->first())
-            ->get()
-            ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
-            ->map->count();
-
-        $revenueByMonth = PaymentHistory::query()
-            ->where('status', PaymentStatus::PAID)
-            ->where('created_at', '>=', $months->first())
-            ->get()
-            ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
-            ->map(fn ($payments) => $payments->sum('amount'));
-
-        $chartRentals = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
-        ]);
-
-        $chartRevenue = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($revenueByMonth[$date->format('Y-m')] ?? 0),
-        ]);
-
-        $topCar = Car::query()
-            ->withCount('rentals')
-            ->withSum('rentals', 'total_price')
-            ->orderByDesc('rentals_count')
-            ->orderByDesc('rentals_sum_total_price')
-            ->first();
 
         $recentRentals = Rental::query()
             ->with(['user:id,name', 'car:id,name'])
@@ -100,52 +66,52 @@ class BackofficeController extends Controller
                 ];
             });
 
+        $overdueRentalsQuery = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', '<', now());
+
+        $overdueRentalsCount = (clone $overdueRentalsQuery)->count();
+
+        $overdueRentalsPreview = (clone $overdueRentalsQuery)
+            ->orderBy('end_date', 'asc')
+            ->limit(3)
+            ->get();
+
+        $pendingVerifications = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::PENDING_VERIFICATION)
+            ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
+            ->orderBy('created_at', 'asc')
+            ->limit(4)
+            ->get();
+
+        $returnsToday = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', now()->toDateString())
+            ->orderBy('end_date', 'asc')
+            ->limit(4)
+            ->get();
+
+        $fleet = [
+            'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
+            'rented' => Car::query()
+                ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                ->count(),
+            'maintenance' => Car::query()
+                ->where('status', CarStatus::UNAVAILABLE)
+                ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                ->count(),
+        ];
+
         return view('backoffice.dashboard', [
             'admin' => request()->user(),
-            'stats' => [
-                'total_users' => User::count(),
-                'total_cars' => Car::count(),
-                'available_cars' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented_cars' => Car::query()
-                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-                'monthly_revenue' => PaymentHistory::where('status', PaymentStatus::PAID)
-                    ->where('created_at', '>=', $monthStart)
-                    ->sum('amount'),
-                'bookings_today' => Rental::whereDate('created_at', $now->toDateString())->count(),
-                'waiting_verification' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::PENDING)
-                    ->count(),
-                'needs_review' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
-                    ->count(),
-                'verified_waiting_pay' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
-                    ->count(),
-                'waiting_payment' => Rental::where('status', RentalStatus::PREPAID)->count(),
-                'active_rentals' => Rental::where('status', RentalStatus::ONGOING)->count(),
-                'cancelled_expired' => Rental::whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED])->count(),
-            ],
-            'fleet' => [
-                'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented' => Car::query()
-                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-                'maintenance' => Car::query()
-                    ->where('status', CarStatus::UNAVAILABLE)
-                    ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-            ],
-            'chartRentals' => $chartRentals,
-            'chartRevenue' => $chartRevenue,
+            'overdueRentalsCount' => $overdueRentalsCount,
+            'overdueRentalsPreview' => $overdueRentalsPreview,
+            'pendingVerifications' => $pendingVerifications,
+            'returnsToday' => $returnsToday,
+            'fleet' => $fleet,
             'recentActivities' => $recentRentals,
-            'featuredCar' => [
-                'name' => trim(($topCar?->brand ?? '').' '.($topCar?->name ?? '')) ?: 'Belum ada armada unggulan',
-                'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
-                'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
-                'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
-            ],
-            'monthLabels' => $monthLabels,
         ]);
     }
 
@@ -637,6 +603,10 @@ class BackofficeController extends Controller
             $query->where('status', RentalStatus::PREPAID);
         } elseif ($filter === 'active') {
             $query->where('status', RentalStatus::ONGOING);
+        } elseif ($filter === 'overdue') {
+            $query->where('status', RentalStatus::ONGOING)
+                ->whereNull('returned_at')
+                ->whereDate('end_date', '<', now());
         } elseif ($filter === 'cancelled_expired') {
             $query->whereIn('status', [
                 RentalStatus::CANCELLED,
@@ -677,6 +647,11 @@ class BackofficeController extends Controller
                 'verification_status',
                 \App\Enums\VerificationStatus::NEEDS_REVIEW
             )
+            ->count();
+
+        $overdueReservations = Rental::where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', '<', now())
             ->count();
 
         $rentals = $query
@@ -733,10 +708,19 @@ class BackofficeController extends Controller
                     $statusLabel = 'Expired';
                 }
 
+                $isOverdue = $rental->status === RentalStatus::ONGOING 
+                    && is_null($rental->returned_at) 
+                    && $rental->end_date && $rental->end_date->lt(now()->startOfDay());
+                $overdueDays = $isOverdue ? $rental->end_date->diffInDays(now()->startOfDay()) : 0;
+
                 return [
                     'id' => $rental->id,
 
                     'booking_id' => $rental->id,
+
+                    'is_overdue' => $isOverdue,
+
+                    'overdue_days' => (int) $overdueDays,
 
                     'customer_name' => $rental->user?->name,
 
@@ -850,6 +834,7 @@ class BackofficeController extends Controller
                 'pending' => $pendingReservations,
                 'completed' => $completedReservations,
                 'needs_review' => $needsReviewCount,
+                'overdue' => $overdueReservations,
             ],
 
             'current_filter' => $filter,
@@ -1079,5 +1064,358 @@ class BackofficeController extends Controller
 
             Storage::disk('public')->delete($path);
         }
+    }
+
+    public function reports(Request $request)
+    {
+        $tab = $request->query('tab', 'overview');
+        $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', Carbon::now()->toDateString());
+
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+
+        // Prepare Laporan Overview data if tab is overview
+        $overviewSummary = [];
+        $statusDistribution = collect();
+        $serviceTypeDistribution = collect();
+        $topCars = collect();
+        $fleetOccupancy = [];
+
+        if ($tab === 'overview') {
+            $totalRentals = Rental::whereBetween('created_at', [$start, $end])->count();
+            $successRentals = Rental::whereBetween('created_at', [$start, $end])
+                ->whereIn('status', [RentalStatus::RETURNED, RentalStatus::ONGOING])
+                ->count();
+            $successRate = $totalRentals > 0 ? ($successRentals / $totalRentals) * 100 : 0;
+
+            $overviewSummary = [
+                'total_cars' => Car::count(),
+                'total_rentals' => $totalRentals,
+                'total_users' => User::count(),
+                'revenue_paid' => (int) PaymentHistory::where('status', PaymentStatus::PAID)
+                    ->whereBetween('created_at', [$start, $end])
+                    ->sum('amount'),
+                'success_bookings' => $successRentals,
+                'failed_bookings' => max(0, $totalRentals - $successRentals),
+                'success_rate' => $successRate,
+            ];
+
+            $statusDistribution = Rental::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->groupBy('status')
+                ->select('status', DB::raw('count(*) as total'))
+                ->get()
+                ->map(fn($item) => [
+                    'label' => match($item->status) {
+                        RentalStatus::PENDING_VERIFICATION => 'Verifikasi',
+                        RentalStatus::PREPAID => 'Prepaid',
+                        RentalStatus::ONGOING => 'Aktif',
+                        RentalStatus::RETURNED => 'Selesai',
+                        RentalStatus::CANCELLED => 'Batal',
+                        RentalStatus::EXPIRED => 'Expired',
+                        default => $item->status->value
+                    },
+                    'value' => $item->total
+                ]);
+
+            $serviceTypeDistribution = Rental::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->groupBy('type')
+                ->select('type', DB::raw('count(*) as total'))
+                ->get()
+                ->map(fn($item) => [
+                    'label' => match($item->type) {
+                        RentalType::SELF_DRIVE => 'Lepas Kunci',
+                        RentalType::WITH_DRIVER => 'Dengan Driver',
+                        default => $item->type->value
+                    },
+                    'value' => $item->total
+                ]);
+
+            $topCars = Car::query()
+                ->withCount(['rentals' => fn($q) => $q->whereBetween('created_at', [$start, $end])])
+                ->orderByDesc('rentals_count')
+                ->limit(5)
+                ->get()
+                ->map(fn($car) => [
+                    'name' => trim($car->brand . ' ' . $car->name),
+                    'count' => $car->rentals_count
+                ]);
+
+            $fleetOccupancy = [
+                'total' => Car::count(),
+                'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
+                'unavailable' => Car::where('status', CarStatus::UNAVAILABLE)->count(),
+            ];
+        }
+
+        // Prepare Laporan Armada data if tab is fleet OR we are exporting fleet
+        $carStats = collect();
+        if ($tab === 'fleet') {
+            $cars = Car::all();
+            $payments = PaymentHistory::query()
+                ->with('rental')
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$start, $end])
+                ->get();
+
+            $rentals = Rental::query()
+                ->whereBetween('created_at', [$start, $end])
+                ->get();
+
+            $carStats = $cars->map(function ($car) use ($rentals, $payments) {
+                $carRentals = $rentals->where('car_id', $car->id);
+                $carPayments = $payments->where('rental.car_id', $car->id);
+                $latestRental = $carRentals->sortByDesc('created_at')->first();
+
+                return [
+                    'id' => $car->id,
+                    'brand' => $car->brand,
+                    'name' => $car->name,
+                    'license_plate' => $car->license_plate,
+                    'vehicle_type' => $car->vehicle_type ? $car->vehicle_type->value : '-',
+                    'transmission' => $car->transmission ? $car->transmission->value : '-',
+                    'status' => $car->status ? $car->status->value : '-',
+                    'rentals_count' => $carRentals->count(),
+                    'total_revenue' => (int) $carPayments->sum('amount'),
+                    'last_rented' => $latestRental ? $latestRental->created_at->toDateString() : '-',
+                ];
+            });
+        }
+
+        // Handle CSV Export
+        if ($request->query('export') === 'csv') {
+            $filename = "laporan_{$tab}_{$startDate}_to_{$endDate}.csv";
+            $headers = [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ];
+
+            return response()->stream(function () use ($tab, $start, $end, $carStats) {
+                $handle = fopen('php://output', 'w');
+                // Add UTF-8 BOM
+                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+                if ($tab === 'revenue') {
+                    fputcsv($handle, ['Tanggal Pembayaran', 'Customer', 'Mobil', 'Plat Nomor', 'Tipe Rental', 'Provider Pembayaran', 'Status Pembayaran', 'Amount']);
+                    PaymentHistory::query()
+                        ->with(['rental.user', 'rental.car'])
+                        ->where('status', PaymentStatus::PAID)
+                        ->whereBetween('created_at', [$start, $end])
+                        ->latest()
+                        ->chunk(100, function ($histories) use ($handle) {
+                            foreach ($histories as $history) {
+                                fputcsv($handle, [
+                                    $history->created_at->toDateTimeString(),
+                                    $history->rental?->user?->name ?? '-',
+                                    trim(($history->rental?->car?->brand ?? '') . ' ' . ($history->rental?->car?->name ?? '')),
+                                    $history->rental?->car?->license_plate ?? '-',
+                                    $history->rental?->type === RentalType::SELF_DRIVE ? 'Self Drive' : 'With Driver',
+                                    $history->provider ?? '-',
+                                    $history->status->value,
+                                    $history->amount,
+                                ]);
+                            }
+                        });
+                } elseif ($tab === 'reservation') {
+                    fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
+                    Rental::query()
+                        ->with(['user', 'car'])
+                        ->whereBetween('created_at', [$start, $end])
+                        ->latest()
+                        ->chunk(100, function ($rentals) use ($handle) {
+                            foreach ($rentals as $rental) {
+                                fputcsv($handle, [
+                                    $rental->created_at->toDateTimeString(),
+                                    $rental->user?->name ?? '-',
+                                    trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
+                                    $rental->car?->license_plate ?? '-',
+                                    $rental->start_date?->toDateString() ?? '-',
+                                    $rental->end_date?->toDateString() ?? '-',
+                                    $rental->returned_at?->toDateTimeString() ?? '-',
+                                    $rental->type?->value ?? '-',
+                                    $rental->verification_status?->value ?? '-',
+                                    $rental->status?->value ?? '-',
+                                    $rental->total_price,
+                                ]);
+                            }
+                        });
+                } elseif ($tab === 'fleet') {
+                    fputcsv($handle, ['Brand', 'Nama Mobil', 'Plat Nomor', 'Tipe Kendaraan', 'Transmisi', 'Status Mobil', 'Jumlah Disewa', 'Total Pendapatan', 'Terakhir Disewa']);
+                    foreach ($carStats as $car) {
+                        fputcsv($handle, [
+                            $car['brand'],
+                            $car['name'],
+                            $car['license_plate'],
+                            str($car['vehicle_type'])->headline(),
+                            str($car['transmission'])->headline(),
+                            str($car['status'])->headline(),
+                            $car['rentals_count'],
+                            $car['total_revenue'],
+                            $car['last_rented'],
+                        ]);
+                    }
+                }
+
+                fclose($handle);
+            }, 200, $headers);
+        }
+
+        // Initialize variables for view rendering
+        $summary = [];
+        $data = null;
+
+        if ($tab === 'revenue') {
+            $baseQuery = PaymentHistory::query()
+                ->with(['rental.user', 'rental.car'])
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$start, $end]);
+
+            $totalRevenue = (int) $baseQuery->sum('amount');
+            $totalTransactions = $baseQuery->count();
+            $avgTransaction = $totalTransactions > 0 ? (int) ($totalRevenue / $totalTransactions) : 0;
+
+            $summary = [
+                'total_revenue' => $totalRevenue,
+                'total_transactions' => $totalTransactions,
+                'avg_transaction' => $avgTransaction,
+            ];
+
+            $data = $baseQuery->latest()->paginate(10)->withQueryString();
+
+        } elseif ($tab === 'reservation') {
+            $baseQuery = Rental::query()
+                ->with(['user', 'car'])
+                ->whereBetween('created_at', [$start, $end]);
+
+            $totalReservations = $baseQuery->count();
+            $pending = (clone $baseQuery)->where('status', RentalStatus::PENDING_VERIFICATION)->count();
+            $prepaid = (clone $baseQuery)->where('status', RentalStatus::PREPAID)->count();
+            $ongoing = (clone $baseQuery)->where('status', RentalStatus::ONGOING)->count();
+            $returned = (clone $baseQuery)->where('status', RentalStatus::RETURNED)->count();
+            $cancelled = (clone $baseQuery)->where('status', RentalStatus::CANCELLED)->count();
+            $expired = (clone $baseQuery)->where('status', RentalStatus::EXPIRED)->count();
+
+            $cancellationRate = $totalReservations > 0 ? round(($cancelled / $totalReservations) * 100, 1) : 0;
+            $avgDuration = (clone $baseQuery)
+                ->whereNotNull('start_date')
+                ->whereNotNull('end_date')
+                ->get()
+                ->avg(fn ($r) => Carbon::parse($r->start_date)->diffInDays(Carbon::parse($r->end_date)) + 1) ?? 0;
+
+            $summary = [
+                'total_reservations' => $totalReservations,
+                'pending' => $pending,
+                'prepaid' => $prepaid,
+                'ongoing' => $ongoing,
+                'returned' => $returned,
+                'cancelled' => $cancelled,
+                'expired' => $expired,
+                'cancellation_rate' => $cancellationRate,
+                'avg_duration' => round($avgDuration, 1),
+            ];
+
+            $data = $baseQuery->latest()->paginate(10)->withQueryString();
+
+        } elseif ($tab === 'fleet') {
+            $totalFleet = Car::count();
+            $available = Car::where('status', CarStatus::AVAILABLE)->count();
+            $unavailable = Car::where('status', CarStatus::UNAVAILABLE)->count();
+
+            $topRented = $carStats->sortByDesc('rentals_count')->first();
+            $topRentedName = ($topRented && $topRented['rentals_count'] > 0) 
+                ? trim($topRented['brand'] . ' ' . $topRented['name']) . ' (' . $topRented['rentals_count'] . 'x)' 
+                : '-';
+
+            $topRevenue = $carStats->sortByDesc('total_revenue')->first();
+            $topRevenueName = ($topRevenue && $topRevenue['total_revenue'] > 0) 
+                ? trim($topRevenue['brand'] . ' ' . $topRevenue['name']) . ' (Rp ' . number_format($topRevenue['total_revenue'], 0, ',', '.') . ')' 
+                : '-';
+
+            $summary = [
+                'total_fleet' => $totalFleet,
+                'available' => $available,
+                'unavailable' => $unavailable,
+                'top_rented' => $topRentedName,
+                'top_revenue' => $topRevenueName,
+            ];
+
+            // Manual pagination for computed collection
+            $perPage = 10;
+            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+            $currentItems = $carStats->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            $data = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentItems,
+                $carStats->count(),
+                $perPage,
+                $currentPage,
+                ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+            );
+            $data->withQueryString();
+        }
+
+        // Prepare chart and featured fleet data for visual analytics
+        $chartNow = Carbon::parse($endDate);
+        $months = collect(range(5, 0))->map(fn (int $offset) => $chartNow->copy()->subMonths($offset)->startOfMonth());
+        $monthLabels = $months->map(fn (Carbon $date) => $date->translatedFormat('M'));
+
+        $rentalCounts = Rental::query()
+            ->where('created_at', '>=', $months->first())
+            ->where('created_at', '<=', $months->last()->copy()->endOfMonth())
+            ->get()
+            ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
+            ->map->count();
+
+        $revenueByMonth = PaymentHistory::query()
+            ->where('status', PaymentStatus::PAID)
+            ->where('created_at', '>=', $months->first())
+            ->where('created_at', '<=', $months->last()->copy()->endOfMonth())
+            ->get()
+            ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
+            ->map(fn ($payments) => $payments->sum('amount'));
+
+        $chartRentals = $months->map(fn (Carbon $date) => [
+            'label' => $date->translatedFormat('M'),
+            'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
+        ]);
+
+        $chartRevenue = $months->map(fn (Carbon $date) => [
+            'label' => $date->translatedFormat('M'),
+            'value' => (int) ($revenueByMonth[$date->format('Y-m')] ?? 0),
+        ]);
+
+        $topCar = Car::query()
+            ->withCount(['rentals' => fn ($q) => $q->whereBetween('created_at', [$start, $end])])
+            ->withSum(['rentals' => fn ($q) => $q->whereBetween('created_at', [$start, $end])], 'total_price')
+            ->orderByDesc('rentals_count')
+            ->orderByDesc('rentals_sum_total_price')
+            ->first();
+
+        $featuredCar = [
+            'name' => trim(($topCar?->brand ?? '').' '.($topCar?->name ?? '')) ?: 'Belum ada armada unggulan',
+            'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
+            'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
+            'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
+        ];
+
+        return view('backoffice.reports', [
+            'admin' => $request->user(),
+            'active' => 'reports',
+            'tab' => $tab,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'summary' => $summary,
+            'data' => $data,
+            'chartRentals' => $chartRentals,
+            'chartRevenue' => $chartRevenue,
+            'monthLabels' => $monthLabels,
+            'featuredCar' => $featuredCar,
+            'overviewSummary' => $overviewSummary,
+            'statusDistribution' => $statusDistribution,
+            'serviceTypeDistribution' => $serviceTypeDistribution,
+            'topCars' => $topCars,
+            'fleetOccupancy' => $fleetOccupancy,
+        ]);
     }
 }

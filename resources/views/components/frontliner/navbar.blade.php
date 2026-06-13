@@ -14,7 +14,7 @@
                 <div id="nav-back-separator" class="w-px h-6 bg-slate-200"></div>
             </div>
             <a href="{{ auth()->check() ? route('frontliner') : route('home') }}">
-                <img src="{{ asset('images/logo.png') }}" alt="MD Car Rental" class="h-12 w-auto">
+                <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL" class="h-12 w-auto">
             </a>
         </div>
 
