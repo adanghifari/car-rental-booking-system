@@ -14,7 +14,7 @@
                 <div id="nav-back-separator" class="w-px h-6 bg-slate-200"></div>
             </div>
             <a href="{{ auth()->check() ? route('frontliner') : route('home') }}">
-                <img src="{{ asset('images/logo.jpeg') }}" alt="MD Car Rental" class="h-12 w-auto">
+                <img src="{{ asset('images/logo.png') }}" alt="MD Car Rental" class="h-12 w-auto">
             </a>
         </div>
 
@@ -395,12 +395,7 @@
 
             sessionStorage.setItem('nav_app_depth', depth);
 
-            const isHomepage = {
-                {
-                    in_array(Route::currentRouteName(), ['home', 'frontliner', 'beranda']) ? 'true' :
-                        'false'
-                }
-            };
+            const isHomepage = {{ in_array(Route::currentRouteName(), ['home', 'frontliner', 'beranda']) ? 'true' : 'false' }};
 
             if (isHomepage || depth <= 1) {
                 container.classList.add('hidden');
