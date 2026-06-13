@@ -610,86 +610,200 @@ class BackofficeController extends Controller
     public function reservations(Request $request): View
     {
         $filter = $request->query('status_filter');
-        $highlightRentalId = (int) $request->query('rental_id', $request->query('highlight', 0));
+        $carType = $request->query('car_type');
+        $date = $request->query('date');
 
-        $query = Rental::query();
+        $highlightRentalId = (int) $request->query(
+            'rental_id',
+            $request->query('highlight', 0)
+        );
+
+        $query = Rental::query()
+            ->with(['user:id,name', 'car']);
 
         if ($filter === 'waiting_review') {
             $query->where('status', RentalStatus::PENDING_VERIFICATION)
-                  ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW);
+                ->where(
+                    'verification_status',
+                    \App\Enums\VerificationStatus::NEEDS_REVIEW
+                );
         } elseif ($filter === 'verified_no_pay') {
             $query->where('status', RentalStatus::PENDING_VERIFICATION)
-                  ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED);
+                ->where(
+                    'verification_status',
+                    \App\Enums\VerificationStatus::VERIFIED
+                );
         } elseif ($filter === 'waiting_pay') {
             $query->where('status', RentalStatus::PREPAID);
         } elseif ($filter === 'active') {
             $query->where('status', RentalStatus::ONGOING);
         } elseif ($filter === 'cancelled_expired') {
-            $query->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+            $query->whereIn('status', [
+                RentalStatus::CANCELLED,
+                RentalStatus::EXPIRED,
+            ]);
+        } elseif ($filter === 'returned') {
+            $query->where('status', RentalStatus::RETURNED);
+        }
+
+        if ($carType) {
+            $query->whereHas('car', function ($q) use ($carType) {
+                $q->where('vehicle_type', $carType);
+            });
+        }
+
+        if ($date) {
+            $query->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date);
         }
 
         $totalReservations = Rental::count();
-        $pendingReservations = Rental::where('status', RentalStatus::PREPAID)->count();
-        $completedReservations = Rental::where('status', RentalStatus::RETURNED)->count();
-        $needsReviewCount = Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-            ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
+
+        $pendingReservations = Rental::whereIn('status', [
+            RentalStatus::PENDING_VERIFICATION,
+            RentalStatus::PREPAID,
+        ])->count();
+
+        $completedReservations = Rental::where(
+            'status',
+            RentalStatus::RETURNED
+        )->count();
+
+        $needsReviewCount = Rental::where(
+            'status',
+            RentalStatus::PENDING_VERIFICATION
+        )
+            ->where(
+                'verification_status',
+                \App\Enums\VerificationStatus::NEEDS_REVIEW
+            )
             ->count();
 
-        $rentals = $query->with(['user:id,name', 'car'])
+        $rentals = $query
             ->latest()
             ->paginate(6)
             ->withQueryString()
             ->through(function (Rental $rental) {
+
                 $statusLabel = 'Menunggu';
+
                 if ($rental->status === RentalStatus::PENDING_VERIFICATION) {
-                    if ($rental->verification_status === \App\Enums\VerificationStatus::NEEDS_REVIEW) {
+
+                    if (
+                        $rental->verification_status ===
+                        \App\Enums\VerificationStatus::NEEDS_REVIEW
+                    ) {
                         $statusLabel = 'Butuh Review Admin';
-                    } elseif ($rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
+
+                    } elseif (
+                        $rental->verification_status ===
+                        \App\Enums\VerificationStatus::VERIFIED
+                    ) {
                         $statusLabel = 'Terverifikasi (Belum Payment)';
+
                     } else {
                         $statusLabel = 'Menunggu Verifikasi';
                     }
+
                 } elseif ($rental->status === RentalStatus::PREPAID) {
+
                     $statusLabel = 'Menunggu Pembayaran';
+
                 } elseif ($rental->status === RentalStatus::ONGOING) {
+
                     $statusLabel = 'Aktif';
+
                 } elseif ($rental->status === RentalStatus::RETURNED) {
+
                     $statusLabel = 'Selesai';
+
                 } elseif ($rental->status === RentalStatus::CANCELLED) {
-                    if ($rental->verification_status === \App\Enums\VerificationStatus::REJECTED) {
+
+                    if (
+                        $rental->verification_status ===
+                        \App\Enums\VerificationStatus::REJECTED
+                    ) {
                         $statusLabel = 'Ditolak';
                     } else {
                         $statusLabel = 'Dibatalkan';
                     }
+
                 } elseif ($rental->status === RentalStatus::EXPIRED) {
+
                     $statusLabel = 'Expired';
                 }
 
                 return [
                     'id' => $rental->id,
+
                     'booking_id' => $rental->id,
+
                     'customer_name' => $rental->user?->name,
-                    'car_model' => trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
+
+                    'car_model' => trim(
+                        ($rental->car?->brand ?? '') .
+                        ' ' .
+                        ($rental->car?->name ?? '')
+                    ),
+
                     'start_date' => $rental->start_date?->toDateString(),
+
                     'end_date' => $rental->end_date?->toDateString(),
+
                     'total_price' => (int) ($rental->total_price ?? 0),
+
                     'status' => $statusLabel,
+
                     'status_raw' => $rental->status->value,
-                    'verification_status' => $rental->verification_status ? $rental->verification_status->value : null,
-                    'ktp_url' => $rental->ktp_path ? route('backoffice.rentals.document', ['rental' => $rental->id, 'type' => 'ktp']) : null,
-                    'selfie_url' => $rental->selfie_path ? route('backoffice.rentals.document', ['rental' => $rental->id, 'type' => 'selfie']) : null,
-                    'car_details' => $rental->car ? [
-                        'brand' => $rental->car->brand,
-                        'name' => $rental->car->name,
-                        'license_plate' => $rental->car->license_plate,
-                        'transmission' => str($rental->car->transmission->value)->headline(),
-                        'seat_count' => $rental->car->seat_count . ' Kursi',
-                        'year' => $rental->car->year,
-                        'cc' => number_format($rental->car->cc) . ' cc',
-                        'vehicle_type' => str($rental->car->vehicle_type->value)->headline(),
-                        'color' => $rental->car->color,
-                        'daily_rate' => 'Rp ' . number_format($rental->car->daily_rate, 0, ',', '.'),
-                    ] : null,
+
+                    'verification_status' => $rental->verification_status
+                        ? $rental->verification_status->value
+                        : null,
+
+                    'ktp_url' => $rental->ktp_path
+                        ? route(
+                            'backoffice.rentals.document',
+                            [
+                                'rental' => $rental->id,
+                                'type' => 'ktp',
+                            ]
+                        )
+                        : null,
+
+                    'selfie_url' => $rental->selfie_path
+                        ? route(
+                            'backoffice.rentals.document',
+                            [
+                                'rental' => $rental->id,
+                                'type' => 'selfie',
+                            ]
+                        )
+                        : null,
+
+                    'car_details' => $rental->car
+                        ? [
+                            'brand' => $rental->car->brand,
+                            'name' => $rental->car->name,
+                            'license_plate' => $rental->car->license_plate,
+                            'transmission' => str(
+                                $rental->car->transmission->value
+                            )->headline(),
+                            'seat_count' => $rental->car->seat_count . ' Kursi',
+                            'year' => $rental->car->year,
+                            'cc' => number_format($rental->car->cc) . ' cc',
+                            'vehicle_type' => str(
+                                $rental->car->vehicle_type->value
+                            )->headline(),
+                            'color' => $rental->car->color,
+                            'daily_rate' => 'Rp ' .
+                                number_format(
+                                    $rental->car->daily_rate,
+                                    0,
+                                    ',',
+                                    '.'
+                                ),
+                        ]
+                        : null,
                 ];
             });
 
@@ -697,29 +811,52 @@ class BackofficeController extends Controller
             ->where('role', '!=', User::ROLE_ADMIN)
             ->orderBy('name')
             ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name])
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+            ])
             ->all();
 
         $availableCars = Car::query()
             ->where('status', CarStatus::AVAILABLE)
             ->get()
-            ->map(fn (Car $c) => ['id' => $c->id, 'brand' => $c->brand, 'model' => $c->name ?? $c->model ?? ''])
+            ->map(fn (Car $c) => [
+                'id' => $c->id,
+                'brand' => $c->brand,
+                'model' => $c->name ?? $c->model ?? '',
+            ])
             ->all();
+
+        $vehicleTypes = VehicleType::cases();
 
         return view('backoffice.reservations', [
             'admin' => request()->user(),
+
             'rentals' => $rentals,
-            'pagination' => $this->paginationWindow($rentals->currentPage(), $rentals->lastPage()),
+
+            'pagination' => $this->paginationWindow(
+                $rentals->currentPage(),
+                $rentals->lastPage()
+            ),
+
             'customers' => $customers,
+
             'availableCars' => $availableCars,
+
+            'vehicleTypes' => $vehicleTypes,
+
             'summary' => [
                 'total' => $totalReservations,
                 'pending' => $pendingReservations,
                 'completed' => $completedReservations,
                 'needs_review' => $needsReviewCount,
             ],
+
             'current_filter' => $filter,
-            'highlightRentalId' => $highlightRentalId > 0 ? $highlightRentalId : null,
+
+            'highlightRentalId' => $highlightRentalId > 0
+                ? $highlightRentalId
+                : null,
         ]);
     }
 

@@ -24,8 +24,8 @@ return new class extends Migration
             $table->string('type', 30)->default(RentalType::SELF_DRIVE->value);
             $table->timestamp('returned_at')->nullable();
             $table->timestamp('prepaid_expires_at')->nullable();
-            $table->string('ktp_path');
-            $table->string('selfie_path');
+            $table->string('ktp_path')->nullable();
+            $table->string('selfie_path')->nullable();
             $table->boolean('verification_passed')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
