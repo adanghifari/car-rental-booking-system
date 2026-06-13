@@ -1,31 +1,89 @@
 <x-backoffice.layout title="Laporan Perusahaan" :admin="$admin" active="reports">
+    @php
+        $reportTabLabels = [
+            'overview' => 'Overview',
+            'revenue' => 'Laporan Pendapatan',
+            'reservation' => 'Laporan Reservasi',
+            'fleet' => 'Laporan Armada',
+        ];
+    @endphp
+
+    <style>
+        .report-switcher-trigger-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .report-switcher-trigger-main {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 2px 6px 3px;
+            border-radius: 12px;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+        }
+
+        .report-switcher-mode {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #0b1b4d;
+        }
+
+        .report-switcher-trigger:hover .report-switcher-trigger-main {
+            border-bottom-color: rgba(11, 27, 77, 0.48);
+            background: rgba(11, 27, 77, 0.1) !important;
+        }
+
+        .report-switcher-trigger:hover .report-switcher-trigger-icon {
+            transform: translateY(1px);
+        }
+
+        .report-switcher-summary:hover {
+            cursor: pointer;
+        }
+    </style>
+
     <section class="page-head">
         <div>
-            <h1 class="page-title">{{ $tab === 'overview' ? 'Overview' : 'Laporan Perusahaan' }}</h1>
+            <details style="position: relative; display: inline-block;">
+                <summary class="report-switcher-trigger report-switcher-summary" style="list-style: none; display: inline-flex; align-items: center; gap: 10px; user-select: none; padding: 2px 0;">
+                    <span style="display: grid; gap: 4px;">
+                        <span class="report-switcher-mode">Mode Laporan</span>
+                        <span class="report-switcher-trigger-line">
+                            <span class="report-switcher-trigger-main">
+                                <h1 class="page-title" style="margin: 0;">{{ $reportTabLabels[$tab] ?? 'Overview' }}</h1>
+                                <svg class="report-switcher-trigger-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.55; flex: 0 0 auto; transition: transform 0.18s ease;">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </span>
+                        </span>
+                    </span>
+                </summary>
+
+                <div style="position: absolute; left: 0; top: calc(100% + 10px); min-width: 240px; z-index: 20; padding: 8px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.95); background: rgba(255, 255, 255, 0.98); box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12); display: grid; gap: 4px;">
+                    @foreach ($reportTabLabels as $key => $label)
+                        <a href="{{ route('backoffice.reports', ['tab' => $key, 'start_date' => $start_date, 'end_date' => $end_date]) }}"
+                           style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: {{ $tab === $key ? '#fff' : '#52607a' }}; background: {{ $tab === $key ? 'var(--blue)' : 'transparent' }};">
+                            <span>{{ $label }}</span>
+                            @if ($tab === $key)
+                                <span style="font-size: 10px; font-weight: 800; opacity: 0.8;">Aktif</span>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+            </details>
             <p class="page-subtitle">{{ $tab === 'overview' ? 'Ringkasan performa bisnis secara visual' : 'Rekap data pendapatan, reservasi, dan armada perusahaan.' }}</p>
         </div>
     </section>
 
     <section class="card" style="margin-bottom: 20px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.85); background: rgba(255, 255, 255, 0.88); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-            <a href="{{ route('backoffice.reports', ['tab' => 'overview', 'start_date' => $start_date, 'end_date' => $end_date]) }}"
-               style="text-decoration: none; cursor: pointer; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; transition: all 0.2s; background: {{ $tab === 'overview' ? 'var(--blue)' : 'transparent' }}; color: {{ $tab === 'overview' ? '#fff' : '#6a748a' }};">
-                Overview
-            </a>
-            <a href="{{ route('backoffice.reports', ['tab' => 'revenue', 'start_date' => $start_date, 'end_date' => $end_date]) }}"
-               style="text-decoration: none; cursor: pointer; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; transition: all 0.2s; background: {{ $tab === 'revenue' ? 'var(--blue)' : 'transparent' }}; color: {{ $tab === 'revenue' ? '#fff' : '#6a748a' }};">
-                Laporan Pendapatan
-            </a>
-            <a href="{{ route('backoffice.reports', ['tab' => 'reservation', 'start_date' => $start_date, 'end_date' => $end_date]) }}"
-               style="text-decoration: none; cursor: pointer; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; transition: all 0.2s; background: {{ $tab === 'reservation' ? 'var(--blue)' : 'transparent' }}; color: {{ $tab === 'reservation' ? '#fff' : '#6a748a' }};">
-                Laporan Reservasi
-            </a>
-            <a href="{{ route('backoffice.reports', ['tab' => 'fleet', 'start_date' => $start_date, 'end_date' => $end_date]) }}"
-               style="text-decoration: none; cursor: pointer; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; transition: all 0.2s; background: {{ $tab === 'fleet' ? 'var(--blue)' : 'transparent' }}; color: {{ $tab === 'fleet' ? '#fff' : '#6a748a' }};">
-                Laporan Armada
-            </a>
-        </div>
-
         <form method="GET" action="{{ route('backoffice.reports') }}" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; justify-content: flex-end; margin-left: auto;">
             <input type="hidden" name="tab" value="{{ $tab }}">
             <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
