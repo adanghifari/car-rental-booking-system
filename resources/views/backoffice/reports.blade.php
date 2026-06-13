@@ -77,6 +77,33 @@
             cursor: pointer;
         }
 
+        .report-switcher-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .report-switcher-summary::marker {
+            content: '';
+        }
+
+        .report-switcher-menu {
+            position: absolute;
+            left: 0;
+            top: calc(100% + 10px);
+            min-width: 240px;
+            z-index: 20;
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(219, 227, 239, 0.95);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+            display: none;
+            gap: 4px;
+        }
+
+        details[open] > .report-switcher-menu {
+            display: grid;
+        }
+
         .report-filter-panel {
             min-width: min(100%, 760px);
             display: flex;
@@ -119,11 +146,82 @@
         }
 
         .report-filter-actions {
+            display: grid;
+            justify-items: end;
+            gap: 8px;
+        }
+
+        .report-filter-primary-actions {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: flex-end;
             gap: 8px;
             flex-wrap: wrap;
+        }
+
+        .report-export-dropdown {
+            position: relative;
+        }
+
+        .report-export-trigger {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 116px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .report-export-trigger::-webkit-details-marker {
+            display: none;
+        }
+
+        .report-export-trigger::marker {
+            content: '';
+        }
+
+        .report-export-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            min-width: 132px;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(219, 227, 239, 0.96);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+            display: none;
+            z-index: 30;
+        }
+
+        .report-export-dropdown[open] .report-export-menu {
+            display: grid;
+            gap: 4px;
+        }
+
+        .report-export-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .report-export-link:hover {
+            background: #f8fafc;
         }
 
         .report-filter-group {
@@ -235,7 +333,7 @@
                     </span>
                 </summary>
 
-                <div style="position: absolute; left: 0; top: calc(100% + 10px); min-width: 240px; z-index: 20; padding: 8px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.95); background: rgba(255, 255, 255, 0.98); box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12); display: grid; gap: 4px;">
+                <div class="report-switcher-menu">
                     @foreach ($reportTabLabels as $key => $label)
                         <a href="{{ route('backoffice.reports', ['tab' => $key, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd]) }}"
                            style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: {{ $tab === $key ? '#fff' : '#52607a' }}; background: {{ $tab === $key ? 'var(--blue)' : 'transparent' }};">
@@ -301,29 +399,37 @@
                 </div>
 
                 <div class="report-filter-actions" data-filter-actions>
-                    <button type="submit" style="background: var(--blue); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; transition: opacity 0.2s;">
-                        Terapkan Filter
-                    </button>
-                    <a href="{{ route('backoffice.reports', ['tab' => $tab]) }}" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background: #f1f5f9; padding: 10px 16px; border-radius: 10px; border: 0; color: #475569; font-weight: 700; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                        Reset
-                    </a>
+                    <div class="report-filter-primary-actions">
+                        <button type="submit" style="background: var(--blue); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; transition: opacity 0.2s;">
+                            Terapkan Filter
+                        </button>
+                        <a href="{{ route('backoffice.reports', ['tab' => $tab]) }}" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background: #f1f5f9; padding: 10px 16px; border-radius: 10px; border: 0; color: #475569; font-weight: 700; cursor: pointer; font-size: 13px; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            Reset
+                        </a>
+                    </div>
+
+                    <details class="report-export-dropdown">
+                        <summary class="report-export-trigger">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                            Export
+                        </summary>
+                        <div class="report-export-menu">
+                            <a class="report-export-link" href="{{ route('backoffice.reports', ['tab' => $tab, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd, 'export' => 'pdf']) }}" target="_blank" rel="noopener">
+                                <span>PDF</span>
+                            </a>
+                            <a class="report-export-link" href="{{ route('backoffice.reports', ['tab' => $tab, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd, 'export' => 'csv']) }}">
+                                <span>CSV</span>
+                            </a>
+                        </div>
+                    </details>
                 </div>
             </div>
         </form>
     </section>
-
-    @if ($tab !== 'overview')
-        <section class="card" style="margin-bottom: 20px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.85); background: rgba(255, 255, 255, 0.88); display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
-            <a href="{{ route('backoffice.reports', ['tab' => $tab, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd, 'export' => 'csv']) }}" style="background: var(--green); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s; white-space: nowrap;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Export CSV
-            </a>
-        </section>
-    @endif
 
     <!-- Summary Metrics & Visual Analytics Charts -->
         @if ($tab === 'overview')
@@ -1289,39 +1395,34 @@
                     </div>
                 </div>
 
-                <div class="vehicle-stage">
-                    <svg viewBox="0 0 560 320" aria-hidden="true">
-                        <defs>
-                            <linearGradient id="carPaint" x1="0" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stop-color="#121922" />
-                                <stop offset="55%" stop-color="#3b495a" />
-                                <stop offset="100%" stop-color="#111827" />
-                            </linearGradient>
-                        </defs>
-                        <rect x="0" y="0" width="560" height="320" fill="transparent" />
-                        <ellipse cx="280" cy="220" rx="200" ry="28" fill="rgba(0, 0, 0, 0.18)" />
-                        <g transform="translate(72 118)">
-                            <path
-                                d="M35 88c0-16 11-29 26-32l41-9c18-33 53-54 94-54h74c29 0 57 10 79 27l41 31h41c19 0 35 16 35 35v37c0 9-7 16-16 16h-18c-3-25-24-44-50-44-25 0-46 19-49 44H143c-3-25-24-44-49-44-26 0-47 19-50 44H35Z"
-                                fill="url(#carPaint)" />
-                            <path d="M125 45c17-24 40-36 70-36h65c20 0 39 7 54 19l38 29H111Z"
-                                fill="rgba(228, 236, 249, 0.82)" />
-                            <path d="M154 48h58v-27h-33c-11 0-21 9-25 27Z" fill="rgba(175, 192, 220, 0.7)" />
-                            <path d="M227 21h42c14 0 28 5 39 13l20 14h-101Z" fill="rgba(175, 192, 220, 0.7)" />
-                            <circle cx="93" cy="129" r="35" fill="#111827" />
-                            <circle cx="93" cy="129" r="21" fill="#cbd5e1" />
-                            <circle cx="388" cy="129" r="35" fill="#111827" />
-                            <circle cx="388" cy="129" r="21" fill="#cbd5e1" />
-                            <circle cx="93" cy="129" r="8" fill="#94a3b8" />
-                            <circle cx="388" cy="129" r="8" fill="#94a3b8" />
-                            <rect x="455" y="78" width="20" height="10" rx="5" fill="#f8fafc" />
-                            <rect x="26" y="83" width="14" height="10" rx="4" fill="#f59e0b" />
-                        </g>
-                        <rect x="26" y="250" width="508" height="44" rx="14" fill="rgba(255, 255, 255, 0.9)" />
-                        <text x="48" y="276" fill="#111827" font-size="22" font-weight="700">Premium Fleet</text>
-                        <text x="454" y="276" fill="#111827" font-size="18" font-weight="700"
-                            text-anchor="end">{{ $summary['total_fleet'] ?? 0 }} Units</text>
-                    </svg>
+                <div class="vehicle-stage" style="position: relative; overflow: hidden; border-radius: 24px; min-height: 320px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.08), rgba(63, 94, 215, 0.12)); display: grid; align-items: end;">
+                    @if ($featuredCar['image_url'])
+                        <img
+                            src="{{ $featuredCar['image_url'] }}"
+                            alt="{{ $featuredCar['name'] }}"
+                            style="width: 100%; height: 320px; object-fit: cover; object-position: center; display: block;"
+                        >
+                        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.18) 58%, rgba(15, 23, 42, 0.72) 100%);"></div>
+                        <div style="position: absolute; left: 18px; right: 18px; bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 4px;">Nominasi Utama</div>
+                                <div style="font-size: 18px; font-weight: 800; color: var(--text); line-height: 1.2;">{{ $featuredCar['name'] }}</div>
+                            </div>
+                            <div style="font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">{{ $summary['total_fleet'] ?? 0 }} Units</div>
+                        </div>
+                    @else
+                        <div style="display: grid; place-items: center; min-height: 320px; padding: 24px;">
+                            <div style="text-align: center; max-width: 320px;">
+                                <div style="width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 20px; display: grid; place-items: center; background: rgba(63, 94, 215, 0.12); color: var(--blue);">
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path d="M14 16H9m10 0h2m-7 0h1m-9 0h1m0 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0m8 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0M3 12l2-5h13l3 5"/>
+                                    </svg>
+                                </div>
+                                <div style="font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 8px;">Gambar Utama Belum Tersedia</div>
+                                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #64748b;">Armada nominasi sudah ditentukan, tetapi mobil ini belum memiliki foto utama untuk ditampilkan pada laporan armada.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </section>
@@ -1514,6 +1615,12 @@
                 syncFilterFields();
             }
 
+            document.querySelectorAll('.page-top-reveal').forEach((element, index) => {
+                window.setTimeout(() => {
+                    element.classList.remove('opacity-0', '-translate-y-4');
+                }, index * 120);
+            });
+
             @if ($tab === 'overview')
                 const overviewBookingsBreakdown = @json($chartBookingsBreakdown->values());
                 const overviewRevenueBreakdown = @json($chartRevenueBreakdown->values());
@@ -1551,12 +1658,6 @@
                     return (Number(value) / Number(total) * 100).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
                 };
                 const sumValues = (items) => items.reduce((sum, item) => sum + (Number(item) || 0), 0);
-
-                document.querySelectorAll('.page-top-reveal').forEach((element, index) => {
-                    window.setTimeout(() => {
-                        element.classList.remove('opacity-0', '-translate-y-4');
-                    }, index * 120);
-                });
 
                 const getKpiCardRevealDelay = (card) => {
                     const kpiCards = Array.from(document.querySelectorAll('.kpi-card.dashboard-reveal'));

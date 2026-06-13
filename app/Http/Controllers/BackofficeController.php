@@ -1248,87 +1248,10 @@ class BackofficeController extends Controller
             });
         }
 
-        // Handle CSV Export
-        if ($request->query('export') === 'csv') {
-            $filename = "laporan_{$tab}_{$filterMode}.csv";
-            $headers = [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            ];
-
-            return response()->stream(function () use ($tab, $periodStart, $periodEnd, $carStats) {
-                $handle = fopen('php://output', 'w');
-                // Add UTF-8 BOM
-                fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-
-                if ($tab === 'revenue') {
-                    fputcsv($handle, ['Tanggal Pembayaran', 'Customer', 'Mobil', 'Plat Nomor', 'Tipe Rental', 'Provider Pembayaran', 'Status Pembayaran', 'Amount']);
-                    PaymentHistory::query()
-                        ->with(['rental.user', 'rental.car'])
-                        ->where('status', PaymentStatus::PAID)
-                        ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
-                        ->latest()
-                        ->chunk(100, function ($histories) use ($handle) {
-                            foreach ($histories as $history) {
-                                fputcsv($handle, [
-                                    $history->created_at->toDateTimeString(),
-                                    $history->rental?->user?->name ?? '-',
-                                    trim(($history->rental?->car?->brand ?? '') . ' ' . ($history->rental?->car?->name ?? '')),
-                                    $history->rental?->car?->license_plate ?? '-',
-                                    $history->rental?->type === RentalType::SELF_DRIVE ? 'Self Drive' : 'With Driver',
-                                    $history->provider ?? '-',
-                                    $history->status->value,
-                                    $history->amount,
-                                ]);
-                            }
-                        });
-                } elseif ($tab === 'reservation') {
-                    fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
-                    Rental::query()
-                        ->with(['user', 'car'])
-                        ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
-                        ->latest()
-                        ->chunk(100, function ($rentals) use ($handle) {
-                            foreach ($rentals as $rental) {
-                                fputcsv($handle, [
-                                    $rental->created_at->toDateTimeString(),
-                                    $rental->user?->name ?? '-',
-                                    trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
-                                    $rental->car?->license_plate ?? '-',
-                                    $rental->start_date?->toDateString() ?? '-',
-                                    $rental->end_date?->toDateString() ?? '-',
-                                    $rental->returned_at?->toDateTimeString() ?? '-',
-                                    $rental->type?->value ?? '-',
-                                    $rental->verification_status?->value ?? '-',
-                                    $rental->status?->value ?? '-',
-                                    $rental->total_price,
-                                ]);
-                            }
-                        });
-                } elseif ($tab === 'fleet') {
-                    fputcsv($handle, ['Brand', 'Nama Mobil', 'Plat Nomor', 'Tipe Kendaraan', 'Transmisi', 'Status Mobil', 'Jumlah Disewa', 'Total Pendapatan', 'Terakhir Disewa']);
-                    foreach ($carStats as $car) {
-                        fputcsv($handle, [
-                            $car['brand'],
-                            $car['name'],
-                            $car['license_plate'],
-                            str($car['vehicle_type'])->headline(),
-                            str($car['transmission'])->headline(),
-                            str($car['status'])->headline(),
-                            $car['rentals_count'],
-                            $car['total_revenue'],
-                            $car['last_rented'],
-                        ]);
-                    }
-                }
-
-                fclose($handle);
-            }, 200, $headers);
-        }
-
         // Initialize variables for view rendering
         $summary = [];
         $data = null;
+        $exportRows = collect();
 
         if ($tab === 'revenue') {
             $baseQuery = PaymentHistory::query()
@@ -1347,6 +1270,7 @@ class BackofficeController extends Controller
             ];
 
             $data = $baseQuery->latest()->paginate(10)->withQueryString();
+            $exportRows = (clone $baseQuery)->latest()->get();
 
         } elseif ($tab === 'reservation') {
             $baseQuery = Rental::query()
@@ -1381,6 +1305,7 @@ class BackofficeController extends Controller
             ];
 
             $data = $baseQuery->latest()->paginate(10)->withQueryString();
+            $exportRows = (clone $baseQuery)->latest()->get();
 
         } elseif ($tab === 'fleet') {
             $totalFleet = Car::count();
@@ -1417,6 +1342,7 @@ class BackofficeController extends Controller
                 ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
             );
             $data->withQueryString();
+            $exportRows = $carStats->values();
         }
 
         // Prepare chart and featured fleet data for visual analytics
@@ -1590,7 +1516,167 @@ class BackofficeController extends Controller
             'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
             'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
             'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
+            'image_url' => $this->resolveCarImageUrl($topCar?->image),
         ];
+
+        $reportTabLabels = $this->reportTabLabels();
+        $reportTitle = $reportTabLabels[$tab] ?? 'Overview';
+        $reportPeriodLabel = $this->formatReportPeriodLabel($filterMode, $periodStart, $periodEnd);
+        $pdfCharts = $this->buildReportPdfCharts(
+            $tab,
+            $chartRentals,
+            $chartRevenue,
+            $statusDistribution,
+            $serviceTypeDistribution,
+            $carStats,
+            $fleetOccupancy,
+            $summary
+        );
+
+        if ($request->query('export') === 'csv') {
+            $filename = 'laporan_' . str($reportTitle)->slug('_') . '_' . $periodStart->format('Ymd') . '_' . $periodEnd->format('Ymd') . '.csv';
+            $headers = [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ];
+
+            return response()->stream(function () use (
+                $tab,
+                $reportTitle,
+                $reportPeriodLabel,
+                $overviewSummary,
+                $statusDistribution,
+                $serviceTypeDistribution,
+                $topCars,
+                $fleetOccupancy,
+                $chartRentals,
+                $chartRevenue,
+                $exportRows
+            ) {
+                $handle = fopen('php://output', 'w');
+                fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+                fputcsv($handle, [$reportTitle]);
+                fputcsv($handle, ['Periode', $reportPeriodLabel]);
+                fputcsv($handle, []);
+
+                if ($tab === 'overview') {
+                    fputcsv($handle, ['KPI Ringkas']);
+                    fputcsv($handle, ['Total Reservasi', (int) ($overviewSummary['total_rentals'] ?? 0)]);
+                    fputcsv($handle, ['Pendapatan Masuk', (int) ($overviewSummary['revenue_paid'] ?? 0)]);
+                    fputcsv($handle, ['Booking Berhasil', (int) ($overviewSummary['success_bookings'] ?? 0)]);
+                    fputcsv($handle, ['Booking Gagal', (int) ($overviewSummary['failed_bookings'] ?? 0)]);
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Distribusi Status Rental']);
+                    fputcsv($handle, ['Status', 'Jumlah']);
+                    foreach ($statusDistribution as $item) {
+                        fputcsv($handle, [$item['label'], $item['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Reservasi Berdasarkan Tipe Layanan']);
+                    fputcsv($handle, ['Layanan', 'Jumlah']);
+                    foreach ($serviceTypeDistribution as $item) {
+                        fputcsv($handle, [$item['label'], $item['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Top Armada Terpopuler']);
+                    fputcsv($handle, ['Armada', 'Jumlah Reservasi', 'Pendapatan']);
+                    foreach ($topCars as $car) {
+                        fputcsv($handle, [$car['name'], $car['count'], $car['revenue']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Status Ketersediaan Armada']);
+                    fputcsv($handle, ['Total Armada', (int) ($fleetOccupancy['total'] ?? 0)]);
+                    fputcsv($handle, ['Tersedia', (int) ($fleetOccupancy['available'] ?? 0)]);
+                    fputcsv($handle, ['Sibuk', (int) ($fleetOccupancy['unavailable'] ?? 0)]);
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Tren Reservasi']);
+                    fputcsv($handle, ['Periode', 'Reservasi']);
+                    foreach ($chartRentals as $point) {
+                        fputcsv($handle, [$point['label'], $point['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Tren Pendapatan']);
+                    fputcsv($handle, ['Periode', 'Pendapatan']);
+                    foreach ($chartRevenue as $point) {
+                        fputcsv($handle, [$point['label'], $point['value']]);
+                    }
+                } elseif ($tab === 'revenue') {
+                    fputcsv($handle, ['Tanggal Pembayaran', 'Customer', 'Mobil', 'Plat Nomor', 'Tipe Rental', 'Provider Pembayaran', 'Status Pembayaran', 'Amount']);
+                    foreach ($exportRows as $history) {
+                        fputcsv($handle, [
+                            $history->created_at->toDateTimeString(),
+                            $history->rental?->user?->name ?? '-',
+                            trim(($history->rental?->car?->brand ?? '') . ' ' . ($history->rental?->car?->name ?? '')),
+                            $history->rental?->car?->license_plate ?? '-',
+                            $history->rental?->type === RentalType::SELF_DRIVE ? 'Self Drive' : 'With Driver',
+                            strtoupper((string) ($history->provider ?? '-')),
+                            $history->status->value,
+                            $history->amount,
+                        ]);
+                    }
+                } elseif ($tab === 'reservation') {
+                    fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
+                    foreach ($exportRows as $rental) {
+                        fputcsv($handle, [
+                            $rental->created_at->toDateTimeString(),
+                            $rental->user?->name ?? '-',
+                            trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
+                            $rental->car?->license_plate ?? '-',
+                            $rental->start_date?->toDateString() ?? '-',
+                            $rental->end_date?->toDateString() ?? '-',
+                            $rental->returned_at?->toDateTimeString() ?? '-',
+                            $rental->type?->value ?? '-',
+                            $rental->verification_status?->value ?? '-',
+                            $rental->status?->value ?? '-',
+                            $rental->total_price,
+                        ]);
+                    }
+                } elseif ($tab === 'fleet') {
+                    fputcsv($handle, ['Brand', 'Nama Mobil', 'Plat Nomor', 'Tipe Kendaraan', 'Transmisi', 'Status Mobil', 'Jumlah Disewa', 'Total Pendapatan', 'Terakhir Disewa']);
+                    foreach ($exportRows as $car) {
+                        fputcsv($handle, [
+                            $car['brand'],
+                            $car['name'],
+                            $car['license_plate'],
+                            str($car['vehicle_type'])->headline(),
+                            str($car['transmission'])->headline(),
+                            str($car['status'])->headline(),
+                            $car['rentals_count'],
+                            $car['total_revenue'],
+                            $car['last_rented'],
+                        ]);
+                    }
+                }
+
+                fclose($handle);
+            }, 200, $headers);
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return response()->view('backoffice.reports-pdf', [
+                'tab' => $tab,
+                'reportTitle' => $reportTitle,
+                'reportPeriodLabel' => $reportPeriodLabel,
+                'filterMode' => $filterMode,
+                'summary' => $summary,
+                'overviewSummary' => $overviewSummary,
+                'statusDistribution' => $statusDistribution,
+                'serviceTypeDistribution' => $serviceTypeDistribution,
+                'topCars' => $topCars,
+                'fleetOccupancy' => $fleetOccupancy,
+                'featuredCar' => $featuredCar,
+                'exportRows' => $exportRows,
+                'pdfCharts' => $pdfCharts,
+                'generatedAt' => now(),
+            ]);
+        }
 
         return view('backoffice.reports', [
             'admin' => $request->user(),
@@ -1760,5 +1846,235 @@ class BackofficeController extends Controller
             'suffix' => 'vs periode sebelumnya',
             'tone' => $tone,
         ];
+    }
+
+    private function reportTabLabels(): array
+    {
+        return [
+            'overview' => 'Overview',
+            'revenue' => 'Laporan Pendapatan',
+            'reservation' => 'Laporan Reservasi',
+            'fleet' => 'Laporan Armada',
+        ];
+    }
+
+    private function formatReportPeriodLabel(string $filterMode, Carbon $periodStart, Carbon $periodEnd): string
+    {
+        return match ($filterMode) {
+            'day' => $periodStart->translatedFormat('d F Y'),
+            'month' => $periodStart->translatedFormat('F Y'),
+            'year' => $periodStart->translatedFormat('Y'),
+            'range' => $periodStart->translatedFormat('d M Y') . ' - ' . $periodEnd->translatedFormat('d M Y'),
+            default => $periodStart->translatedFormat('d M Y') . ' - ' . $periodEnd->translatedFormat('d M Y'),
+        };
+    }
+
+    private function buildReportPdfCharts(
+        string $tab,
+        \Illuminate\Support\Collection $chartRentals,
+        \Illuminate\Support\Collection $chartRevenue,
+        \Illuminate\Support\Collection $statusDistribution,
+        \Illuminate\Support\Collection $serviceTypeDistribution,
+        \Illuminate\Support\Collection $carStats,
+        array $fleetOccupancy,
+        array $summary
+    ): array {
+        $charts = [];
+
+        if ($tab === 'overview') {
+            $charts['bookings'] = $this->renderLineChartSvg($chartRentals, '#3f5ed7', 'Tren Periode Aktif');
+            $charts['revenue'] = $this->renderBarChartSvg($chartRevenue, '#1dbb84', 'Pendapatan Masuk', true);
+            $charts['status'] = $this->renderDonutChartSvg($statusDistribution, ['#818cf8', '#f59e0b', '#3b82f6', '#1dbb84', '#ef4444', '#94a3b8'], 'Total Reservasi');
+            $charts['service'] = $this->renderDonutChartSvg($serviceTypeDistribution, ['#3f5ed7', '#1dbb84', '#f59e0b', '#94a3b8'], 'Total Reservasi');
+        } elseif ($tab === 'revenue') {
+            $charts['revenue'] = $this->renderBarChartSvg($chartRevenue, '#1dbb84', 'Pendapatan', true);
+        } elseif ($tab === 'reservation') {
+            $charts['reservations'] = $this->renderLineChartSvg($chartRentals, '#3f5ed7', 'Reservasi');
+            $reservationStatus = collect([
+                ['label' => 'Pending', 'value' => (int) ($summary['pending'] ?? 0)],
+                ['label' => 'Prepaid', 'value' => (int) ($summary['prepaid'] ?? 0)],
+                ['label' => 'Aktif', 'value' => (int) ($summary['ongoing'] ?? 0)],
+                ['label' => 'Selesai', 'value' => (int) ($summary['returned'] ?? 0)],
+                ['label' => 'Batal', 'value' => (int) ($summary['cancelled'] ?? 0)],
+                ['label' => 'Expired', 'value' => (int) ($summary['expired'] ?? 0)],
+            ])->filter(fn (array $item) => $item['value'] > 0)->values();
+            $charts['status'] = $this->renderDonutChartSvg($reservationStatus, ['#94a3b8', '#f59e0b', '#1dbb84', '#818cf8', '#ef4444', '#3b82f6'], 'Total Booking');
+        } elseif ($tab === 'fleet') {
+            $fleetPerformance = $carStats
+                ->sortByDesc('rentals_count')
+                ->take(5)
+                ->map(fn (array $item) => [
+                    'label' => str(trim(($item['brand'] ?? '') . ' ' . ($item['name'] ?? '')))->limit(16, '…')->toString(),
+                    'value' => (int) ($item['rentals_count'] ?? 0),
+                ])
+                ->values();
+            $fleetStatus = collect([
+                ['label' => 'Tersedia', 'value' => (int) ($fleetOccupancy['available'] ?? 0)],
+                ['label' => 'Sibuk', 'value' => (int) ($fleetOccupancy['unavailable'] ?? 0)],
+            ]);
+            $charts['fleet_performance'] = $this->renderBarChartSvg($fleetPerformance, '#3f5ed7', 'Top Armada', false);
+            $charts['fleet_status'] = $this->renderDonutChartSvg($fleetStatus, ['#1dbb84', '#ef4444'], 'Status Armada');
+        }
+
+        return $charts;
+    }
+
+    private function renderBarChartSvg(\Illuminate\Support\Collection $points, string $barColor, string $seriesLabel, bool $currency = false): string
+    {
+        $points = $points->map(fn ($point) => [
+            'label' => (string) ($point['label'] ?? ''),
+            'value' => (float) ($point['value'] ?? 0),
+        ])->values();
+
+        $width = 720;
+        $height = 280;
+        $left = 52;
+        $right = 18;
+        $top = 18;
+        $bottom = 42;
+        $plotWidth = $width - $left - $right;
+        $plotHeight = $height - $top - $bottom;
+        $maxValue = max(1, (float) $points->max('value'));
+        $step = $points->count() > 0 ? $plotWidth / max($points->count(), 1) : $plotWidth;
+        $barWidth = max(16, $step * 0.56);
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$width} {$height}\" role=\"img\" aria-label=\"" . e($seriesLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<rect width=\"{$width}\" height=\"{$height}\" rx=\"18\" fill=\"#ffffff\"/>";
+
+        for ($i = 0; $i < 4; $i++) {
+            $y = $top + ($plotHeight / 3) * $i;
+            $svg[] = "<line x1=\"{$left}\" y1=\"{$y}\" x2=\"" . ($width - $right) . "\" y2=\"{$y}\" stroke=\"rgba(203,213,225,0.9)\" stroke-width=\"1\" />";
+        }
+
+        if ($points->isEmpty()) {
+            $svg[] = "<text x=\"" . ($width / 2) . "\" y=\"" . ($height / 2) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        foreach ($points as $index => $point) {
+            $value = (float) $point['value'];
+            $x = $left + ($step * $index) + (($step - $barWidth) / 2);
+            $barHeight = $maxValue > 0 ? ($value / $maxValue) * ($plotHeight * 0.9) : 0;
+            $y = $top + $plotHeight - $barHeight;
+            $label = e($point['label']);
+            $valueLabel = $currency
+                ? 'Rp ' . number_format((int) $value, 0, ',', '.')
+                : number_format((int) $value, 0, ',', '.');
+
+            $svg[] = "<rect x=\"{$x}\" y=\"{$y}\" width=\"{$barWidth}\" height=\"{$barHeight}\" rx=\"8\" fill=\"{$barColor}\" fill-opacity=\"0.82\" />";
+            $svg[] = "<text x=\"" . ($x + ($barWidth / 2)) . "\" y=\"" . max(14, $y - 6) . "\" text-anchor=\"middle\" fill=\"#334155\" font-size=\"10\" font-family=\"Arial, sans-serif\">{$valueLabel}</text>";
+            $svg[] = "<text x=\"" . ($x + ($barWidth / 2)) . "\" y=\"" . ($height - 16) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"Arial, sans-serif\">{$label}</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
+    }
+
+    private function renderLineChartSvg(\Illuminate\Support\Collection $points, string $strokeColor, string $seriesLabel): string
+    {
+        $points = $points->map(fn ($point) => [
+            'label' => (string) ($point['label'] ?? ''),
+            'value' => (float) ($point['value'] ?? 0),
+        ])->values();
+
+        $width = 720;
+        $height = 280;
+        $left = 42;
+        $right = 18;
+        $top = 18;
+        $bottom = 42;
+        $plotWidth = $width - $left - $right;
+        $plotHeight = $height - $top - $bottom;
+        $maxValue = max(1, (float) $points->max('value'));
+        $count = max($points->count(), 1);
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$width} {$height}\" role=\"img\" aria-label=\"" . e($seriesLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<defs><linearGradient id=\"lineFill\" x1=\"0\" x2=\"0\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"{$strokeColor}\" stop-opacity=\"0.18\"/><stop offset=\"100%\" stop-color=\"{$strokeColor}\" stop-opacity=\"0.02\"/></linearGradient></defs>";
+        $svg[] = "<rect width=\"{$width}\" height=\"{$height}\" rx=\"18\" fill=\"#ffffff\"/>";
+
+        for ($i = 0; $i < 4; $i++) {
+            $y = $top + ($plotHeight / 3) * $i;
+            $svg[] = "<line x1=\"{$left}\" y1=\"{$y}\" x2=\"" . ($width - $right) . "\" y2=\"{$y}\" stroke=\"rgba(203,213,225,0.9)\" stroke-width=\"1\" />";
+        }
+
+        if ($points->isEmpty()) {
+            $svg[] = "<text x=\"" . ($width / 2) . "\" y=\"" . ($height / 2) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        $coordinates = [];
+        foreach ($points as $index => $point) {
+            $x = $left + ($plotWidth * ($count === 1 ? 0.5 : $index / ($count - 1)));
+            $y = $top + $plotHeight - (($point['value'] / $maxValue) * ($plotHeight * 0.9));
+            $coordinates[] = ['x' => round($x, 2), 'y' => round($y, 2), 'label' => $point['label'], 'value' => $point['value']];
+        }
+
+        $polyline = collect($coordinates)->map(fn ($point) => $point['x'] . ',' . $point['y'])->implode(' ');
+        $area = $polyline . ' ' . ($left + $plotWidth) . ',' . ($top + $plotHeight) . ' ' . $left . ',' . ($top + $plotHeight);
+        $svg[] = "<polygon points=\"{$area}\" fill=\"url(#lineFill)\" />";
+        $svg[] = "<polyline points=\"{$polyline}\" fill=\"none\" stroke=\"{$strokeColor}\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
+
+        foreach ($coordinates as $point) {
+            $svg[] = "<circle cx=\"{$point['x']}\" cy=\"{$point['y']}\" r=\"4.5\" fill=\"{$strokeColor}\" />";
+            $svg[] = "<text x=\"{$point['x']}\" y=\"" . ($height - 16) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"Arial, sans-serif\">" . e($point['label']) . "</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
+    }
+
+    private function renderDonutChartSvg(\Illuminate\Support\Collection $segments, array $colors, string $centerLabel): string
+    {
+        $segments = $segments->map(fn ($segment) => [
+            'label' => (string) ($segment['label'] ?? ''),
+            'value' => (float) ($segment['value'] ?? 0),
+        ])->filter(fn (array $segment) => $segment['value'] > 0)->values();
+
+        $size = 300;
+        $radius = 78;
+        $stroke = 34;
+        $circumference = 2 * pi() * $radius;
+        $total = max(0, (float) $segments->sum('value'));
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$size} {$size}\" role=\"img\" aria-label=\"" . e($centerLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<rect width=\"{$size}\" height=\"{$size}\" rx=\"24\" fill=\"#ffffff\"/>";
+
+        if ($total <= 0) {
+            $svg[] = "<text x=\"150\" y=\"150\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        $offset = 0.0;
+        foreach ($segments as $index => $segment) {
+            $ratio = $segment['value'] / $total;
+            $arc = $circumference * $ratio;
+            $color = $colors[$index % count($colors)];
+            $svg[] = "<circle cx=\"150\" cy=\"150\" r=\"{$radius}\" fill=\"none\" stroke=\"{$color}\" stroke-width=\"{$stroke}\" stroke-linecap=\"butt\" stroke-dasharray=\"{$arc} " . ($circumference - $arc) . "\" stroke-dashoffset=\"-" . ($offset * $circumference) . "\" transform=\"rotate(-90 150 150)\" />";
+            $offset += $ratio;
+        }
+
+        $svg[] = "<circle cx=\"150\" cy=\"150\" r=\"50\" fill=\"#ffffff\" />";
+        $svg[] = "<text x=\"150\" y=\"145\" text-anchor=\"middle\" fill=\"#111827\" font-size=\"28\" font-weight=\"700\" font-family=\"Arial, sans-serif\">" . number_format((int) $total, 0, ',', '.') . "</text>";
+        $svg[] = "<text x=\"150\" y=\"170\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"12\" font-weight=\"700\" font-family=\"Arial, sans-serif\">" . e($centerLabel) . "</text>";
+
+        foreach ($segments as $index => $segment) {
+            $y = 236 + ($index * 18);
+            $color = $colors[$index % count($colors)];
+            $text = e($segment['label'] . ' • ' . number_format((int) $segment['value'], 0, ',', '.'));
+            $svg[] = "<rect x=\"26\" y=\"" . ($y - 9) . "\" width=\"10\" height=\"10\" rx=\"3\" fill=\"{$color}\" />";
+            $svg[] = "<text x=\"44\" y=\"{$y}\" fill=\"#475569\" font-size=\"11\" font-family=\"Arial, sans-serif\">{$text}</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
     }
 }
