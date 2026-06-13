@@ -994,6 +994,10 @@ Route::get('/dashboard/reservations', [BackofficeController::class, 'reservation
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations');
 
+Route::get('/dashboard/reports', [BackofficeController::class, 'reports'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.reports');
+
 Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReservation'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations.store');

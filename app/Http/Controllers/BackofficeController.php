@@ -25,41 +25,7 @@ class BackofficeController extends Controller
 {
     public function index(): View
     {
-        $now = now();
-        $monthStart = $now->copy()->startOfMonth();
-        $months = collect(range(5, 0))->map(fn (int $offset) => $now->copy()->subMonths($offset)->startOfMonth());
-        $monthLabels = $months->map(fn (Carbon $date) => $date->translatedFormat('M'));
         $lockingStatuses = $this->lockingRentalStatuses();
-
-        $rentalCounts = Rental::query()
-            ->where('created_at', '>=', $months->first())
-            ->get()
-            ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
-            ->map->count();
-
-        $revenueByMonth = PaymentHistory::query()
-            ->where('status', PaymentStatus::PAID)
-            ->where('created_at', '>=', $months->first())
-            ->get()
-            ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
-            ->map(fn ($payments) => $payments->sum('amount'));
-
-        $chartRentals = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
-        ]);
-
-        $chartRevenue = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($revenueByMonth[$date->format('Y-m')] ?? 0),
-        ]);
-
-        $topCar = Car::query()
-            ->withCount('rentals')
-            ->withSum('rentals', 'total_price')
-            ->orderByDesc('rentals_count')
-            ->orderByDesc('rentals_sum_total_price')
-            ->first();
 
         $recentRentals = Rental::query()
             ->with(['user:id,name', 'car:id,name'])
@@ -100,52 +66,52 @@ class BackofficeController extends Controller
                 ];
             });
 
+        $overdueRentalsQuery = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', '<', now());
+
+        $overdueRentalsCount = (clone $overdueRentalsQuery)->count();
+
+        $overdueRentalsPreview = (clone $overdueRentalsQuery)
+            ->orderBy('end_date', 'asc')
+            ->limit(3)
+            ->get();
+
+        $pendingVerifications = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::PENDING_VERIFICATION)
+            ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
+            ->orderBy('created_at', 'asc')
+            ->limit(4)
+            ->get();
+
+        $returnsToday = Rental::with(['user:id,name', 'car'])
+            ->where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', now()->toDateString())
+            ->orderBy('end_date', 'asc')
+            ->limit(4)
+            ->get();
+
+        $fleet = [
+            'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
+            'rented' => Car::query()
+                ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                ->count(),
+            'maintenance' => Car::query()
+                ->where('status', CarStatus::UNAVAILABLE)
+                ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
+                ->count(),
+        ];
+
         return view('backoffice.dashboard', [
             'admin' => request()->user(),
-            'stats' => [
-                'total_users' => User::count(),
-                'total_cars' => Car::count(),
-                'available_cars' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented_cars' => Car::query()
-                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-                'monthly_revenue' => PaymentHistory::where('status', PaymentStatus::PAID)
-                    ->where('created_at', '>=', $monthStart)
-                    ->sum('amount'),
-                'bookings_today' => Rental::whereDate('created_at', $now->toDateString())->count(),
-                'waiting_verification' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::PENDING)
-                    ->count(),
-                'needs_review' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::NEEDS_REVIEW)
-                    ->count(),
-                'verified_waiting_pay' => Rental::where('status', RentalStatus::PENDING_VERIFICATION)
-                    ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
-                    ->count(),
-                'waiting_payment' => Rental::where('status', RentalStatus::PREPAID)->count(),
-                'active_rentals' => Rental::where('status', RentalStatus::ONGOING)->count(),
-                'cancelled_expired' => Rental::whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED])->count(),
-            ],
-            'fleet' => [
-                'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
-                'rented' => Car::query()
-                    ->whereHas('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-                'maintenance' => Car::query()
-                    ->where('status', CarStatus::UNAVAILABLE)
-                    ->whereDoesntHave('rentals', fn ($query) => $query->whereIn('status', $lockingStatuses))
-                    ->count(),
-            ],
-            'chartRentals' => $chartRentals,
-            'chartRevenue' => $chartRevenue,
+            'overdueRentalsCount' => $overdueRentalsCount,
+            'overdueRentalsPreview' => $overdueRentalsPreview,
+            'pendingVerifications' => $pendingVerifications,
+            'returnsToday' => $returnsToday,
+            'fleet' => $fleet,
             'recentActivities' => $recentRentals,
-            'featuredCar' => [
-                'name' => trim(($topCar?->brand ?? '').' '.($topCar?->name ?? '')) ?: 'Belum ada armada unggulan',
-                'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
-                'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
-                'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
-            ],
-            'monthLabels' => $monthLabels,
         ]);
     }
 
@@ -637,6 +603,10 @@ class BackofficeController extends Controller
             $query->where('status', RentalStatus::PREPAID);
         } elseif ($filter === 'active') {
             $query->where('status', RentalStatus::ONGOING);
+        } elseif ($filter === 'overdue') {
+            $query->where('status', RentalStatus::ONGOING)
+                ->whereNull('returned_at')
+                ->whereDate('end_date', '<', now());
         } elseif ($filter === 'cancelled_expired') {
             $query->whereIn('status', [
                 RentalStatus::CANCELLED,
@@ -677,6 +647,11 @@ class BackofficeController extends Controller
                 'verification_status',
                 \App\Enums\VerificationStatus::NEEDS_REVIEW
             )
+            ->count();
+
+        $overdueReservations = Rental::where('status', RentalStatus::ONGOING)
+            ->whereNull('returned_at')
+            ->whereDate('end_date', '<', now())
             ->count();
 
         $rentals = $query
@@ -733,10 +708,19 @@ class BackofficeController extends Controller
                     $statusLabel = 'Expired';
                 }
 
+                $isOverdue = $rental->status === RentalStatus::ONGOING 
+                    && is_null($rental->returned_at) 
+                    && $rental->end_date && $rental->end_date->lt(now()->startOfDay());
+                $overdueDays = $isOverdue ? $rental->end_date->diffInDays(now()->startOfDay()) : 0;
+
                 return [
                     'id' => $rental->id,
 
                     'booking_id' => $rental->id,
+
+                    'is_overdue' => $isOverdue,
+
+                    'overdue_days' => (int) $overdueDays,
 
                     'customer_name' => $rental->user?->name,
 
@@ -850,6 +834,7 @@ class BackofficeController extends Controller
                 'pending' => $pendingReservations,
                 'completed' => $completedReservations,
                 'needs_review' => $needsReviewCount,
+                'overdue' => $overdueReservations,
             ],
 
             'current_filter' => $filter,
@@ -1079,5 +1064,1017 @@ class BackofficeController extends Controller
 
             Storage::disk('public')->delete($path);
         }
+    }
+
+    public function reports(Request $request)
+    {
+        $tab = $request->query('tab', 'overview');
+        $reportPeriod = $this->resolveReportFilterPeriod($request);
+        $filterMode = $reportPeriod['filterMode'];
+        $filterDate = $reportPeriod['filterDate'];
+        $filterMonth = $reportPeriod['filterMonth'];
+        $filterYear = $reportPeriod['filterYear'];
+        $filterStart = $reportPeriod['filterStart'];
+        $filterEnd = $reportPeriod['filterEnd'];
+        $periodStart = $reportPeriod['periodStart'];
+        $periodEnd = $reportPeriod['periodEnd'];
+        $previousPeriodStart = $reportPeriod['previousPeriodStart'];
+        $previousPeriodEnd = $reportPeriod['previousPeriodEnd'];
+
+        // Prepare Laporan Overview data if tab is overview
+        $overviewSummary = [];
+        $statusDistribution = collect();
+        $serviceTypeDistribution = collect();
+        $topCars = collect();
+        $fleetOccupancy = [];
+        $chartBookingsBreakdown = collect();
+        $chartRevenueBreakdown = collect();
+        $paidTransactions = 0;
+
+        if ($tab === 'overview') {
+            $totalRentalsCurrentQuery = Rental::query();
+            $totalRentalsPreviousQuery = Rental::query();
+            $revenuePaidCurrentQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $revenuePaidPreviousQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $successRentalsCurrentQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $successRentalsPreviousQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $failedRentalsCurrentQuery = Rental::query()->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+            $failedRentalsPreviousQuery = Rental::query()->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+
+            $this->applyReportFilter($totalRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($totalRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($revenuePaidCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($revenuePaidPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($successRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($successRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($failedRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($failedRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+
+            $totalRentals = $totalRentalsCurrentQuery->count();
+            $previousTotalRentals = $totalRentalsPreviousQuery->count();
+
+            $successRentals = (clone $successRentalsCurrentQuery)
+                ->distinct()
+                ->count('rental_id');
+            $previousSuccessRentals = (clone $successRentalsPreviousQuery)
+                ->distinct()
+                ->count('rental_id');
+
+            $failedRentals = $failedRentalsCurrentQuery->count();
+            $previousFailedRentals = $failedRentalsPreviousQuery->count();
+
+            $revenuePaid = (int) $revenuePaidCurrentQuery->sum('amount');
+            $paidTransactions = (clone $revenuePaidCurrentQuery)->count();
+            $previousRevenuePaid = (int) $revenuePaidPreviousQuery->sum('amount');
+
+            $successRate = $totalRentals > 0 ? round(($successRentals / $totalRentals) * 100, 1) : 0.0;
+            $previousSuccessRate = $previousTotalRentals > 0 ? round(($previousSuccessRentals / $previousTotalRentals) * 100, 1) : 0.0;
+            $failedRate = $totalRentals > 0 ? round(($failedRentals / $totalRentals) * 100, 1) : 0.0;
+            $previousFailedRate = $previousTotalRentals > 0 ? round(($previousFailedRentals / $previousTotalRentals) * 100, 1) : 0.0;
+
+            $overviewSummary = [
+                'total_cars' => Car::count(),
+                'total_rentals' => $totalRentals,
+                'previous_total_rentals' => $previousTotalRentals,
+                'total_users' => User::count(),
+                'revenue_paid' => $revenuePaid,
+                'paid_transactions' => $paidTransactions,
+                'previous_revenue_paid' => $previousRevenuePaid,
+                'success_bookings' => $successRentals,
+                'previous_success_bookings' => $previousSuccessRentals,
+                'failed_bookings' => $failedRentals,
+                'previous_failed_bookings' => $previousFailedRentals,
+                'success_rate' => $successRate,
+                'previous_success_rate' => $previousSuccessRate,
+                'failed_rate' => $failedRate,
+                'previous_failed_rate' => $previousFailedRate,
+                'total_rentals_growth' => $this->buildRelativeGrowthText($totalRentals, $previousTotalRentals),
+                'revenue_paid_growth' => $this->buildRelativeGrowthText($revenuePaid, $previousRevenuePaid),
+                'success_rate_growth' => $this->buildPointChangeText($successRate, $previousSuccessRate, false),
+                'failed_rate_growth' => $this->buildPointChangeText($failedRate, $previousFailedRate, true),
+            ];
+
+            $statusDistributionQuery = Rental::query();
+            $this->applyReportFilter($statusDistributionQuery, $periodStart, $periodEnd);
+            $statusDistribution = $statusDistributionQuery
+                ->groupBy('status')
+                ->select('status', DB::raw('count(*) as total'))
+                ->get()
+                ->map(fn($item) => [
+                    'label' => match($item->status) {
+                        RentalStatus::PENDING_VERIFICATION => 'Verifikasi',
+                        RentalStatus::PREPAID => 'Prepaid',
+                        RentalStatus::ONGOING => 'Aktif',
+                        RentalStatus::RETURNED => 'Selesai',
+                        RentalStatus::CANCELLED => 'Batal',
+                        RentalStatus::EXPIRED => 'Expired',
+                        default => $item->status->value
+                    },
+                    'value' => $item->total
+                ]);
+
+            $serviceTypeDistributionQuery = Rental::query();
+            $this->applyReportFilter($serviceTypeDistributionQuery, $periodStart, $periodEnd);
+            $serviceTypeDistribution = $serviceTypeDistributionQuery
+                ->groupBy('type')
+                ->select('type', DB::raw('count(*) as total'))
+                ->get()
+                ->map(fn($item) => [
+                    'label' => match($item->type) {
+                        RentalType::SELF_DRIVE => 'Lepas Kunci',
+                        RentalType::WITH_DRIVER => 'Dengan Driver',
+                        default => $item->type->value
+                    },
+                    'value' => $item->total
+                ]);
+
+            $topCarsQuery = Car::query()
+                ->withCount(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                    $this->applyReportFilter($q, $periodStart, $periodEnd);
+                }])
+                ->withSum(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                    $this->applyReportFilter($q, $periodStart, $periodEnd);
+                }], 'total_price')
+                ->orderByDesc('rentals_count')
+                ->limit(5);
+
+            $topCars = $topCarsQuery
+                ->get()
+                ->map(fn($car) => [
+                    'name' => trim($car->brand . ' ' . $car->name),
+                    'count' => $car->rentals_count,
+                    'revenue' => (int) ($car->rentals_sum_total_price ?? 0),
+                ]);
+
+            $fleetOccupancy = [
+                'total' => Car::count(),
+                'available' => Car::where('status', CarStatus::AVAILABLE)->count(),
+                'unavailable' => Car::where('status', CarStatus::UNAVAILABLE)->count(),
+            ];
+        }
+
+        // Prepare Laporan Armada data if tab is fleet OR we are exporting fleet
+        $carStats = collect();
+        if ($tab === 'fleet') {
+            $cars = Car::all();
+            $paymentsQuery = PaymentHistory::query()
+                ->with('rental')
+                ->where('status', PaymentStatus::PAID);
+            $this->applyReportFilter($paymentsQuery, $periodStart, $periodEnd);
+            $payments = $paymentsQuery->get();
+
+            $rentalsQuery = Rental::query();
+            $this->applyReportFilter($rentalsQuery, $periodStart, $periodEnd);
+            $rentals = $rentalsQuery
+                ->get();
+
+            $carStats = $cars->map(function ($car) use ($rentals, $payments) {
+                $carRentals = $rentals->where('car_id', $car->id);
+                $carPayments = $payments->where('rental.car_id', $car->id);
+                $latestRental = $carRentals->sortByDesc('created_at')->first();
+
+                return [
+                    'id' => $car->id,
+                    'brand' => $car->brand,
+                    'name' => $car->name,
+                    'license_plate' => $car->license_plate,
+                    'vehicle_type' => $car->vehicle_type ? $car->vehicle_type->value : '-',
+                    'transmission' => $car->transmission ? $car->transmission->value : '-',
+                    'status' => $car->status ? $car->status->value : '-',
+                    'rentals_count' => $carRentals->count(),
+                    'total_revenue' => (int) $carPayments->sum('amount'),
+                    'last_rented' => $latestRental ? $latestRental->created_at->toDateString() : '-',
+                ];
+            });
+        }
+
+        // Initialize variables for view rendering
+        $summary = [];
+        $data = null;
+        $exportRows = collect();
+
+        if ($tab === 'revenue') {
+            $baseQuery = PaymentHistory::query()
+                ->with(['rental.user', 'rental.car'])
+                ->where('status', PaymentStatus::PAID);
+            $this->applyReportFilter($baseQuery, $periodStart, $periodEnd);
+
+            $totalRevenue = (int) $baseQuery->sum('amount');
+            $totalTransactions = $baseQuery->count();
+            $avgTransaction = $totalTransactions > 0 ? (int) ($totalRevenue / $totalTransactions) : 0;
+
+            $summary = [
+                'total_revenue' => $totalRevenue,
+                'total_transactions' => $totalTransactions,
+                'avg_transaction' => $avgTransaction,
+            ];
+
+            $data = $baseQuery->latest()->paginate(10)->withQueryString();
+            $exportRows = (clone $baseQuery)->latest()->get();
+
+        } elseif ($tab === 'reservation') {
+            $baseQuery = Rental::query()
+                ->with(['user', 'car']);
+            $this->applyReportFilter($baseQuery, $periodStart, $periodEnd);
+
+            $totalReservations = $baseQuery->count();
+            $pending = (clone $baseQuery)->where('status', RentalStatus::PENDING_VERIFICATION)->count();
+            $prepaid = (clone $baseQuery)->where('status', RentalStatus::PREPAID)->count();
+            $ongoing = (clone $baseQuery)->where('status', RentalStatus::ONGOING)->count();
+            $returned = (clone $baseQuery)->where('status', RentalStatus::RETURNED)->count();
+            $cancelled = (clone $baseQuery)->where('status', RentalStatus::CANCELLED)->count();
+            $expired = (clone $baseQuery)->where('status', RentalStatus::EXPIRED)->count();
+
+            $cancellationRate = $totalReservations > 0 ? round(($cancelled / $totalReservations) * 100, 1) : 0;
+            $avgDuration = (clone $baseQuery)
+                ->whereNotNull('start_date')
+                ->whereNotNull('end_date')
+                ->get()
+                ->avg(fn ($r) => Carbon::parse($r->start_date)->diffInDays(Carbon::parse($r->end_date)) + 1) ?? 0;
+
+            $summary = [
+                'total_reservations' => $totalReservations,
+                'pending' => $pending,
+                'prepaid' => $prepaid,
+                'ongoing' => $ongoing,
+                'returned' => $returned,
+                'cancelled' => $cancelled,
+                'expired' => $expired,
+                'cancellation_rate' => $cancellationRate,
+                'avg_duration' => round($avgDuration, 1),
+            ];
+
+            $data = $baseQuery->latest()->paginate(10)->withQueryString();
+            $exportRows = (clone $baseQuery)->latest()->get();
+
+        } elseif ($tab === 'fleet') {
+            $totalFleet = Car::count();
+            $available = Car::where('status', CarStatus::AVAILABLE)->count();
+            $unavailable = Car::where('status', CarStatus::UNAVAILABLE)->count();
+
+            $topRented = $carStats->sortByDesc('rentals_count')->first();
+            $topRentedName = ($topRented && $topRented['rentals_count'] > 0) 
+                ? trim($topRented['brand'] . ' ' . $topRented['name']) . ' (' . $topRented['rentals_count'] . 'x)' 
+                : '-';
+
+            $topRevenue = $carStats->sortByDesc('total_revenue')->first();
+            $topRevenueName = ($topRevenue && $topRevenue['total_revenue'] > 0) 
+                ? trim($topRevenue['brand'] . ' ' . $topRevenue['name']) . ' (Rp ' . number_format($topRevenue['total_revenue'], 0, ',', '.') . ')' 
+                : '-';
+
+            $summary = [
+                'total_fleet' => $totalFleet,
+                'available' => $available,
+                'unavailable' => $unavailable,
+                'top_rented' => $topRentedName,
+                'top_revenue' => $topRevenueName,
+            ];
+
+            // Manual pagination for computed collection
+            $perPage = 10;
+            $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+            $currentItems = $carStats->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            $data = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentItems,
+                $carStats->count(),
+                $perPage,
+                $currentPage,
+                ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+            );
+            $data->withQueryString();
+            $exportRows = $carStats->values();
+        }
+
+        // Prepare chart and featured fleet data for visual analytics
+        $chartStart = $periodStart ? $periodStart->copy() : Carbon::now()->subMonthsNoOverflow(5)->startOfMonth();
+        $chartEnd = $periodEnd ? $periodEnd->copy() : Carbon::now()->endOfDay();
+        $chartMode = $filterMode === 'day'
+            ? 'hour'
+            : ((max(1, $chartStart->copy()->startOfDay()->diffInDays($chartEnd->copy()->startOfDay()) + 1) <= 31) ? 'day' : 'month');
+        if ($chartMode === 'hour') {
+            $chartBuckets = collect(range(0, 23))->map(fn (int $hour) => $chartStart->copy()->startOfDay()->addHours($hour));
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('H'))
+                ->map->count();
+
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('H'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('H'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('H'))
+                ->map->count();
+
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'value' => (int) ($rentalCounts[$date->format('H')] ?? 0),
+            ]);
+
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'value' => (int) ($revenueByPeriod[$date->format('H')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'total' => (int) ($rentalCounts[$date->format('H')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('H')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('H')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('H')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('H')] ?? 0),
+            ]);
+        } elseif ($chartMode === 'day') {
+            $chartBuckets = collect();
+            $cursor = $chartStart->copy()->startOfDay();
+            while ($cursor->lte($chartEnd->copy()->endOfDay())) {
+                $chartBuckets->push($cursor->copy());
+                $cursor->addDay();
+            }
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m-d'))
+                ->map->count();
+
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m-d'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m-d'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m-d'))
+                ->map->count();
+
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'value' => (int) ($rentalCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'value' => (int) ($revenueByPeriod[$date->format('Y-m-d')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'total' => (int) ($rentalCounts[$date->format('Y-m-d')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('Y-m-d')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('Y-m-d')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+        } else {
+            $chartStartMonth = $chartStart->copy()->startOfMonth();
+            $chartEndMonth = $chartEnd->copy()->startOfMonth();
+            $chartBuckets = collect();
+            $cursor = $chartStartMonth->copy();
+            while ($cursor->lte($chartEndMonth)) {
+                $chartBuckets->push($cursor->copy());
+                $cursor->addMonthNoOverflow();
+            }
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
+                ->map->count();
+
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
+                ->map->count();
+
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
+            ]);
+
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'value' => (int) ($revenueByPeriod[$date->format('Y-m')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'total' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('Y-m')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('Y-m')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('Y-m')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('Y-m')] ?? 0),
+            ]);
+        }
+
+        $topCar = Car::query()
+            ->withCount(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                $this->applyReportFilter($q, $periodStart, $periodEnd);
+            }])
+            ->withSum(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                $this->applyReportFilter($q, $periodStart, $periodEnd);
+            }], 'total_price')
+            ->orderByDesc('rentals_count')
+            ->orderByDesc('rentals_sum_total_price')
+            ->first();
+
+        $featuredCar = [
+            'name' => trim(($topCar?->brand ?? '').' '.($topCar?->name ?? '')) ?: 'Belum ada armada unggulan',
+            'description' => $topCar?->description ?? 'Tambahkan transaksi rental untuk melihat armada dengan performa terbaik.',
+            'revenue' => (int) ($topCar?->rentals_sum_total_price ?? 0),
+            'rentals_count' => (int) ($topCar?->rentals_count ?? 0),
+            'image_url' => $this->resolveCarImageUrl($topCar?->image),
+        ];
+
+        $reportTabLabels = $this->reportTabLabels();
+        $reportTitle = $reportTabLabels[$tab] ?? 'Overview';
+        $reportPeriodLabel = $this->formatReportPeriodLabel($filterMode, $periodStart, $periodEnd);
+        $pdfCharts = $this->buildReportPdfCharts(
+            $tab,
+            $chartRentals,
+            $chartRevenue,
+            $statusDistribution,
+            $serviceTypeDistribution,
+            $carStats,
+            $fleetOccupancy,
+            $summary
+        );
+
+        if ($request->query('export') === 'csv') {
+            $filename = 'laporan_' . str($reportTitle)->slug('_') . '_' . $periodStart->format('Ymd') . '_' . $periodEnd->format('Ymd') . '.csv';
+            $headers = [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            ];
+
+            return response()->stream(function () use (
+                $tab,
+                $reportTitle,
+                $reportPeriodLabel,
+                $overviewSummary,
+                $statusDistribution,
+                $serviceTypeDistribution,
+                $topCars,
+                $fleetOccupancy,
+                $chartRentals,
+                $chartRevenue,
+                $exportRows
+            ) {
+                $handle = fopen('php://output', 'w');
+                fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+                fputcsv($handle, [$reportTitle]);
+                fputcsv($handle, ['Periode', $reportPeriodLabel]);
+                fputcsv($handle, []);
+
+                if ($tab === 'overview') {
+                    fputcsv($handle, ['KPI Ringkas']);
+                    fputcsv($handle, ['Total Reservasi', (int) ($overviewSummary['total_rentals'] ?? 0)]);
+                    fputcsv($handle, ['Pendapatan Masuk', (int) ($overviewSummary['revenue_paid'] ?? 0)]);
+                    fputcsv($handle, ['Booking Berhasil', (int) ($overviewSummary['success_bookings'] ?? 0)]);
+                    fputcsv($handle, ['Booking Gagal', (int) ($overviewSummary['failed_bookings'] ?? 0)]);
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Distribusi Status Rental']);
+                    fputcsv($handle, ['Status', 'Jumlah']);
+                    foreach ($statusDistribution as $item) {
+                        fputcsv($handle, [$item['label'], $item['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Reservasi Berdasarkan Tipe Layanan']);
+                    fputcsv($handle, ['Layanan', 'Jumlah']);
+                    foreach ($serviceTypeDistribution as $item) {
+                        fputcsv($handle, [$item['label'], $item['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Top Armada Terpopuler']);
+                    fputcsv($handle, ['Armada', 'Jumlah Reservasi', 'Pendapatan']);
+                    foreach ($topCars as $car) {
+                        fputcsv($handle, [$car['name'], $car['count'], $car['revenue']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Status Ketersediaan Armada']);
+                    fputcsv($handle, ['Total Armada', (int) ($fleetOccupancy['total'] ?? 0)]);
+                    fputcsv($handle, ['Tersedia', (int) ($fleetOccupancy['available'] ?? 0)]);
+                    fputcsv($handle, ['Sibuk', (int) ($fleetOccupancy['unavailable'] ?? 0)]);
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Tren Reservasi']);
+                    fputcsv($handle, ['Periode', 'Reservasi']);
+                    foreach ($chartRentals as $point) {
+                        fputcsv($handle, [$point['label'], $point['value']]);
+                    }
+                    fputcsv($handle, []);
+
+                    fputcsv($handle, ['Tren Pendapatan']);
+                    fputcsv($handle, ['Periode', 'Pendapatan']);
+                    foreach ($chartRevenue as $point) {
+                        fputcsv($handle, [$point['label'], $point['value']]);
+                    }
+                } elseif ($tab === 'revenue') {
+                    fputcsv($handle, ['Tanggal Pembayaran', 'Customer', 'Mobil', 'Plat Nomor', 'Tipe Rental', 'Provider Pembayaran', 'Status Pembayaran', 'Amount']);
+                    foreach ($exportRows as $history) {
+                        fputcsv($handle, [
+                            $history->created_at->toDateTimeString(),
+                            $history->rental?->user?->name ?? '-',
+                            trim(($history->rental?->car?->brand ?? '') . ' ' . ($history->rental?->car?->name ?? '')),
+                            $history->rental?->car?->license_plate ?? '-',
+                            $history->rental?->type === RentalType::SELF_DRIVE ? 'Self Drive' : 'With Driver',
+                            strtoupper((string) ($history->provider ?? '-')),
+                            $history->status->value,
+                            $history->amount,
+                        ]);
+                    }
+                } elseif ($tab === 'reservation') {
+                    fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
+                    foreach ($exportRows as $rental) {
+                        fputcsv($handle, [
+                            $rental->created_at->toDateTimeString(),
+                            $rental->user?->name ?? '-',
+                            trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
+                            $rental->car?->license_plate ?? '-',
+                            $rental->start_date?->toDateString() ?? '-',
+                            $rental->end_date?->toDateString() ?? '-',
+                            $rental->returned_at?->toDateTimeString() ?? '-',
+                            $rental->type?->value ?? '-',
+                            $rental->verification_status?->value ?? '-',
+                            $rental->status?->value ?? '-',
+                            $rental->total_price,
+                        ]);
+                    }
+                } elseif ($tab === 'fleet') {
+                    fputcsv($handle, ['Brand', 'Nama Mobil', 'Plat Nomor', 'Tipe Kendaraan', 'Transmisi', 'Status Mobil', 'Jumlah Disewa', 'Total Pendapatan', 'Terakhir Disewa']);
+                    foreach ($exportRows as $car) {
+                        fputcsv($handle, [
+                            $car['brand'],
+                            $car['name'],
+                            $car['license_plate'],
+                            str($car['vehicle_type'])->headline(),
+                            str($car['transmission'])->headline(),
+                            str($car['status'])->headline(),
+                            $car['rentals_count'],
+                            $car['total_revenue'],
+                            $car['last_rented'],
+                        ]);
+                    }
+                }
+
+                fclose($handle);
+            }, 200, $headers);
+        }
+
+        if ($request->query('export') === 'pdf') {
+            return response()->view('backoffice.reports-pdf', [
+                'tab' => $tab,
+                'reportTitle' => $reportTitle,
+                'reportPeriodLabel' => $reportPeriodLabel,
+                'filterMode' => $filterMode,
+                'summary' => $summary,
+                'overviewSummary' => $overviewSummary,
+                'statusDistribution' => $statusDistribution,
+                'serviceTypeDistribution' => $serviceTypeDistribution,
+                'topCars' => $topCars,
+                'fleetOccupancy' => $fleetOccupancy,
+                'featuredCar' => $featuredCar,
+                'exportRows' => $exportRows,
+                'pdfCharts' => $pdfCharts,
+                'generatedAt' => now(),
+            ]);
+        }
+
+        return view('backoffice.reports', [
+            'admin' => $request->user(),
+            'active' => 'reports',
+            'tab' => $tab,
+            'filterMode' => $filterMode,
+            'filterDate' => $filterDate,
+            'filterMonth' => $filterMonth,
+            'filterYear' => $filterYear,
+            'filterStart' => $filterStart,
+            'filterEnd' => $filterEnd,
+            'summary' => $summary,
+            'data' => $data,
+            'chartRentals' => $chartRentals,
+            'chartRevenue' => $chartRevenue,
+            'featuredCar' => $featuredCar,
+            'overviewSummary' => $overviewSummary,
+            'statusDistribution' => $statusDistribution,
+            'serviceTypeDistribution' => $serviceTypeDistribution,
+            'topCars' => $topCars,
+            'fleetOccupancy' => $fleetOccupancy,
+            'chartMode' => $chartMode,
+            'chartBookingsBreakdown' => $chartBookingsBreakdown,
+            'chartRevenueBreakdown' => $chartRevenueBreakdown,
+            'paidTransactions' => $paidTransactions ?? 0,
+        ]);
+    }
+
+    private function resolveReportFilterPeriod(Request $request): array
+    {
+        $now = Carbon::now();
+        $filterMode = (string) $request->query('filter_mode', 'none');
+
+        $defaultStart = $now->copy()->startOfMonth()->startOfDay();
+        $defaultEnd = $now->copy()->endOfDay();
+
+        $filterDate = (string) $request->query('filter_date', $defaultEnd->toDateString());
+        $filterMonth = (string) $request->query('filter_month', $defaultEnd->format('m'));
+        $filterYear = (string) $request->query('filter_year', $defaultEnd->year);
+        $filterStart = (string) $request->query('filter_start', $defaultStart->toDateString());
+        $filterEnd = (string) $request->query('filter_end', $defaultEnd->toDateString());
+
+        [$periodStart, $periodEnd] = match ($filterMode) {
+            'day' => [
+                Carbon::parse($filterDate)->startOfDay(),
+                Carbon::parse($filterDate)->endOfDay(),
+            ],
+            'month' => [
+                Carbon::createFromDate((int) $filterYear, (int) $filterMonth, 1)->startOfMonth(),
+                Carbon::createFromDate((int) $filterYear, (int) $filterMonth, 1)->endOfMonth(),
+            ],
+            'year' => [
+                Carbon::createFromDate((int) $filterYear, 1, 1)->startOfYear(),
+                Carbon::createFromDate((int) $filterYear, 1, 1)->endOfYear(),
+            ],
+            'range' => [
+                Carbon::parse($filterStart)->startOfDay(),
+                Carbon::parse($filterEnd)->endOfDay(),
+            ],
+            default => [
+                $defaultStart->copy(),
+                $defaultEnd->copy(),
+            ],
+        };
+
+        if ($periodEnd->lessThan($periodStart)) {
+            [$periodStart, $periodEnd] = [$periodEnd->copy()->startOfDay(), $periodStart->copy()->endOfDay()];
+        }
+
+        $durationDays = max(1, $periodStart->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1);
+        $previousPeriodEnd = $periodStart->copy()->subDay()->endOfDay();
+        $previousPeriodStart = $previousPeriodEnd->copy()->subDays($durationDays - 1)->startOfDay();
+
+        return [
+            'filterMode' => $filterMode,
+            'filterDate' => $filterDate,
+            'filterMonth' => $filterMonth,
+            'filterYear' => $filterYear,
+            'filterStart' => $filterStart,
+            'filterEnd' => $filterEnd,
+            'periodStart' => $periodStart,
+            'periodEnd' => $periodEnd,
+            'previousPeriodStart' => $previousPeriodStart,
+            'previousPeriodEnd' => $previousPeriodEnd,
+        ];
+    }
+
+    private function applyReportFilter(\Illuminate\Database\Eloquent\Builder $query, ?Carbon $start, ?Carbon $end): \Illuminate\Database\Eloquent\Builder
+    {
+        if ($start && $end) {
+            $query->whereBetween('created_at', [$start, $end]);
+        }
+
+        return $query;
+    }
+
+    private function buildRelativeGrowthText(int|float $current, int|float $previous): array
+    {
+        if ($previous <= 0) {
+            if ($current > 0) {
+                return [
+                    'direction' => 'up',
+                    'value' => '100,0%',
+                    'suffix' => 'vs periode sebelumnya',
+                    'tone' => 'positive',
+                ];
+            }
+
+            return [
+                'direction' => 'flat',
+                'value' => '0,0%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'neutral',
+            ];
+        }
+
+        $growth = round((($current - $previous) / $previous) * 100, 1);
+
+        if ($growth > 0) {
+            return [
+                'direction' => 'up',
+                'value' => number_format($growth, 1, ',', '.') . '%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'positive',
+            ];
+        }
+
+        if ($growth < 0) {
+            return [
+                'direction' => 'down',
+                'value' => number_format(abs($growth), 1, ',', '.') . '%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'negative',
+            ];
+        }
+
+        return [
+            'direction' => 'flat',
+            'value' => '0,0%',
+            'suffix' => 'vs periode sebelumnya',
+            'tone' => 'neutral',
+        ];
+    }
+
+    private function buildPointChangeText(float $currentRate, float $previousRate, bool $lowerIsBetter = false): array
+    {
+        $delta = round($currentRate - $previousRate, 1);
+
+        if ($delta === 0.0) {
+            return [
+                'direction' => 'flat',
+                'value' => '0,0%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'neutral',
+            ];
+        }
+
+        $arrow = $delta > 0 ? '▲' : '▼';
+        $formatted = number_format(abs($delta), 1, ',', '.');
+        $tone = $lowerIsBetter
+            ? ($delta < 0 ? 'positive' : 'negative')
+            : ($delta > 0 ? 'positive' : 'negative');
+
+        return [
+            'direction' => $delta > 0 ? 'up' : 'down',
+            'value' => "{$formatted}%",
+            'suffix' => 'vs periode sebelumnya',
+            'tone' => $tone,
+        ];
+    }
+
+    private function reportTabLabels(): array
+    {
+        return [
+            'overview' => 'Overview',
+            'revenue' => 'Laporan Pendapatan',
+            'reservation' => 'Laporan Reservasi',
+            'fleet' => 'Laporan Armada',
+        ];
+    }
+
+    private function formatReportPeriodLabel(string $filterMode, Carbon $periodStart, Carbon $periodEnd): string
+    {
+        return match ($filterMode) {
+            'day' => $periodStart->translatedFormat('d F Y'),
+            'month' => $periodStart->translatedFormat('F Y'),
+            'year' => $periodStart->translatedFormat('Y'),
+            'range' => $periodStart->translatedFormat('d M Y') . ' - ' . $periodEnd->translatedFormat('d M Y'),
+            default => $periodStart->translatedFormat('d M Y') . ' - ' . $periodEnd->translatedFormat('d M Y'),
+        };
+    }
+
+    private function buildReportPdfCharts(
+        string $tab,
+        \Illuminate\Support\Collection $chartRentals,
+        \Illuminate\Support\Collection $chartRevenue,
+        \Illuminate\Support\Collection $statusDistribution,
+        \Illuminate\Support\Collection $serviceTypeDistribution,
+        \Illuminate\Support\Collection $carStats,
+        array $fleetOccupancy,
+        array $summary
+    ): array {
+        $charts = [];
+
+        if ($tab === 'overview') {
+            $charts['bookings'] = $this->renderLineChartSvg($chartRentals, '#3f5ed7', 'Tren Periode Aktif');
+            $charts['revenue'] = $this->renderBarChartSvg($chartRevenue, '#1dbb84', 'Pendapatan Masuk', true);
+            $charts['status'] = $this->renderDonutChartSvg($statusDistribution, ['#818cf8', '#f59e0b', '#3b82f6', '#1dbb84', '#ef4444', '#94a3b8'], 'Total Reservasi');
+            $charts['service'] = $this->renderDonutChartSvg($serviceTypeDistribution, ['#3f5ed7', '#1dbb84', '#f59e0b', '#94a3b8'], 'Total Reservasi');
+        } elseif ($tab === 'revenue') {
+            $charts['revenue'] = $this->renderBarChartSvg($chartRevenue, '#1dbb84', 'Pendapatan', true);
+        } elseif ($tab === 'reservation') {
+            $charts['reservations'] = $this->renderLineChartSvg($chartRentals, '#3f5ed7', 'Reservasi');
+            $reservationStatus = collect([
+                ['label' => 'Pending', 'value' => (int) ($summary['pending'] ?? 0)],
+                ['label' => 'Prepaid', 'value' => (int) ($summary['prepaid'] ?? 0)],
+                ['label' => 'Aktif', 'value' => (int) ($summary['ongoing'] ?? 0)],
+                ['label' => 'Selesai', 'value' => (int) ($summary['returned'] ?? 0)],
+                ['label' => 'Batal', 'value' => (int) ($summary['cancelled'] ?? 0)],
+                ['label' => 'Expired', 'value' => (int) ($summary['expired'] ?? 0)],
+            ])->filter(fn (array $item) => $item['value'] > 0)->values();
+            $charts['status'] = $this->renderDonutChartSvg($reservationStatus, ['#94a3b8', '#f59e0b', '#1dbb84', '#818cf8', '#ef4444', '#3b82f6'], 'Total Booking');
+        } elseif ($tab === 'fleet') {
+            $fleetPerformance = $carStats
+                ->sortByDesc('rentals_count')
+                ->take(5)
+                ->map(fn (array $item) => [
+                    'label' => str(trim(($item['brand'] ?? '') . ' ' . ($item['name'] ?? '')))->limit(16, '…')->toString(),
+                    'value' => (int) ($item['rentals_count'] ?? 0),
+                ])
+                ->values();
+            $fleetStatus = collect([
+                ['label' => 'Tersedia', 'value' => (int) ($fleetOccupancy['available'] ?? 0)],
+                ['label' => 'Sibuk', 'value' => (int) ($fleetOccupancy['unavailable'] ?? 0)],
+            ]);
+            $charts['fleet_performance'] = $this->renderBarChartSvg($fleetPerformance, '#3f5ed7', 'Top Armada', false);
+            $charts['fleet_status'] = $this->renderDonutChartSvg($fleetStatus, ['#1dbb84', '#ef4444'], 'Status Armada');
+        }
+
+        return $charts;
+    }
+
+    private function renderBarChartSvg(\Illuminate\Support\Collection $points, string $barColor, string $seriesLabel, bool $currency = false): string
+    {
+        $points = $points->map(fn ($point) => [
+            'label' => (string) ($point['label'] ?? ''),
+            'value' => (float) ($point['value'] ?? 0),
+        ])->values();
+
+        $width = 720;
+        $height = 280;
+        $left = 52;
+        $right = 18;
+        $top = 18;
+        $bottom = 42;
+        $plotWidth = $width - $left - $right;
+        $plotHeight = $height - $top - $bottom;
+        $maxValue = max(1, (float) $points->max('value'));
+        $step = $points->count() > 0 ? $plotWidth / max($points->count(), 1) : $plotWidth;
+        $barWidth = max(16, $step * 0.56);
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$width} {$height}\" role=\"img\" aria-label=\"" . e($seriesLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<rect width=\"{$width}\" height=\"{$height}\" rx=\"18\" fill=\"#ffffff\"/>";
+
+        for ($i = 0; $i < 4; $i++) {
+            $y = $top + ($plotHeight / 3) * $i;
+            $svg[] = "<line x1=\"{$left}\" y1=\"{$y}\" x2=\"" . ($width - $right) . "\" y2=\"{$y}\" stroke=\"rgba(203,213,225,0.9)\" stroke-width=\"1\" />";
+        }
+
+        if ($points->isEmpty()) {
+            $svg[] = "<text x=\"" . ($width / 2) . "\" y=\"" . ($height / 2) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        foreach ($points as $index => $point) {
+            $value = (float) $point['value'];
+            $x = $left + ($step * $index) + (($step - $barWidth) / 2);
+            $barHeight = $maxValue > 0 ? ($value / $maxValue) * ($plotHeight * 0.9) : 0;
+            $y = $top + $plotHeight - $barHeight;
+            $label = e($point['label']);
+            $valueLabel = $currency
+                ? 'Rp ' . number_format((int) $value, 0, ',', '.')
+                : number_format((int) $value, 0, ',', '.');
+
+            $svg[] = "<rect x=\"{$x}\" y=\"{$y}\" width=\"{$barWidth}\" height=\"{$barHeight}\" rx=\"8\" fill=\"{$barColor}\" fill-opacity=\"0.82\" />";
+            $svg[] = "<text x=\"" . ($x + ($barWidth / 2)) . "\" y=\"" . max(14, $y - 6) . "\" text-anchor=\"middle\" fill=\"#334155\" font-size=\"10\" font-family=\"Arial, sans-serif\">{$valueLabel}</text>";
+            $svg[] = "<text x=\"" . ($x + ($barWidth / 2)) . "\" y=\"" . ($height - 16) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"Arial, sans-serif\">{$label}</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
+    }
+
+    private function renderLineChartSvg(\Illuminate\Support\Collection $points, string $strokeColor, string $seriesLabel): string
+    {
+        $points = $points->map(fn ($point) => [
+            'label' => (string) ($point['label'] ?? ''),
+            'value' => (float) ($point['value'] ?? 0),
+        ])->values();
+
+        $width = 720;
+        $height = 280;
+        $left = 42;
+        $right = 18;
+        $top = 18;
+        $bottom = 42;
+        $plotWidth = $width - $left - $right;
+        $plotHeight = $height - $top - $bottom;
+        $maxValue = max(1, (float) $points->max('value'));
+        $count = max($points->count(), 1);
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$width} {$height}\" role=\"img\" aria-label=\"" . e($seriesLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<defs><linearGradient id=\"lineFill\" x1=\"0\" x2=\"0\" y1=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"{$strokeColor}\" stop-opacity=\"0.18\"/><stop offset=\"100%\" stop-color=\"{$strokeColor}\" stop-opacity=\"0.02\"/></linearGradient></defs>";
+        $svg[] = "<rect width=\"{$width}\" height=\"{$height}\" rx=\"18\" fill=\"#ffffff\"/>";
+
+        for ($i = 0; $i < 4; $i++) {
+            $y = $top + ($plotHeight / 3) * $i;
+            $svg[] = "<line x1=\"{$left}\" y1=\"{$y}\" x2=\"" . ($width - $right) . "\" y2=\"{$y}\" stroke=\"rgba(203,213,225,0.9)\" stroke-width=\"1\" />";
+        }
+
+        if ($points->isEmpty()) {
+            $svg[] = "<text x=\"" . ($width / 2) . "\" y=\"" . ($height / 2) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        $coordinates = [];
+        foreach ($points as $index => $point) {
+            $x = $left + ($plotWidth * ($count === 1 ? 0.5 : $index / ($count - 1)));
+            $y = $top + $plotHeight - (($point['value'] / $maxValue) * ($plotHeight * 0.9));
+            $coordinates[] = ['x' => round($x, 2), 'y' => round($y, 2), 'label' => $point['label'], 'value' => $point['value']];
+        }
+
+        $polyline = collect($coordinates)->map(fn ($point) => $point['x'] . ',' . $point['y'])->implode(' ');
+        $area = $polyline . ' ' . ($left + $plotWidth) . ',' . ($top + $plotHeight) . ' ' . $left . ',' . ($top + $plotHeight);
+        $svg[] = "<polygon points=\"{$area}\" fill=\"url(#lineFill)\" />";
+        $svg[] = "<polyline points=\"{$polyline}\" fill=\"none\" stroke=\"{$strokeColor}\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
+
+        foreach ($coordinates as $point) {
+            $svg[] = "<circle cx=\"{$point['x']}\" cy=\"{$point['y']}\" r=\"4.5\" fill=\"{$strokeColor}\" />";
+            $svg[] = "<text x=\"{$point['x']}\" y=\"" . ($height - 16) . "\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"10\" font-family=\"Arial, sans-serif\">" . e($point['label']) . "</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
+    }
+
+    private function renderDonutChartSvg(\Illuminate\Support\Collection $segments, array $colors, string $centerLabel): string
+    {
+        $segments = $segments->map(fn ($segment) => [
+            'label' => (string) ($segment['label'] ?? ''),
+            'value' => (float) ($segment['value'] ?? 0),
+        ])->filter(fn (array $segment) => $segment['value'] > 0)->values();
+
+        $size = 300;
+        $radius = 78;
+        $stroke = 34;
+        $circumference = 2 * pi() * $radius;
+        $total = max(0, (float) $segments->sum('value'));
+        $svg = [];
+
+        $svg[] = "<svg viewBox=\"0 0 {$size} {$size}\" role=\"img\" aria-label=\"" . e($centerLabel) . "\" xmlns=\"http://www.w3.org/2000/svg\">";
+        $svg[] = "<rect width=\"{$size}\" height=\"{$size}\" rx=\"24\" fill=\"#ffffff\"/>";
+
+        if ($total <= 0) {
+            $svg[] = "<text x=\"150\" y=\"150\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"16\" font-family=\"Arial, sans-serif\">Belum ada data</text>";
+            $svg[] = '</svg>';
+            return implode('', $svg);
+        }
+
+        $offset = 0.0;
+        foreach ($segments as $index => $segment) {
+            $ratio = $segment['value'] / $total;
+            $arc = $circumference * $ratio;
+            $color = $colors[$index % count($colors)];
+            $svg[] = "<circle cx=\"150\" cy=\"150\" r=\"{$radius}\" fill=\"none\" stroke=\"{$color}\" stroke-width=\"{$stroke}\" stroke-linecap=\"butt\" stroke-dasharray=\"{$arc} " . ($circumference - $arc) . "\" stroke-dashoffset=\"-" . ($offset * $circumference) . "\" transform=\"rotate(-90 150 150)\" />";
+            $offset += $ratio;
+        }
+
+        $svg[] = "<circle cx=\"150\" cy=\"150\" r=\"50\" fill=\"#ffffff\" />";
+        $svg[] = "<text x=\"150\" y=\"145\" text-anchor=\"middle\" fill=\"#111827\" font-size=\"28\" font-weight=\"700\" font-family=\"Arial, sans-serif\">" . number_format((int) $total, 0, ',', '.') . "</text>";
+        $svg[] = "<text x=\"150\" y=\"170\" text-anchor=\"middle\" fill=\"#64748b\" font-size=\"12\" font-weight=\"700\" font-family=\"Arial, sans-serif\">" . e($centerLabel) . "</text>";
+
+        foreach ($segments as $index => $segment) {
+            $y = 236 + ($index * 18);
+            $color = $colors[$index % count($colors)];
+            $text = e($segment['label'] . ' • ' . number_format((int) $segment['value'], 0, ',', '.'));
+            $svg[] = "<rect x=\"26\" y=\"" . ($y - 9) . "\" width=\"10\" height=\"10\" rx=\"3\" fill=\"{$color}\" />";
+            $svg[] = "<text x=\"44\" y=\"{$y}\" fill=\"#475569\" font-size=\"11\" font-family=\"Arial, sans-serif\">{$text}</text>";
+        }
+
+        $svg[] = '</svg>';
+
+        return implode('', $svg);
     }
 }

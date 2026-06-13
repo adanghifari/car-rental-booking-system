@@ -1773,7 +1773,7 @@
                 </svg>
                 <span>Reservasi</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="{{ route('backoffice.reports') }}" class="nav-item {{ $active === 'reports' ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M3 3v18h18"/>
                     <path d="M7 14l4-4 3 3 5-7"/>
@@ -1807,7 +1807,7 @@
     </aside>
 
     <main class="main">
-        <div class="topbar">
+        <div class="topbar {{ $active === 'reports' ? 'page-top-reveal opacity-0 -translate-y-4 transition-all duration-700 ease-out' : '' }}">
             <form method="GET" action="" style="margin: 0; display: block; flex: 1; max-width: min(100%, 520px);">
                 @foreach (request()->except('search', 'page') as $key => $value)
                     @if (is_array($value))
