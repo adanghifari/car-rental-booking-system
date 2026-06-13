@@ -1491,33 +1491,6 @@
                     }, revealDelay);
                 });
 
-                const makeLineAnimation = (pointCount) => ({
-                    x: {
-                        type: 'number',
-                        easing: 'easeOutQuart',
-                        duration: pointCount > 0 ? 1500 / pointCount : 1500,
-                        from: NaN,
-                        delay(ctx) {
-                            return ctx.type === 'data' ? ctx.dataIndex * 80 : 0;
-                        }
-                    },
-                    y: {
-                        type: 'number',
-                        easing: 'easeOutQuart',
-                        duration: pointCount > 0 ? 1500 / pointCount : 1500,
-                        from(ctx) {
-                            if (ctx.index === 0) {
-                                return ctx.chart.scales.y.getPixelForValue(0);
-                            }
-
-                            return ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
-                        },
-                        delay(ctx) {
-                            return ctx.type === 'data' ? ctx.dataIndex * 80 : 0;
-                        }
-                    }
-                });
-
                 const scheduleChartRender = (element, renderChart) => {
                     if (!element) {
                         return;
@@ -1529,6 +1502,35 @@
                     window.setTimeout(() => {
                         renderChart();
                     }, startDelay);
+                };
+
+                // Line chart point-by-point draw animation
+                const makeLineAnimation = (pointCount) => {
+                    const delayBetweenPoints = pointCount > 0 ? 2000 / pointCount : 250;
+                    return {
+                        x: {
+                            type: 'number',
+                            easing: 'easeInOutQuad',
+                            duration: delayBetweenPoints,
+                            from: NaN,
+                            delay(ctx) {
+                                if (ctx.type !== 'data' || ctx.xStarted) return 0;
+                                ctx.xStarted = true;
+                                return ctx.index * delayBetweenPoints;
+                            }
+                        },
+                        y: {
+                            type: 'number',
+                            easing: 'easeInOutQuad',
+                            duration: delayBetweenPoints,
+                            from: NaN,
+                            delay(ctx) {
+                                if (ctx.type !== 'data' || ctx.yStarted) return 0;
+                                ctx.yStarted = true;
+                                return ctx.index * delayBetweenPoints;
+                            }
+                        }
+                    };
                 };
 
                 const valueLabelsPlugin = {
@@ -1593,6 +1595,8 @@
 
                         const { ctx, chartArea } = chart;
                         const total = Number(cfg.total ?? sumValues(chart.data.datasets[0]?.data || []));
+                        const progress = Math.max(0, Math.min(1, Number(chart.$centerTextProgress ?? 1)));
+                        const animatedTotal = Math.round(total * progress);
                         const centerX = (chartArea.left + chartArea.right) / 2;
                         const centerY = (chartArea.top + chartArea.bottom) / 2;
                         ctx.save();
@@ -1600,7 +1604,7 @@
                         ctx.textBaseline = 'middle';
                         ctx.fillStyle = cfg.color || textColor;
                         ctx.font = `${cfg.totalFontWeight || 800} ${cfg.totalFontSize || 20}px ${cfg.fontFamily || "'Space Grotesk', sans-serif"}`;
-                        ctx.fillText(formatInteger(total), centerX, centerY - 8);
+                        ctx.fillText(formatInteger(animatedTotal), centerX, centerY - 8);
                         ctx.fillStyle = cfg.labelColor || '#64748b';
                         ctx.font = `${cfg.labelFontWeight || 700} ${cfg.labelFontSize || 10}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
                         ctx.fillText(cfg.label || 'Total', centerX, centerY + 12);
@@ -1759,11 +1763,19 @@
                             cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
+                            rotation: -90,
+                            circumference: 360,
                             animation: {
                                 duration: 1500,
                                 easing: 'easeOutQuart',
                                 animateRotate: true,
-                                animateScale: true
+                                animateScale: false,
+                                onProgress(context) {
+                                    context.chart.$centerTextProgress = context.initial ? 0 : context.currentStep / context.numSteps;
+                                },
+                                onComplete(context) {
+                                    context.chart.$centerTextProgress = 1;
+                                }
                             },
                             plugins: {
                                 centerTextPlugin: {
@@ -1833,11 +1845,19 @@
                             cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
+                            rotation: -90,
+                            circumference: 360,
                             animation: {
                                 duration: 1500,
                                 easing: 'easeOutQuart',
                                 animateRotate: true,
-                                animateScale: true
+                                animateScale: false,
+                                onProgress(context) {
+                                    context.chart.$centerTextProgress = context.initial ? 0 : context.currentStep / context.numSteps;
+                                },
+                                onComplete(context) {
+                                    context.chart.$centerTextProgress = 1;
+                                }
                             },
                             plugins: {
                                 centerTextPlugin: {
