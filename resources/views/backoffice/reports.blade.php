@@ -725,17 +725,17 @@
                     $overviewFleetHeader = number_format((int) ($fleetOccupancy['total'] ?? 0)) . ' total armada';
                 @endphp
 
-                <article class="card overview-card">
+                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                     <div class="section-head" style="margin-bottom: 8px;">
                         <h2 class="section-title">KPI Ringkas</h2>
                         <span class="chip" style="border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; background: #f0f3f8; color: #6a748a;">4 KPI utama</span>
                     </div>
 
                     <div class="kpi-grid">
-                        <div class="kpi-card total">
+                        <div class="kpi-card total dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Total Reservasi</p>
-                                <p class="kpi-value">{{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }}</p>
+                                <p class="kpi-value" style="font-family: 'Space Grotesk', sans-serif;" data-countup-target="{{ (int) ($overviewSummary['total_rentals'] ?? 0) }}" data-countup-type="number">{{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }}</p>
                                 <div class="kpi-support">
                                 <p class="kpi-trend {{ $totalReservationsTrend['tone'] ?? 'neutral' }}">
                                         @if (($totalReservationsTrend['direction'] ?? 'flat') !== 'flat')
@@ -758,10 +758,10 @@
                             </div>
                         </div>
 
-                        <div class="kpi-card revenue">
+                        <div class="kpi-card revenue dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Pendapatan Masuk</p>
-                                <p class="kpi-value">Rp {{ number_format((float) $overviewSummary['revenue_paid'], 0, ',', '.') }}</p>
+                                <p class="kpi-value" style="font-family: 'Space Grotesk', sans-serif;" data-countup-target="{{ (int) ($overviewSummary['revenue_paid'] ?? 0) }}" data-countup-type="currency">Rp {{ number_format((float) ($overviewSummary['revenue_paid'] ?? 0), 0, ',', '.') }}</p>
                                 <div class="kpi-support">
                                 <p class="kpi-trend {{ $revenueTrend['tone'] ?? 'neutral' }}">
                                         @if (($revenueTrend['direction'] ?? 'flat') !== 'flat')
@@ -783,11 +783,11 @@
                             </div>
                         </div>
 
-                        <div class="kpi-card avg">
+                        <div class="kpi-card avg dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Booking Berhasil</p>
                                 <div class="kpi-inline-metric">
-                                    <p class="kpi-value">{{ number_format((int) ($overviewSummary['success_bookings'] ?? 0)) }}</p>
+                                    <p class="kpi-value" style="font-family: 'Space Grotesk', sans-serif;" data-countup-target="{{ (int) ($overviewSummary['success_bookings'] ?? 0) }}" data-countup-type="number">{{ number_format((int) ($overviewSummary['success_bookings'] ?? 0)) }}</p>
                                     <p class="kpi-secondary">dari {{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }} reservasi</p>
                                 </div>
                                 <div class="kpi-support">
@@ -811,11 +811,11 @@
                             </div>
                         </div>
 
-                        <div class="kpi-card success">
+                        <div class="kpi-card success dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Booking Gagal</p>
                                 <div class="kpi-inline-metric">
-                                    <p class="kpi-value">{{ number_format((int) ($overviewSummary['failed_bookings'] ?? 0)) }}</p>
+                                    <p class="kpi-value" style="font-family: 'Space Grotesk', sans-serif;" data-countup-target="{{ (int) ($overviewSummary['failed_bookings'] ?? 0) }}" data-countup-type="number">{{ number_format((int) ($overviewSummary['failed_bookings'] ?? 0)) }}</p>
                                     <p class="kpi-secondary">dari {{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }} reservasi</p>
                                 </div>
                                 <div class="kpi-support">
@@ -845,7 +845,7 @@
 
             <section class="overview-charts">
                 <div class="chart-column">
-                    <article class="card overview-card">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Tren Periode Aktif</h2>
@@ -862,12 +862,12 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="chart-box trend chart-stage">
+                        <div class="chart-box trend chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <canvas id="overview-bookings-chart"></canvas>
                         </div>
                     </article>
 
-                    <article class="card overview-card">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Pendapatan Masuk</h2>
@@ -881,14 +881,14 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="chart-box revenue chart-stage">
+                        <div class="chart-box revenue chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <canvas id="overview-revenue-chart"></canvas>
                         </div>
                     </article>
                 </div>
 
                 <div class="chart-column">
-                    <article class="card overview-card">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Distribusi Status Rental</h2>
@@ -902,12 +902,12 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="chart-box status chart-stage">
+                        <div class="chart-box status chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <canvas id="overview-status-chart"></canvas>
                         </div>
                     </article>
 
-                    <article class="card overview-card">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Reservasi Berdasarkan Tipe Layanan</h2>
@@ -921,7 +921,7 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="chart-box service-type chart-stage">
+                        <div class="chart-box service-type chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <canvas id="overview-service-type-chart"></canvas>
                         </div>
                     </article>
@@ -929,7 +929,7 @@
             </section>
 
             <section class="overview-charts">
-                <article class="card overview-card">
+                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                     <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                         <div>
                             <h2 class="section-title" style="margin-bottom: 2px;">Top Armada Terpopuler</h2>
@@ -945,7 +945,7 @@
                     </div>
                     <div class="topcars-list">
                         @forelse ($topCars as $car)
-                            <div class="topcars-item">
+                            <div class="topcars-item dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                                 <div style="min-width: 0;">
                                     <p class="topcars-name">{{ $car['name'] }}</p>
                                     <p class="chart-header-meta" style="margin-top: 2px;">Rp {{ number_format((int) ($car['revenue'] ?? 0), 0, ',', '.') }}</p>
@@ -958,7 +958,7 @@
                     </div>
                 </article>
 
-                <article class="card overview-card">
+                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                     <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                         <div>
                             <h2 class="section-title" style="margin-bottom: 2px;">Status Ketersediaan Armada</h2>
@@ -973,15 +973,15 @@
                         </p>
                     </div>
                     <div class="kpi-expand-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-                        <div class="metric-mini">
+                        <div class="metric-mini dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <p class="kpi-label">Total</p>
                             <p class="kpi-value">{{ (int) $fleetOccupancy['total'] }}</p>
                         </div>
-                        <div class="metric-mini green">
+                        <div class="metric-mini green dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
                             <p class="kpi-label">Tersedia</p>
                             <p class="kpi-value">{{ (int) $fleetOccupancy['available'] }}</p>
                         </div>
-                        <div class="metric-mini" style="background: rgba(254, 242, 242, 0.98); border-color: rgba(254, 202, 202, 0.95);">
+                        <div class="metric-mini dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" style="background: rgba(254, 242, 242, 0.98); border-color: rgba(254, 202, 202, 0.95);">
                             <p class="kpi-label" style="color: #b91c1c;">Sibuk</p>
                             <p class="kpi-value" style="color: #b91c1c;">{{ (int) $fleetOccupancy['unavailable'] }}</p>
                         </div>
@@ -1404,6 +1404,14 @@
                 const overviewBookingsBreakdown = @json($chartBookingsBreakdown->values());
                 const overviewRevenueBreakdown = @json($chartRevenueBreakdown->values());
 
+                const getCssVar = (name, fallback) => {
+                    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+                    return value || fallback;
+                };
+
+                const blue = getCssVar('--blue', '#3f5ed7');
+                const green = getCssVar('--green', '#1dbb84');
+                const textColor = getCssVar('--text', '#202636');
                 const formatInteger = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCurrency = (value) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCompactCurrency = (value) => {
@@ -1423,6 +1431,65 @@
                     return (Number(value) / Number(total) * 100).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
                 };
                 const sumValues = (items) => items.reduce((sum, item) => sum + (Number(item) || 0), 0);
+
+                document.querySelectorAll('.dashboard-reveal').forEach((element, index) => {
+                    window.setTimeout(() => {
+                        element.classList.remove('opacity-0', 'translate-y-4');
+                    }, index * 100);
+                });
+
+                document.querySelectorAll('[data-countup-target]').forEach((element) => {
+                    const target = Number(element.dataset.countupTarget || 0);
+                    const type = element.dataset.countupType || 'number';
+                    const duration = 1400;
+                    const startTime = performance.now();
+
+                    const render = (value) => {
+                        element.textContent = type === 'currency'
+                            ? formatCurrency(value)
+                            : formatInteger(value);
+                    };
+
+                    const animate = (currentTime) => {
+                        const progress = Math.min((currentTime - startTime) / duration, 1);
+                        const eased = 1 - Math.pow(1 - progress, 4);
+                        render(Math.round(target * eased));
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        }
+                    };
+
+                    render(0);
+                    requestAnimationFrame(animate);
+                });
+
+                const makeLineAnimation = (pointCount) => ({
+                    x: {
+                        type: 'number',
+                        easing: 'easeOutQuart',
+                        duration: pointCount > 0 ? 1500 / pointCount : 1500,
+                        from: NaN,
+                        delay(ctx) {
+                            return ctx.type === 'data' ? ctx.dataIndex * 80 : 0;
+                        }
+                    },
+                    y: {
+                        type: 'number',
+                        easing: 'easeOutQuart',
+                        duration: pointCount > 0 ? 1500 / pointCount : 1500,
+                        from(ctx) {
+                            if (ctx.index === 0) {
+                                return ctx.chart.scales.y.getPixelForValue(0);
+                            }
+
+                            return ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1].getProps(['y'], true).y;
+                        },
+                        delay(ctx) {
+                            return ctx.type === 'data' ? ctx.dataIndex * 80 : 0;
+                        }
+                    }
+                });
 
                 const valueLabelsPlugin = {
                     id: 'valueLabelsPlugin',
@@ -1491,8 +1558,8 @@
                         ctx.save();
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillStyle = cfg.color || '#0f172a';
-                        ctx.font = `${cfg.totalFontWeight || 800} ${cfg.totalFontSize || 20}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
+                        ctx.fillStyle = cfg.color || textColor;
+                        ctx.font = `${cfg.totalFontWeight || 800} ${cfg.totalFontSize || 20}px ${cfg.fontFamily || "'Space Grotesk', sans-serif"}`;
                         ctx.fillText(formatInteger(total), centerX, centerY - 8);
                         ctx.fillStyle = cfg.labelColor || '#64748b';
                         ctx.font = `${cfg.labelFontWeight || 700} ${cfg.labelFontSize || 10}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
@@ -1513,18 +1580,19 @@
                             datasets: [{
                                 label: '{{ $chartMode === "hour" ? "Reservasi per Jam" : ($chartMode === "day" ? "Reservasi Harian" : "Reservasi Bulanan") }}',
                                 data: @json($chartRentals->pluck('value')),
-                                borderColor: '#3f5ed7',
+                                borderColor: blue,
                                 backgroundColor: 'rgba(63, 94, 215, 0.08)',
                                 fill: true,
                                 tension: 0.35,
                                 pointRadius: 4,
-                                pointBackgroundColor: '#3f5ed7',
+                                pointBackgroundColor: blue,
                                 borderWidth: 3,
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: makeLineAnimation(@json($chartRentals->count())),
                             plugins: {
                                 legend: { display: false },
                                 valueLabelsPlugin: {
@@ -1578,6 +1646,20 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart',
+                                delay(ctx) {
+                                    return ctx.type === 'data' ? ctx.dataIndex * 90 : 0;
+                                }
+                            },
+                            animations: {
+                                y: {
+                                    from(ctx) {
+                                        return ctx.chart.scales.y.getPixelForValue(0);
+                                    }
+                                }
+                            },
                             plugins: {
                                 legend: { display: false },
                                 valueLabelsPlugin: {
@@ -1629,7 +1711,7 @@
                             labels: @json($statusDistribution->pluck('label')),
                             datasets: [{
                                 data: statusValues,
-                                backgroundColor: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'],
+                                backgroundColor: ['#818cf8', '#f59e0b', '#3b82f6', green, '#ef4444', '#94a3b8'],
                                 borderWidth: 0,
                             }]
                         },
@@ -1637,6 +1719,12 @@
                             cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart',
+                                animateRotate: true,
+                                animateScale: true
+                            },
                             plugins: {
                                 centerTextPlugin: {
                                     enabled: true,
@@ -1658,8 +1746,8 @@
                                                 const value = Number(data[index]) || 0;
                                                 return {
                                                     text: `${label} ${formatInteger(value)} / ${formatPercent(value, total)}`,
-                                                    fillStyle: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'][index % 6],
-                                                    strokeStyle: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'][index % 6],
+                                                    fillStyle: ['#818cf8', '#f59e0b', '#3b82f6', green, '#ef4444', '#94a3b8'][index % 6],
+                                                    strokeStyle: ['#818cf8', '#f59e0b', '#3b82f6', green, '#ef4444', '#94a3b8'][index % 6],
                                                     lineWidth: 0,
                                                     hidden: false,
                                                     index
@@ -1697,7 +1785,7 @@
                             labels: @json($serviceTypeDistribution->pluck('label')),
                             datasets: [{
                                 data: serviceValues,
-                                backgroundColor: ['#3f5ed7', '#1dbb84'],
+                                backgroundColor: [blue, green],
                                 borderWidth: 0,
                             }]
                         },
@@ -1705,6 +1793,12 @@
                             cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart',
+                                animateRotate: true,
+                                animateScale: true
+                            },
                             plugins: {
                                 centerTextPlugin: {
                                     enabled: true,
@@ -1726,8 +1820,8 @@
                                                 const value = Number(data[index]) || 0;
                                                 return {
                                                     text: `${label} ${formatInteger(value)} / ${formatPercent(value, total)}`,
-                                                    fillStyle: ['#3f5ed7', '#1dbb84'][index % 2],
-                                                    strokeStyle: ['#3f5ed7', '#1dbb84'][index % 2],
+                                                    fillStyle: [blue, green][index % 2],
+                                                    strokeStyle: [blue, green][index % 2],
                                                     lineWidth: 0,
                                                     hidden: false,
                                                     index
