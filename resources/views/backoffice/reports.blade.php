@@ -6,6 +6,23 @@
             'reservation' => 'Laporan Reservasi',
             'fleet' => 'Laporan Armada',
         ];
+
+        $reportMonths = [
+            '01' => 'Januari',
+            '02' => 'Februari',
+            '03' => 'Maret',
+            '04' => 'April',
+            '05' => 'Mei',
+            '06' => 'Juni',
+            '07' => 'Juli',
+            '08' => 'Agustus',
+            '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember',
+        ];
+
+        $reportYears = range((int) now()->format('Y'), (int) now()->format('Y') - 5);
     @endphp
 
     <style>
@@ -28,6 +45,18 @@
             transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
         }
 
+        .report-switcher-trigger-icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 9px;
+            background: #0b1b4d;
+            flex: 0 0 26px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+
         .report-switcher-mode {
             font-size: 10px;
             font-weight: 800;
@@ -38,7 +67,6 @@
 
         .report-switcher-trigger:hover .report-switcher-trigger-main {
             border-bottom-color: rgba(11, 27, 77, 0.48);
-            background: rgba(11, 27, 77, 0.1) !important;
         }
 
         .report-switcher-trigger:hover .report-switcher-trigger-icon {
@@ -48,9 +76,147 @@
         .report-switcher-summary:hover {
             cursor: pointer;
         }
+
+        .report-filter-panel {
+            min-width: min(100%, 760px);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .report-filter-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: fit-content;
+            margin-left: auto;
+        }
+
+        .report-filter-group {
+            display: grid;
+            gap: 4px;
+            align-content: start;
+            min-width: 0;
+        }
+
+        .report-filter-mode {
+            width: 260px;
+            position: relative;
+        }
+
+        .report-filter-detail {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            width: fit-content;
+        }
+
+        .report-filter-detail.is-hidden {
+            display: none;
+        }
+
+        .report-filter-actions {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .report-filter-group {
+            display: grid;
+            gap: 4px;
+        }
+
+        .report-filter-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .report-filter-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dbe3ef;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .report-filter-field {
+            display: none;
+        }
+
+        .report-filter-field.is-visible {
+            display: grid;
+        }
+
+        .report-filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .report-filter-hint {
+            margin: 0;
+            font-size: 12px;
+            color: #6a748a;
+        }
+
+        .report-filter-range {
+            min-width: 162px;
+        }
+
+        .report-filter-mode .report-filter-hint {
+            position: absolute;
+            left: 0;
+            top: calc(100% + 2px);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1280px) {
+            .report-filter-row {
+                justify-content: flex-start;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .report-filter-mode {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .report-filter-row {
+                justify-content: flex-start;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .report-filter-mode {
+                width: 100%;
+            }
+
+            .report-filter-detail,
+            .report-filter-actions {
+                width: 100%;
+            }
+
+            .report-filter-actions {
+                margin-left: 0;
+            }
+        }
     </style>
 
-    <section class="page-head">
+    <section class="page-head" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
         <div>
             <details style="position: relative; display: inline-block;">
                 <summary class="report-switcher-trigger report-switcher-summary" style="list-style: none; display: inline-flex; align-items: center; gap: 10px; user-select: none; padding: 2px 0;">
@@ -59,9 +225,11 @@
                         <span class="report-switcher-trigger-line">
                             <span class="report-switcher-trigger-main">
                                 <h1 class="page-title" style="margin: 0;">{{ $reportTabLabels[$tab] ?? 'Overview' }}</h1>
-                                <svg class="report-switcher-trigger-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.55; flex: 0 0 auto; transition: transform 0.18s ease;">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
+                                <span class="report-switcher-trigger-icon-wrap" aria-hidden="true">
+                                    <svg class="report-switcher-trigger-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1; flex: 0 0 auto; transition: transform 0.18s ease;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </span>
                             </span>
                         </span>
                     </span>
@@ -69,7 +237,7 @@
 
                 <div style="position: absolute; left: 0; top: calc(100% + 10px); min-width: 240px; z-index: 20; padding: 8px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.95); background: rgba(255, 255, 255, 0.98); box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12); display: grid; gap: 4px;">
                     @foreach ($reportTabLabels as $key => $label)
-                        <a href="{{ route('backoffice.reports', ['tab' => $key, 'start_date' => $start_date, 'end_date' => $end_date]) }}"
+                        <a href="{{ route('backoffice.reports', ['tab' => $key, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd]) }}"
                            style="text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: {{ $tab === $key ? '#fff' : '#52607a' }}; background: {{ $tab === $key ? 'var(--blue)' : 'transparent' }};">
                             <span>{{ $label }}</span>
                             @if ($tab === $key)
@@ -81,21 +249,58 @@
             </details>
             <p class="page-subtitle">{{ $tab === 'overview' ? 'Ringkasan performa bisnis secara visual' : 'Rekap data pendapatan, reservasi, dan armada perusahaan.' }}</p>
         </div>
-    </section>
 
-    <section class="card" style="margin-bottom: 20px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.85); background: rgba(255, 255, 255, 0.88); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
-        <form method="GET" action="{{ route('backoffice.reports') }}" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; justify-content: flex-end; margin-left: auto;">
+        <form method="GET" action="{{ route('backoffice.reports') }}" class="report-filter-panel">
             <input type="hidden" name="tab" value="{{ $tab }}">
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Dari Tanggal</label>
-                    <input type="date" name="start_date" value="{{ $start_date }}" style="padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; color: var(--text); background: #fff; outline: none;">
+            <div class="report-filter-row">
+                <div class="report-filter-group report-filter-mode">
+                    <label class="report-filter-label">Mode Filter</label>
+                    <select name="filter_mode" id="filter-mode" class="report-filter-control">
+                        <option value="none" @selected($filterMode === 'none')>Default</option>
+                        <option value="range" @selected($filterMode === 'range')>Rentang Tanggal</option>
+                        <option value="day" @selected($filterMode === 'day')>Spesifik Hari</option>
+                        <option value="month" @selected($filterMode === 'month')>Spesifik Bulan</option>
+                        <option value="year" @selected($filterMode === 'year')>Spesifik Tahun</option>
+                    </select>
+                    <p class="report-filter-hint" style="margin-top: 2px;">Default otomatis menampilkan 4 bulan terakhir.</p>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em;">Sampai Tanggal</label>
-                    <input type="date" name="end_date" value="{{ $end_date }}" style="padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; color: var(--text); background: #fff; outline: none;">
+
+                <div class="report-filter-detail" data-filter-detail>
+                    <div class="report-filter-group report-filter-field report-filter-range" data-filter-field="range">
+                        <label class="report-filter-label">Dari Tanggal</label>
+                        <input type="date" name="filter_start" value="{{ $filterStart }}" class="report-filter-control">
+                    </div>
+
+                    <div class="report-filter-group report-filter-field report-filter-range" data-filter-field="range">
+                        <label class="report-filter-label">Sampai Tanggal</label>
+                        <input type="date" name="filter_end" value="{{ $filterEnd }}" class="report-filter-control">
+                    </div>
+
+                    <div class="report-filter-group report-filter-field" data-filter-field="day">
+                        <label class="report-filter-label">Tanggal</label>
+                        <input type="date" name="filter_date" value="{{ $filterDate }}" class="report-filter-control">
+                    </div>
+
+                    <div class="report-filter-group report-filter-field" data-filter-field="month">
+                        <label class="report-filter-label">Bulan</label>
+                        <select name="filter_month" class="report-filter-control">
+                            @foreach ($reportMonths as $monthValue => $monthLabel)
+                                <option value="{{ $monthValue }}" @selected($filterMonth === $monthValue)>{{ $monthLabel }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="report-filter-group report-filter-field" data-filter-field="month year">
+                        <label class="report-filter-label">Tahun</label>
+                        <select name="filter_year" class="report-filter-control">
+                            @foreach ($reportYears as $yearValue)
+                                <option value="{{ $yearValue }}" @selected((int) $filterYear === (int) $yearValue)>{{ $yearValue }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: flex-end;">
+
+                <div class="report-filter-actions" data-filter-actions>
                     <button type="submit" style="background: var(--blue); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; transition: opacity 0.2s;">
                         Terapkan Filter
                     </button>
@@ -104,26 +309,28 @@
                     </a>
                 </div>
             </div>
-
-            @if ($tab !== 'overview')
-                <a href="{{ route('backoffice.reports', ['tab' => $tab, 'start_date' => $start_date, 'end_date' => $end_date, 'export' => 'csv']) }}" style="background: var(--green); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s; white-space: nowrap;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Export CSV
-                </a>
-            @endif
         </form>
     </section>
 
+    @if ($tab !== 'overview')
+        <section class="card" style="margin-bottom: 20px; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(219, 227, 239, 0.85); background: rgba(255, 255, 255, 0.88); display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+            <a href="{{ route('backoffice.reports', ['tab' => $tab, 'filter_mode' => $filterMode, 'filter_date' => $filterDate, 'filter_month' => $filterMonth, 'filter_year' => $filterYear, 'filter_start' => $filterStart, 'filter_end' => $filterEnd, 'export' => 'csv']) }}" style="background: var(--green); padding: 10px 16px; border-radius: 10px; border: 0; color: white; font-weight: 700; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s; white-space: nowrap;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export CSV
+            </a>
+        </section>
+    @endif
+
     <!-- Summary Metrics & Visual Analytics Charts -->
-    @if ($tab === 'overview')
+        @if ($tab === 'overview')
         <style>
             .overview-layout {
                 display: grid;
-                gap: 14px;
+                gap: 10px;
             }
 
             .overview-kpi-row {
@@ -133,36 +340,54 @@
             .overview-charts {
                 display: grid;
                 grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-                gap: 14px;
+                gap: 10px;
                 align-items: stretch;
             }
 
             .chart-column {
                 display: grid;
-                gap: 14px;
+                gap: 10px;
                 align-content: start;
             }
 
             .overview-card {
-                padding: 16px;
-                border-radius: 22px;
+                padding: 10px;
+                border-radius: 18px;
                 height: 100%;
+            }
+
+            .chart-header-meta {
+                margin: 2px 0 0;
+                font-size: 11px;
+                line-height: 1.35;
+                color: #64748b;
+                font-weight: 600;
+            }
+
+            .chart-insight-top {
+                margin: 0;
+                font-size: 11px;
+                line-height: 1.35;
+                color: #64748b;
+                font-weight: 600;
+                text-align: right;
+                max-width: 260px;
             }
 
             .kpi-grid {
                 display: grid;
                 grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 12px;
+                gap: 10px;
             }
 
             .kpi-card {
                 display: flex;
                 align-items: stretch;
                 justify-content: space-between;
-                gap: 12px;
-                min-height: 74px;
-                padding: 12px 14px;
-                border-radius: 16px;
+                gap: 10px;
+                min-height: 60px;
+                padding: 9px 11px;
+                border-radius: 13px;
                 background: #fff;
                 border: 1px solid rgba(226, 232, 240, 0.95);
                 box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
@@ -192,8 +417,8 @@
             }
 
             .kpi-label {
-                margin: 0 0 6px;
-                font-size: 11px;
+                margin: 0 0 3px;
+                font-size: 10px;
                 font-weight: 800;
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
@@ -212,9 +437,14 @@
                 color: #b45309;
             }
 
+            .kpi-card.avg .kpi-value,
+            .kpi-card.success .kpi-value {
+                font-size: 28px;
+            }
+
             .kpi-value {
                 margin: 0;
-                font-size: 22px;
+                font-size: 28px;
                 line-height: 1;
                 font-weight: 800;
                 letter-spacing: -0.04em;
@@ -222,18 +452,107 @@
                 white-space: nowrap;
             }
 
+            .kpi-support {
+                display: grid;
+                gap: 4px;
+                margin-top: 8px;
+            }
+
+            .kpi-inline-metric {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .kpi-secondary {
+                margin: 0;
+                font-size: 12px;
+                line-height: 1.3;
+                color: #64748b;
+                font-weight: 600;
+            }
+
+            .kpi-trend {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                margin: 0;
+                font-size: 11px;
+                line-height: 1.2;
+                font-weight: 800;
+                flex-wrap: wrap;
+            }
+
+            .kpi-trend.positive {
+                color: var(--green);
+            }
+
+            .kpi-trend.negative {
+                color: var(--red);
+            }
+
+            .kpi-trend.neutral {
+                color: #64748b;
+            }
+
+            .kpi-trend-value {
+                font-size: 13px;
+                line-height: 1;
+                font-weight: 900;
+                letter-spacing: -0.02em;
+            }
+
+            .kpi-trend-icon {
+                width: 15px;
+                height: 15px;
+                flex: 0 0 15px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .kpi-trend-icon svg {
+                width: 15px;
+                height: 15px;
+                display: block;
+            }
+
+            .kpi-trend-icon.is-up {
+                transform: rotate(180deg);
+            }
+
+            .kpi-trend-suffix {
+                font-size: 10px;
+                line-height: 1.1;
+                font-weight: 700;
+                opacity: 0.85;
+            }
+
             .kpi-graphic {
-                width: 64px;
-                flex: 0 0 64px;
+                width: 60px;
+                flex: 0 0 60px;
                 display: flex;
                 align-items: center;
                 justify-content: flex-end;
-                opacity: 0.9;
+                opacity: 1;
             }
 
             .kpi-spark {
-                width: 64px;
-                height: 40px;
+                width: 60px;
+                height: 38px;
+                overflow: visible;
+            }
+
+            .kpi-spark path,
+            .kpi-spark polyline,
+            .kpi-spark line,
+            .kpi-spark circle {
+                stroke-width: 5 !important;
+            }
+
+            .kpi-card.revenue .kpi-spark path {
+                stroke-width: 4.5 !important;
             }
 
             .kpi-expand-grid {
@@ -243,8 +562,8 @@
             }
 
             .metric-mini {
-                padding: 12px 14px;
-                border-radius: 16px;
+                padding: 10px 12px;
+                border-radius: 14px;
                 background: #fff;
                 border: 1px solid rgba(226, 232, 240, 0.9);
             }
@@ -275,7 +594,7 @@
 
             .metric-mini .kpi-value {
                 margin: 0;
-                font-size: 18px;
+                font-size: 16px;
                 font-weight: 800;
                 line-height: 1.1;
                 color: var(--text);
@@ -286,20 +605,38 @@
                 width: 100%;
             }
 
+            .chart-stage {
+                position: relative;
+                width: 100%;
+            }
+
             .chart-box.trend {
-                height: 250px;
+                height: 235px;
             }
 
             .chart-box.status {
-                height: 220px;
+                height: 200px;
             }
 
             .chart-box.service-type {
-                height: 220px;
+                height: 200px;
             }
 
             .chart-box.revenue {
-                height: 190px;
+                height: 180px;
+            }
+
+            .chart-insight {
+                margin: 8px 0 0;
+                font-size: 11px;
+                line-height: 1.4;
+                color: #64748b;
+                font-weight: 600;
+            }
+
+            .chart-insight strong {
+                color: var(--text);
+                font-weight: 800;
             }
 
             .secondary-stack {
@@ -347,7 +684,7 @@
                 }
 
                 .chart-box.trend {
-                    height: 230px;
+                    height: 220px;
                 }
             }
 
@@ -360,15 +697,36 @@
                 .chart-box.status,
                 .chart-box.service-type,
                 .chart-box.revenue {
-                    height: 210px;
+                    height: 200px;
                 }
             }
         </style>
 
         <section class="overview-layout">
             <section class="overview-kpi-row">
+                @php
+                    $totalReservationsTrend = $overviewSummary['total_rentals_growth'] ?? ['value' => '0,0%', 'suffix' => 'vs periode sebelumnya', 'tone' => 'neutral'];
+                    $revenueTrend = $overviewSummary['revenue_paid_growth'] ?? ['value' => '0,0%', 'suffix' => 'vs periode sebelumnya', 'tone' => 'neutral'];
+                    $successTrend = $overviewSummary['success_rate_growth'] ?? ['value' => '0,0%', 'suffix' => 'vs periode sebelumnya', 'tone' => 'neutral'];
+                    $failedTrend = $overviewSummary['failed_rate_growth'] ?? ['value' => '0,0%', 'suffix' => 'vs periode sebelumnya', 'tone' => 'neutral'];
+                    $overviewBookingsPeak = $chartRentals->sortByDesc('value')->first();
+                    $overviewRevenuePeak = $chartRevenue->sortByDesc('value')->first();
+                    $overviewStatusPeak = $statusDistribution->sortByDesc('value')->first();
+                    $overviewServicePeak = $serviceTypeDistribution->sortByDesc('value')->first();
+                    $overviewTopCarPeak = $topCars->sortByDesc('count')->first();
+                    $overviewTotalStatuses = $statusDistribution->sum('value');
+                    $overviewTotalServices = $serviceTypeDistribution->sum('value');
+                    $overviewTotalTopCars = $topCars->sum('count');
+                    $overviewBookingsHeader = 'Total ' . number_format((int) ($overviewSummary['total_rentals'] ?? 0)) . ' reservasi';
+                    $overviewRevenueHeader = 'Total Rp' . number_format((int) ($overviewSummary['revenue_paid'] ?? 0), 0, ',', '.') . ' • ' . number_format((int) ($overviewSummary['paid_transactions'] ?? 0)) . ' transaksi paid';
+                    $overviewStatusHeader = number_format((int) $overviewTotalStatuses) . ' total reservasi';
+                    $overviewServiceHeader = number_format((int) $overviewTotalServices) . ' total reservasi';
+                    $overviewTopCarHeader = $overviewTopCarPeak ? number_format((int) ($overviewTopCarPeak['count'] ?? 0)) . ' reservasi paling sering dipesan' : 'Belum ada data pada periode ini';
+                    $overviewFleetHeader = number_format((int) ($fleetOccupancy['total'] ?? 0)) . ' total armada';
+                @endphp
+
                 <article class="card overview-card">
-                    <div class="section-head" style="margin-bottom: 12px;">
+                    <div class="section-head" style="margin-bottom: 8px;">
                         <h2 class="section-title">KPI Ringkas</h2>
                         <span class="chip" style="border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; background: #f0f3f8; color: #6a748a;">4 KPI utama</span>
                     </div>
@@ -376,8 +734,21 @@
                     <div class="kpi-grid">
                         <div class="kpi-card total">
                             <div class="kpi-copy">
-                                <p class="kpi-label">Total Booking</p>
-                                <p class="kpi-value">{{ (int) $overviewSummary['total_rentals'] }}</p>
+                                <p class="kpi-label">Total Reservasi</p>
+                                <p class="kpi-value">{{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }}</p>
+                                <div class="kpi-support">
+                                <p class="kpi-trend {{ $totalReservationsTrend['tone'] ?? 'neutral' }}">
+                                        @if (($totalReservationsTrend['direction'] ?? 'flat') !== 'flat')
+                                            <span class="kpi-trend-icon {{ ($totalReservationsTrend['direction'] ?? 'flat') === 'up' ? 'is-up' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                                                    <path d="M2.2 5.2H4.6V0h2.8v5.2H9.8L6 12 2.2 5.2Z" />
+                                                </svg>
+                                            </span>
+                                        @endif
+                                        <span class="kpi-trend-value">{{ $totalReservationsTrend['value'] ?? '0,0%' }}</span>
+                                        <span class="kpi-trend-suffix">{{ $totalReservationsTrend['suffix'] ?? 'vs periode sebelumnya' }}</span>
+                                    </p>
+                                </div>
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
@@ -389,8 +760,21 @@
 
                         <div class="kpi-card revenue">
                             <div class="kpi-copy">
-                                <p class="kpi-label">Revenue Paid</p>
+                                <p class="kpi-label">Pendapatan Masuk</p>
                                 <p class="kpi-value">Rp {{ number_format((float) $overviewSummary['revenue_paid'], 0, ',', '.') }}</p>
+                                <div class="kpi-support">
+                                <p class="kpi-trend {{ $revenueTrend['tone'] ?? 'neutral' }}">
+                                        @if (($revenueTrend['direction'] ?? 'flat') !== 'flat')
+                                            <span class="kpi-trend-icon {{ ($revenueTrend['direction'] ?? 'flat') === 'up' ? 'is-up' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                                                    <path d="M2.2 5.2H4.6V0h2.8v5.2H9.8L6 12 2.2 5.2Z" />
+                                                </svg>
+                                            </span>
+                                        @endif
+                                        <span class="kpi-trend-value">{{ $revenueTrend['value'] ?? '0,0%' }}</span>
+                                        <span class="kpi-trend-suffix">{{ $revenueTrend['suffix'] ?? 'vs periode sebelumnya' }}</span>
+                                    </p>
+                                </div>
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
@@ -402,7 +786,23 @@
                         <div class="kpi-card avg">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Booking Berhasil</p>
-                                <p class="kpi-value">{{ (int) $overviewSummary['success_bookings'] }}</p>
+                                <div class="kpi-inline-metric">
+                                    <p class="kpi-value">{{ number_format((int) ($overviewSummary['success_bookings'] ?? 0)) }}</p>
+                                    <p class="kpi-secondary">dari {{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }} reservasi</p>
+                                </div>
+                                <div class="kpi-support">
+                                <p class="kpi-trend {{ $successTrend['tone'] ?? 'neutral' }}">
+                                        @if (($successTrend['direction'] ?? 'flat') !== 'flat')
+                                            <span class="kpi-trend-icon {{ ($successTrend['direction'] ?? 'flat') === 'up' ? 'is-up' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                                                    <path d="M2.2 5.2H4.6V0h2.8v5.2H9.8L6 12 2.2 5.2Z" />
+                                                </svg>
+                                            </span>
+                                        @endif
+                                        <span class="kpi-trend-value">{{ $successTrend['value'] ?? '0,0%' }}</span>
+                                        <span class="kpi-trend-suffix">{{ $successTrend['suffix'] ?? 'vs periode sebelumnya' }}</span>
+                                    </p>
+                                </div>
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
@@ -414,7 +814,23 @@
                         <div class="kpi-card success">
                             <div class="kpi-copy">
                                 <p class="kpi-label">Booking Gagal</p>
-                                <p class="kpi-value">{{ (int) $overviewSummary['failed_bookings'] }}</p>
+                                <div class="kpi-inline-metric">
+                                    <p class="kpi-value">{{ number_format((int) ($overviewSummary['failed_bookings'] ?? 0)) }}</p>
+                                    <p class="kpi-secondary">dari {{ number_format((int) ($overviewSummary['total_rentals'] ?? 0)) }} reservasi</p>
+                                </div>
+                                <div class="kpi-support">
+                                <p class="kpi-trend {{ $failedTrend['tone'] ?? 'neutral' }}">
+                                        @if (($failedTrend['direction'] ?? 'flat') !== 'flat')
+                                            <span class="kpi-trend-icon {{ ($failedTrend['direction'] ?? 'flat') === 'up' ? 'is-up' : '' }}" aria-hidden="true">
+                                                <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                                                    <path d="M2.2 5.2H4.6V0h2.8v5.2H9.8L6 12 2.2 5.2Z" />
+                                                </svg>
+                                            </span>
+                                        @endif
+                                        <span class="kpi-trend-value">{{ $failedTrend['value'] ?? '0,0%' }}</span>
+                                        <span class="kpi-trend-suffix">{{ $failedTrend['suffix'] ?? 'vs periode sebelumnya' }}</span>
+                                    </p>
+                                </div>
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
@@ -430,20 +846,42 @@
             <section class="overview-charts">
                 <div class="chart-column">
                     <article class="card overview-card">
-                    <div class="section-head" style="margin-bottom: 12px;">
-                        <h2 class="section-title">Tren 6 Bulan Terakhir</h2>
-                        <span class="chip" style="border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; background: #f0f3f8; color: #6a748a;">Grafik utama</span>
-                    </div>
-                    <div class="chart-box trend">
-                        <canvas id="overview-bookings-chart"></canvas>
-                    </div>
+                        <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <h2 class="section-title" style="margin-bottom: 2px;">Tren Periode Aktif</h2>
+                                <p class="chart-header-meta">{{ $overviewBookingsHeader }}</p>
+                            </div>
+                            <div style="display: grid; justify-items: end; gap: 4px;">
+                                <span class="chip" style="border-radius: 999px; padding: 5px 10px; font-size: 10px; font-weight: 700; background: #f0f3f8; color: #6a748a;">{{ $chartMode === 'hour' ? 'Per Jam' : ($chartMode === 'day' ? 'Harian' : 'Bulanan') }}</span>
+                                <p class="chart-insight-top">
+                                    @if ($overviewBookingsPeak)
+                                        Reservasi tertinggi pada {{ $overviewBookingsPeak['label'] }}.
+                                    @else
+                                        Belum ada data pada periode ini.
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                        <div class="chart-box trend chart-stage">
+                            <canvas id="overview-bookings-chart"></canvas>
+                        </div>
                     </article>
 
                     <article class="card overview-card">
-                        <div class="section-head" style="margin-bottom: 12px;">
-                            <h2 class="section-title">Revenue Paid</h2>
+                        <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <h2 class="section-title" style="margin-bottom: 2px;">Pendapatan Masuk</h2>
+                                <p class="chart-header-meta">{{ $overviewRevenueHeader }}</p>
+                            </div>
+                            <p class="chart-insight-top">
+                                @if ($overviewRevenuePeak)
+                                    Pendapatan terbesar pada {{ $overviewRevenuePeak['label'] }}.
+                                @else
+                                    Belum ada data pada periode ini.
+                                @endif
+                            </p>
                         </div>
-                        <div class="chart-box revenue">
+                        <div class="chart-box revenue chart-stage">
                             <canvas id="overview-revenue-chart"></canvas>
                         </div>
                     </article>
@@ -451,19 +889,39 @@
 
                 <div class="chart-column">
                     <article class="card overview-card">
-                        <div class="section-head" style="margin-bottom: 12px;">
-                            <h2 class="section-title">Distribusi Status Rental</h2>
+                        <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <h2 class="section-title" style="margin-bottom: 2px;">Distribusi Status Rental</h2>
+                                <p class="chart-header-meta">{{ $overviewStatusHeader }}</p>
+                            </div>
+                            <p class="chart-insight-top">
+                                @if ($overviewStatusPeak)
+                                    Status terbanyak {{ $overviewStatusPeak['label'] }}.
+                                @else
+                                    Belum ada data pada periode ini.
+                                @endif
+                            </p>
                         </div>
-                        <div class="chart-box status">
+                        <div class="chart-box status chart-stage">
                             <canvas id="overview-status-chart"></canvas>
                         </div>
                     </article>
 
                     <article class="card overview-card">
-                        <div class="section-head" style="margin-bottom: 12px;">
-                            <h2 class="section-title">Booking Berdasarkan Tipe Layanan</h2>
+                        <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                            <div>
+                                <h2 class="section-title" style="margin-bottom: 2px;">Reservasi Berdasarkan Tipe Layanan</h2>
+                                <p class="chart-header-meta">{{ $overviewServiceHeader }}</p>
+                            </div>
+                            <p class="chart-insight-top">
+                                @if ($overviewServicePeak)
+                                    {{ $overviewServicePeak['label'] }} paling banyak dipilih.
+                                @else
+                                    Belum ada data pada periode ini.
+                                @endif
+                            </p>
                         </div>
-                        <div class="chart-box service-type">
+                        <div class="chart-box service-type chart-stage">
                             <canvas id="overview-service-type-chart"></canvas>
                         </div>
                     </article>
@@ -472,13 +930,26 @@
 
             <section class="overview-charts">
                 <article class="card overview-card">
-                    <div class="section-head" style="margin-bottom: 12px;">
-                        <h2 class="section-title">Top Armada Terpopuler</h2>
+                    <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <h2 class="section-title" style="margin-bottom: 2px;">Top Armada Terpopuler</h2>
+                            <p class="chart-header-meta">{{ $overviewTopCarHeader }}</p>
+                        </div>
+                        <p class="chart-insight-top">
+                            @if ($overviewTopCarPeak)
+                                {{ $overviewTopCarPeak['name'] }} paling sering dipesan.
+                            @else
+                                Belum ada data pada periode ini.
+                            @endif
+                        </p>
                     </div>
                     <div class="topcars-list">
                         @forelse ($topCars as $car)
                             <div class="topcars-item">
-                                <p class="topcars-name">{{ $car['name'] }}</p>
+                                <div style="min-width: 0;">
+                                    <p class="topcars-name">{{ $car['name'] }}</p>
+                                    <p class="chart-header-meta" style="margin-top: 2px;">Rp {{ number_format((int) ($car['revenue'] ?? 0), 0, ',', '.') }}</p>
+                                </div>
                                 <span class="text-xs font-bold rounded-full px-2 py-1 bg-slate-200 text-slate-700" style="white-space: nowrap;">{{ $car['count'] }}x</span>
                             </div>
                         @empty
@@ -488,8 +959,18 @@
                 </article>
 
                 <article class="card overview-card">
-                    <div class="section-head" style="margin-bottom: 12px;">
-                        <h2 class="section-title">Status Ketersediaan Armada</h2>
+                    <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <h2 class="section-title" style="margin-bottom: 2px;">Status Ketersediaan Armada</h2>
+                            <p class="chart-header-meta">{{ $overviewFleetHeader }}</p>
+                        </div>
+                        <p class="chart-insight-top">
+                            @if (($fleetOccupancy['total'] ?? 0) > 0)
+                                {{ (int) ($fleetOccupancy['available'] ?? 0) }} armada masih tersedia.
+                            @else
+                                Belum ada data pada periode ini.
+                            @endif
+                        </p>
                     </div>
                     <div class="kpi-expand-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                         <div class="metric-mini">
@@ -897,7 +1378,131 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const filterMode = document.getElementById('filter-mode');
+            const filterFields = document.querySelectorAll('[data-filter-field]');
+            const filterDetail = document.querySelector('[data-filter-detail]');
+
+            function syncFilterFields() {
+                const activeMode = filterMode ? filterMode.value : 'none';
+                filterFields.forEach((field) => {
+                    const modes = (field.dataset.filterField || '').split(/\s+/).filter(Boolean);
+                    field.classList.toggle('is-visible', modes.includes(activeMode));
+                });
+
+                if (filterDetail) {
+                    const hasDetail = activeMode !== 'none';
+                    filterDetail.classList.toggle('is-hidden', !hasDetail);
+                }
+            }
+
+            if (filterMode) {
+                filterMode.addEventListener('change', syncFilterFields);
+                syncFilterFields();
+            }
+
             @if ($tab === 'overview')
+                const overviewBookingsBreakdown = @json($chartBookingsBreakdown->values());
+                const overviewRevenueBreakdown = @json($chartRevenueBreakdown->values());
+
+                const formatInteger = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
+                const formatCurrency = (value) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value) || 0);
+                const formatCompactCurrency = (value) => {
+                    const amount = Number(value) || 0;
+                    if (amount >= 1000000) {
+                        return 'Rp' + (amount / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+                    }
+
+                    if (amount >= 1000) {
+                        return 'Rp' + (amount / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb';
+                    }
+
+                    return 'Rp' + formatInteger(amount);
+                };
+                const formatPercent = (value, total) => {
+                    if (!total) return '0,0%';
+                    return (Number(value) / Number(total) * 100).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+                };
+                const sumValues = (items) => items.reduce((sum, item) => sum + (Number(item) || 0), 0);
+
+                const valueLabelsPlugin = {
+                    id: 'valueLabelsPlugin',
+                    afterDatasetsDraw(chart, args, options) {
+                        const cfg = options || {};
+                        if (!cfg.enabled) {
+                            return;
+                        }
+
+                        const dataset = chart.data.datasets[0] || {};
+                        const values = (dataset.data || []).map((value) => Number(value) || 0);
+                        if (!values.length) {
+                            return;
+                        }
+
+                        const maxValue = Math.max(...values);
+                        const showAll = values.length <= (cfg.showAllThreshold ?? 12);
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.fillStyle = cfg.color || '#475569';
+                        ctx.font = `${cfg.fontWeight || 700} ${cfg.fontSize || 10}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+
+                        chart.getDatasetMeta(0).data.forEach((element, index) => {
+                            const value = values[index];
+                            if (value <= 0) {
+                                return;
+                            }
+                            if (!showAll && index !== values.length - 1 && value !== maxValue) {
+                                return;
+                            }
+
+                            const label = typeof cfg.formatter === 'function'
+                                ? cfg.formatter(value, index, values, chart)
+                                : String(value);
+                            if (!label) {
+                                return;
+                            }
+
+                            const position = element.tooltipPosition();
+                            ctx.fillText(label, position.x, position.y - (cfg.offset || 8));
+                        });
+
+                        ctx.restore();
+                    }
+                };
+
+                const centerTextPlugin = {
+                    id: 'centerTextPlugin',
+                    beforeDraw(chart, args, options) {
+                        const cfg = options || {};
+                        if (!cfg.enabled || chart.config.type !== 'doughnut') {
+                            return;
+                        }
+
+                        const meta = chart.getDatasetMeta(0);
+                        if (!meta || !meta.data || !meta.data.length) {
+                            return;
+                        }
+
+                        const { ctx, chartArea } = chart;
+                        const total = Number(cfg.total ?? sumValues(chart.data.datasets[0]?.data || []));
+                        const centerX = (chartArea.left + chartArea.right) / 2;
+                        const centerY = (chartArea.top + chartArea.bottom) / 2;
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillStyle = cfg.color || '#0f172a';
+                        ctx.font = `${cfg.totalFontWeight || 800} ${cfg.totalFontSize || 20}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
+                        ctx.fillText(formatInteger(total), centerX, centerY - 8);
+                        ctx.fillStyle = cfg.labelColor || '#64748b';
+                        ctx.font = `${cfg.labelFontWeight || 700} ${cfg.labelFontSize || 10}px ${cfg.fontFamily || "'Instrument Sans', sans-serif"}`;
+                        ctx.fillText(cfg.label || 'Total', centerX, centerY + 12);
+                        ctx.restore();
+                    }
+                };
+
+                Chart.register(valueLabelsPlugin, centerTextPlugin);
+
                 // 1. Overview Bookings Line Chart
                 const overviewBookingsCtx = document.getElementById('overview-bookings-chart');
                 if (overviewBookingsCtx) {
@@ -906,7 +1511,7 @@
                         data: {
                             labels: @json($chartRentals->pluck('label')),
                             datasets: [{
-                                label: 'Booking',
+                                label: '{{ $chartMode === "hour" ? "Reservasi per Jam" : ($chartMode === "day" ? "Reservasi Harian" : "Reservasi Bulanan") }}',
                                 data: @json($chartRentals->pluck('value')),
                                 borderColor: '#3f5ed7',
                                 backgroundColor: 'rgba(63, 94, 215, 0.08)',
@@ -920,7 +1525,27 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
+                            plugins: {
+                                legend: { display: false },
+                                valueLabelsPlugin: {
+                                    enabled: true,
+                                    showAllThreshold: 12,
+                                    formatter: (value) => String(value)
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => overviewBookingsBreakdown[items[0].dataIndex]?.label || items[0].label,
+                                        label: (ctx) => `Reservasi: ${formatInteger(overviewBookingsBreakdown[ctx.dataIndex]?.total ?? ctx.parsed.y)}`,
+                                        afterBody: (items) => {
+                                            const detail = overviewBookingsBreakdown[items[0].dataIndex] || {};
+                                            return [
+                                                `Booking berhasil: ${formatInteger(detail.success ?? 0)}`,
+                                                `Booking gagal: ${formatInteger(detail.failed ?? 0)}`
+                                            ];
+                                        }
+                                    }
+                                }
+                            },
                             scales: {
                                 y: {
                                     beginAtZero: true,
@@ -944,7 +1569,7 @@
                         data: {
                             labels: @json($chartRevenue->pluck('label')),
                             datasets: [{
-                                label: 'Pendapatan',
+                                label: '{{ $chartMode === "hour" ? "Pendapatan per Jam" : ($chartMode === "day" ? "Pendapatan Harian" : "Pendapatan Bulanan") }}',
                                 data: @json($chartRevenue->pluck('value')),
                                 backgroundColor: 'rgba(29, 187, 132, 0.75)',
                                 borderRadius: 6,
@@ -953,7 +1578,24 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
+                            plugins: {
+                                legend: { display: false },
+                                valueLabelsPlugin: {
+                                    enabled: true,
+                                    showAllThreshold: 12,
+                                    formatter: (value) => formatCompactCurrency(value)
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => overviewRevenueBreakdown[items[0].dataIndex]?.label || items[0].label,
+                                        label: (ctx) => `Pendapatan masuk: ${formatCurrency(overviewRevenueBreakdown[ctx.dataIndex]?.revenue ?? ctx.parsed.y)}`,
+                                        afterBody: (items) => {
+                                            const detail = overviewRevenueBreakdown[items[0].dataIndex] || {};
+                                            return [`Transaksi paid: ${formatInteger(detail.transactions ?? 0)}`];
+                                        }
+                                    }
+                                }
+                            },
                             scales: {
                                 y: {
                                     beginAtZero: true,
@@ -975,6 +1617,9 @@
                     });
                 }
 
+                const statusValues = @json($statusDistribution->pluck('value'));
+                const statusTotal = sumValues(statusValues);
+
                 // 3. Overview Status Distribution Doughnut Chart
                 const overviewStatusCtx = document.getElementById('overview-status-chart');
                 if (overviewStatusCtx) {
@@ -983,28 +1628,65 @@
                         data: {
                             labels: @json($statusDistribution->pluck('label')),
                             datasets: [{
-                                data: @json($statusDistribution->pluck('value')),
+                                data: statusValues,
                                 backgroundColor: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'],
                                 borderWidth: 0,
                             }]
                         },
                         options: {
+                            cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
+                                centerTextPlugin: {
+                                    enabled: true,
+                                    total: statusTotal,
+                                    label: 'Total Reservasi'
+                                },
                                 legend: {
                                     position: 'bottom',
                                     labels: {
                                         boxWidth: 8,
                                         boxHeight: 8,
                                         font: { size: 10, family: "'Instrument Sans', sans-serif" },
-                                        color: '#64748b'
+                                        color: '#64748b',
+                                        generateLabels: (chart) => {
+                                            const dataset = chart.data.datasets[0] || {};
+                                            const data = dataset.data || [];
+                                            const total = sumValues(data);
+                                            return chart.data.labels.map((label, index) => {
+                                                const value = Number(data[index]) || 0;
+                                                return {
+                                                    text: `${label} ${formatInteger(value)} / ${formatPercent(value, total)}`,
+                                                    fillStyle: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'][index % 6],
+                                                    strokeStyle: ['#818cf8', '#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#94a3b8'][index % 6],
+                                                    lineWidth: 0,
+                                                    hidden: false,
+                                                    index
+                                                };
+                                            });
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => items[0].label,
+                                        label: (ctx) => {
+                                            const value = Number(ctx.parsed) || 0;
+                                            return [
+                                                `${formatInteger(value)} reservasi`,
+                                                `${formatPercent(value, statusTotal)} dari total`
+                                            ];
+                                        }
                                     }
                                 }
                             }
                         }
                     });
                 }
+
+                const serviceValues = @json($serviceTypeDistribution->pluck('value'));
+                const serviceTotal = sumValues(serviceValues);
 
                 // 4. Overview Service Type Distribution Doughnut Chart
                 const overviewServiceTypeCtx = document.getElementById('overview-service-type-chart');
@@ -1014,22 +1696,56 @@
                         data: {
                             labels: @json($serviceTypeDistribution->pluck('label')),
                             datasets: [{
-                                data: @json($serviceTypeDistribution->pluck('value')),
+                                data: serviceValues,
                                 backgroundColor: ['#3f5ed7', '#1dbb84'],
                                 borderWidth: 0,
                             }]
                         },
                         options: {
+                            cutout: '68%',
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
+                                centerTextPlugin: {
+                                    enabled: true,
+                                    total: serviceTotal,
+                                    label: 'Total Reservasi'
+                                },
                                 legend: {
                                     position: 'bottom',
                                     labels: {
                                         boxWidth: 8,
                                         boxHeight: 8,
                                         font: { size: 10, family: "'Instrument Sans', sans-serif" },
-                                        color: '#64748b'
+                                        color: '#64748b',
+                                        generateLabels: (chart) => {
+                                            const dataset = chart.data.datasets[0] || {};
+                                            const data = dataset.data || [];
+                                            const total = sumValues(data);
+                                            return chart.data.labels.map((label, index) => {
+                                                const value = Number(data[index]) || 0;
+                                                return {
+                                                    text: `${label} ${formatInteger(value)} / ${formatPercent(value, total)}`,
+                                                    fillStyle: ['#3f5ed7', '#1dbb84'][index % 2],
+                                                    strokeStyle: ['#3f5ed7', '#1dbb84'][index % 2],
+                                                    lineWidth: 0,
+                                                    hidden: false,
+                                                    index
+                                                };
+                                            });
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => items[0].label,
+                                        label: (ctx) => {
+                                            const value = Number(ctx.parsed) || 0;
+                                            return [
+                                                `${formatInteger(value)} reservasi`,
+                                                `${formatPercent(value, serviceTotal)} dari total`
+                                            ];
+                                        }
                                     }
                                 }
                             }

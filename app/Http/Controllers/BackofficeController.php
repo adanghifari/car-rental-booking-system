@@ -1069,11 +1069,17 @@ class BackofficeController extends Controller
     public function reports(Request $request)
     {
         $tab = $request->query('tab', 'overview');
-        $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate = $request->query('end_date', Carbon::now()->toDateString());
-
-        $start = Carbon::parse($startDate)->startOfDay();
-        $end = Carbon::parse($endDate)->endOfDay();
+        $reportPeriod = $this->resolveReportFilterPeriod($request);
+        $filterMode = $reportPeriod['filterMode'];
+        $filterDate = $reportPeriod['filterDate'];
+        $filterMonth = $reportPeriod['filterMonth'];
+        $filterYear = $reportPeriod['filterYear'];
+        $filterStart = $reportPeriod['filterStart'];
+        $filterEnd = $reportPeriod['filterEnd'];
+        $periodStart = $reportPeriod['periodStart'];
+        $periodEnd = $reportPeriod['periodEnd'];
+        $previousPeriodStart = $reportPeriod['previousPeriodStart'];
+        $previousPeriodEnd = $reportPeriod['previousPeriodEnd'];
 
         // Prepare Laporan Overview data if tab is overview
         $overviewSummary = [];
@@ -1081,28 +1087,76 @@ class BackofficeController extends Controller
         $serviceTypeDistribution = collect();
         $topCars = collect();
         $fleetOccupancy = [];
+        $chartBookingsBreakdown = collect();
+        $chartRevenueBreakdown = collect();
+        $paidTransactions = 0;
 
         if ($tab === 'overview') {
-            $totalRentals = Rental::whereBetween('created_at', [$start, $end])->count();
-            $successRentals = Rental::whereBetween('created_at', [$start, $end])
-                ->whereIn('status', [RentalStatus::RETURNED, RentalStatus::ONGOING])
-                ->count();
-            $successRate = $totalRentals > 0 ? ($successRentals / $totalRentals) * 100 : 0;
+            $totalRentalsCurrentQuery = Rental::query();
+            $totalRentalsPreviousQuery = Rental::query();
+            $revenuePaidCurrentQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $revenuePaidPreviousQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $successRentalsCurrentQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $successRentalsPreviousQuery = PaymentHistory::query()->where('status', PaymentStatus::PAID);
+            $failedRentalsCurrentQuery = Rental::query()->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+            $failedRentalsPreviousQuery = Rental::query()->whereIn('status', [RentalStatus::CANCELLED, RentalStatus::EXPIRED]);
+
+            $this->applyReportFilter($totalRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($totalRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($revenuePaidCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($revenuePaidPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($successRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($successRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+            $this->applyReportFilter($failedRentalsCurrentQuery, $periodStart, $periodEnd);
+            $this->applyReportFilter($failedRentalsPreviousQuery, $previousPeriodStart, $previousPeriodEnd);
+
+            $totalRentals = $totalRentalsCurrentQuery->count();
+            $previousTotalRentals = $totalRentalsPreviousQuery->count();
+
+            $successRentals = (clone $successRentalsCurrentQuery)
+                ->distinct()
+                ->count('rental_id');
+            $previousSuccessRentals = (clone $successRentalsPreviousQuery)
+                ->distinct()
+                ->count('rental_id');
+
+            $failedRentals = $failedRentalsCurrentQuery->count();
+            $previousFailedRentals = $failedRentalsPreviousQuery->count();
+
+            $revenuePaid = (int) $revenuePaidCurrentQuery->sum('amount');
+            $paidTransactions = (clone $revenuePaidCurrentQuery)->count();
+            $previousRevenuePaid = (int) $revenuePaidPreviousQuery->sum('amount');
+
+            $successRate = $totalRentals > 0 ? round(($successRentals / $totalRentals) * 100, 1) : 0.0;
+            $previousSuccessRate = $previousTotalRentals > 0 ? round(($previousSuccessRentals / $previousTotalRentals) * 100, 1) : 0.0;
+            $failedRate = $totalRentals > 0 ? round(($failedRentals / $totalRentals) * 100, 1) : 0.0;
+            $previousFailedRate = $previousTotalRentals > 0 ? round(($previousFailedRentals / $previousTotalRentals) * 100, 1) : 0.0;
 
             $overviewSummary = [
                 'total_cars' => Car::count(),
                 'total_rentals' => $totalRentals,
+                'previous_total_rentals' => $previousTotalRentals,
                 'total_users' => User::count(),
-                'revenue_paid' => (int) PaymentHistory::where('status', PaymentStatus::PAID)
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('amount'),
+                'revenue_paid' => $revenuePaid,
+                'paid_transactions' => $paidTransactions,
+                'previous_revenue_paid' => $previousRevenuePaid,
                 'success_bookings' => $successRentals,
-                'failed_bookings' => max(0, $totalRentals - $successRentals),
+                'previous_success_bookings' => $previousSuccessRentals,
+                'failed_bookings' => $failedRentals,
+                'previous_failed_bookings' => $previousFailedRentals,
                 'success_rate' => $successRate,
+                'previous_success_rate' => $previousSuccessRate,
+                'failed_rate' => $failedRate,
+                'previous_failed_rate' => $previousFailedRate,
+                'total_rentals_growth' => $this->buildRelativeGrowthText($totalRentals, $previousTotalRentals),
+                'revenue_paid_growth' => $this->buildRelativeGrowthText($revenuePaid, $previousRevenuePaid),
+                'success_rate_growth' => $this->buildPointChangeText($successRate, $previousSuccessRate, false),
+                'failed_rate_growth' => $this->buildPointChangeText($failedRate, $previousFailedRate, true),
             ];
 
-            $statusDistribution = Rental::query()
-                ->whereBetween('created_at', [$start, $end])
+            $statusDistributionQuery = Rental::query();
+            $this->applyReportFilter($statusDistributionQuery, $periodStart, $periodEnd);
+            $statusDistribution = $statusDistributionQuery
                 ->groupBy('status')
                 ->select('status', DB::raw('count(*) as total'))
                 ->get()
@@ -1119,8 +1173,9 @@ class BackofficeController extends Controller
                     'value' => $item->total
                 ]);
 
-            $serviceTypeDistribution = Rental::query()
-                ->whereBetween('created_at', [$start, $end])
+            $serviceTypeDistributionQuery = Rental::query();
+            $this->applyReportFilter($serviceTypeDistributionQuery, $periodStart, $periodEnd);
+            $serviceTypeDistribution = $serviceTypeDistributionQuery
                 ->groupBy('type')
                 ->select('type', DB::raw('count(*) as total'))
                 ->get()
@@ -1133,14 +1188,22 @@ class BackofficeController extends Controller
                     'value' => $item->total
                 ]);
 
-            $topCars = Car::query()
-                ->withCount(['rentals' => fn($q) => $q->whereBetween('created_at', [$start, $end])])
+            $topCarsQuery = Car::query()
+                ->withCount(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                    $this->applyReportFilter($q, $periodStart, $periodEnd);
+                }])
+                ->withSum(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                    $this->applyReportFilter($q, $periodStart, $periodEnd);
+                }], 'total_price')
                 ->orderByDesc('rentals_count')
-                ->limit(5)
+                ->limit(5);
+
+            $topCars = $topCarsQuery
                 ->get()
                 ->map(fn($car) => [
                     'name' => trim($car->brand . ' ' . $car->name),
-                    'count' => $car->rentals_count
+                    'count' => $car->rentals_count,
+                    'revenue' => (int) ($car->rentals_sum_total_price ?? 0),
                 ]);
 
             $fleetOccupancy = [
@@ -1154,14 +1217,15 @@ class BackofficeController extends Controller
         $carStats = collect();
         if ($tab === 'fleet') {
             $cars = Car::all();
-            $payments = PaymentHistory::query()
+            $paymentsQuery = PaymentHistory::query()
                 ->with('rental')
-                ->where('status', PaymentStatus::PAID)
-                ->whereBetween('created_at', [$start, $end])
-                ->get();
+                ->where('status', PaymentStatus::PAID);
+            $this->applyReportFilter($paymentsQuery, $periodStart, $periodEnd);
+            $payments = $paymentsQuery->get();
 
-            $rentals = Rental::query()
-                ->whereBetween('created_at', [$start, $end])
+            $rentalsQuery = Rental::query();
+            $this->applyReportFilter($rentalsQuery, $periodStart, $periodEnd);
+            $rentals = $rentalsQuery
                 ->get();
 
             $carStats = $cars->map(function ($car) use ($rentals, $payments) {
@@ -1186,13 +1250,13 @@ class BackofficeController extends Controller
 
         // Handle CSV Export
         if ($request->query('export') === 'csv') {
-            $filename = "laporan_{$tab}_{$startDate}_to_{$endDate}.csv";
+            $filename = "laporan_{$tab}_{$filterMode}.csv";
             $headers = [
                 'Content-Type' => 'text/csv; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
-            return response()->stream(function () use ($tab, $start, $end, $carStats) {
+            return response()->stream(function () use ($tab, $periodStart, $periodEnd, $carStats) {
                 $handle = fopen('php://output', 'w');
                 // Add UTF-8 BOM
                 fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
@@ -1202,7 +1266,7 @@ class BackofficeController extends Controller
                     PaymentHistory::query()
                         ->with(['rental.user', 'rental.car'])
                         ->where('status', PaymentStatus::PAID)
-                        ->whereBetween('created_at', [$start, $end])
+                        ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
                         ->latest()
                         ->chunk(100, function ($histories) use ($handle) {
                             foreach ($histories as $history) {
@@ -1222,7 +1286,7 @@ class BackofficeController extends Controller
                     fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
                     Rental::query()
                         ->with(['user', 'car'])
-                        ->whereBetween('created_at', [$start, $end])
+                        ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
                         ->latest()
                         ->chunk(100, function ($rentals) use ($handle) {
                             foreach ($rentals as $rental) {
@@ -1269,8 +1333,8 @@ class BackofficeController extends Controller
         if ($tab === 'revenue') {
             $baseQuery = PaymentHistory::query()
                 ->with(['rental.user', 'rental.car'])
-                ->where('status', PaymentStatus::PAID)
-                ->whereBetween('created_at', [$start, $end]);
+                ->where('status', PaymentStatus::PAID);
+            $this->applyReportFilter($baseQuery, $periodStart, $periodEnd);
 
             $totalRevenue = (int) $baseQuery->sum('amount');
             $totalTransactions = $baseQuery->count();
@@ -1286,8 +1350,8 @@ class BackofficeController extends Controller
 
         } elseif ($tab === 'reservation') {
             $baseQuery = Rental::query()
-                ->with(['user', 'car'])
-                ->whereBetween('created_at', [$start, $end]);
+                ->with(['user', 'car']);
+            $this->applyReportFilter($baseQuery, $periodStart, $periodEnd);
 
             $totalReservations = $baseQuery->count();
             $pending = (clone $baseQuery)->where('status', RentalStatus::PENDING_VERIFICATION)->count();
@@ -1356,38 +1420,167 @@ class BackofficeController extends Controller
         }
 
         // Prepare chart and featured fleet data for visual analytics
-        $chartNow = Carbon::parse($endDate);
-        $months = collect(range(5, 0))->map(fn (int $offset) => $chartNow->copy()->subMonths($offset)->startOfMonth());
-        $monthLabels = $months->map(fn (Carbon $date) => $date->translatedFormat('M'));
+        $chartStart = $periodStart ? $periodStart->copy() : Carbon::now()->subMonthsNoOverflow(5)->startOfMonth();
+        $chartEnd = $periodEnd ? $periodEnd->copy() : Carbon::now()->endOfDay();
+        $chartMode = $filterMode === 'day'
+            ? 'hour'
+            : ((max(1, $chartStart->copy()->startOfDay()->diffInDays($chartEnd->copy()->startOfDay()) + 1) <= 31) ? 'day' : 'month');
+        if ($chartMode === 'hour') {
+            $chartBuckets = collect(range(0, 23))->map(fn (int $hour) => $chartStart->copy()->startOfDay()->addHours($hour));
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
 
-        $rentalCounts = Rental::query()
-            ->where('created_at', '>=', $months->first())
-            ->where('created_at', '<=', $months->last()->copy()->endOfMonth())
-            ->get()
-            ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
-            ->map->count();
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('H'))
+                ->map->count();
 
-        $revenueByMonth = PaymentHistory::query()
-            ->where('status', PaymentStatus::PAID)
-            ->where('created_at', '>=', $months->first())
-            ->where('created_at', '<=', $months->last()->copy()->endOfMonth())
-            ->get()
-            ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
-            ->map(fn ($payments) => $payments->sum('amount'));
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('H'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('H'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('H'))
+                ->map->count();
 
-        $chartRentals = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
-        ]);
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'value' => (int) ($rentalCounts[$date->format('H')] ?? 0),
+            ]);
 
-        $chartRevenue = $months->map(fn (Carbon $date) => [
-            'label' => $date->translatedFormat('M'),
-            'value' => (int) ($revenueByMonth[$date->format('Y-m')] ?? 0),
-        ]);
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'value' => (int) ($revenueByPeriod[$date->format('H')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'total' => (int) ($rentalCounts[$date->format('H')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('H')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('H')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->format('H:00'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('H')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('H')] ?? 0),
+            ]);
+        } elseif ($chartMode === 'day') {
+            $chartBuckets = collect();
+            $cursor = $chartStart->copy()->startOfDay();
+            while ($cursor->lte($chartEnd->copy()->endOfDay())) {
+                $chartBuckets->push($cursor->copy());
+                $cursor->addDay();
+            }
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m-d'))
+                ->map->count();
+
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m-d'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m-d'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m-d'))
+                ->map->count();
+
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'value' => (int) ($rentalCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'value' => (int) ($revenueByPeriod[$date->format('Y-m-d')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'total' => (int) ($rentalCounts[$date->format('Y-m-d')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('Y-m-d')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('d M'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('Y-m-d')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('Y-m-d')] ?? 0),
+            ]);
+        } else {
+            $chartStartMonth = $chartStart->copy()->startOfMonth();
+            $chartEndMonth = $chartEnd->copy()->startOfMonth();
+            $chartBuckets = collect();
+            $cursor = $chartStartMonth->copy();
+            while ($cursor->lte($chartEndMonth)) {
+                $chartBuckets->push($cursor->copy());
+                $cursor->addMonthNoOverflow();
+            }
+            $periodRentals = Rental::query()
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+            $periodPayments = PaymentHistory::query()
+                ->where('status', PaymentStatus::PAID)
+                ->whereBetween('created_at', [$chartStart->copy()->startOfDay(), $chartEnd->copy()->endOfDay()])
+                ->get();
+
+            $rentalCounts = $periodRentals
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
+                ->map->count();
+
+            $revenueByPeriod = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
+                ->map(fn ($payments) => $payments->sum('amount'));
+            $successCounts = $periodPayments
+                ->groupBy(fn (PaymentHistory $payment) => $payment->created_at->format('Y-m'))
+                ->map->count();
+            $failedCounts = $periodRentals
+                ->filter(fn (Rental $rental) => in_array($rental->status, [RentalStatus::CANCELLED, RentalStatus::EXPIRED], true))
+                ->groupBy(fn (Rental $rental) => $rental->created_at->format('Y-m'))
+                ->map->count();
+
+            $chartRentals = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'value' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
+            ]);
+
+            $chartRevenue = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'value' => (int) ($revenueByPeriod[$date->format('Y-m')] ?? 0),
+            ]);
+            $chartBookingsBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'total' => (int) ($rentalCounts[$date->format('Y-m')] ?? 0),
+                'success' => (int) ($successCounts[$date->format('Y-m')] ?? 0),
+                'failed' => (int) ($failedCounts[$date->format('Y-m')] ?? 0),
+            ]);
+            $chartRevenueBreakdown = $chartBuckets->map(fn (Carbon $date) => [
+                'label' => $date->translatedFormat('M Y'),
+                'revenue' => (int) ($revenueByPeriod[$date->format('Y-m')] ?? 0),
+                'transactions' => (int) ($successCounts[$date->format('Y-m')] ?? 0),
+            ]);
+        }
 
         $topCar = Car::query()
-            ->withCount(['rentals' => fn ($q) => $q->whereBetween('created_at', [$start, $end])])
-            ->withSum(['rentals' => fn ($q) => $q->whereBetween('created_at', [$start, $end])], 'total_price')
+            ->withCount(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                $this->applyReportFilter($q, $periodStart, $periodEnd);
+            }])
+            ->withSum(['rentals' => function ($q) use ($periodStart, $periodEnd) {
+                $this->applyReportFilter($q, $periodStart, $periodEnd);
+            }], 'total_price')
             ->orderByDesc('rentals_count')
             ->orderByDesc('rentals_sum_total_price')
             ->first();
@@ -1403,19 +1596,169 @@ class BackofficeController extends Controller
             'admin' => $request->user(),
             'active' => 'reports',
             'tab' => $tab,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
+            'filterMode' => $filterMode,
+            'filterDate' => $filterDate,
+            'filterMonth' => $filterMonth,
+            'filterYear' => $filterYear,
+            'filterStart' => $filterStart,
+            'filterEnd' => $filterEnd,
             'summary' => $summary,
             'data' => $data,
             'chartRentals' => $chartRentals,
             'chartRevenue' => $chartRevenue,
-            'monthLabels' => $monthLabels,
             'featuredCar' => $featuredCar,
             'overviewSummary' => $overviewSummary,
             'statusDistribution' => $statusDistribution,
             'serviceTypeDistribution' => $serviceTypeDistribution,
             'topCars' => $topCars,
             'fleetOccupancy' => $fleetOccupancy,
+            'chartMode' => $chartMode,
+            'chartBookingsBreakdown' => $chartBookingsBreakdown,
+            'chartRevenueBreakdown' => $chartRevenueBreakdown,
+            'paidTransactions' => $paidTransactions ?? 0,
         ]);
+    }
+
+    private function resolveReportFilterPeriod(Request $request): array
+    {
+        $now = Carbon::now();
+        $filterMode = (string) $request->query('filter_mode', 'none');
+
+        $defaultStart = $now->copy()->subMonthsNoOverflow(3)->startOfMonth()->startOfDay();
+        $defaultEnd = $now->copy()->endOfDay();
+
+        $filterDate = (string) $request->query('filter_date', $defaultEnd->toDateString());
+        $filterMonth = (string) $request->query('filter_month', $defaultEnd->format('m'));
+        $filterYear = (string) $request->query('filter_year', $defaultEnd->year);
+        $filterStart = (string) $request->query('filter_start', $defaultStart->toDateString());
+        $filterEnd = (string) $request->query('filter_end', $defaultEnd->toDateString());
+
+        [$periodStart, $periodEnd] = match ($filterMode) {
+            'day' => [
+                Carbon::parse($filterDate)->startOfDay(),
+                Carbon::parse($filterDate)->endOfDay(),
+            ],
+            'month' => [
+                Carbon::createFromDate((int) $filterYear, (int) $filterMonth, 1)->startOfMonth(),
+                Carbon::createFromDate((int) $filterYear, (int) $filterMonth, 1)->endOfMonth(),
+            ],
+            'year' => [
+                Carbon::createFromDate((int) $filterYear, 1, 1)->startOfYear(),
+                Carbon::createFromDate((int) $filterYear, 1, 1)->endOfYear(),
+            ],
+            'range' => [
+                Carbon::parse($filterStart)->startOfDay(),
+                Carbon::parse($filterEnd)->endOfDay(),
+            ],
+            default => [
+                $defaultStart->copy(),
+                $defaultEnd->copy(),
+            ],
+        };
+
+        if ($periodEnd->lessThan($periodStart)) {
+            [$periodStart, $periodEnd] = [$periodEnd->copy()->startOfDay(), $periodStart->copy()->endOfDay()];
+        }
+
+        $durationDays = max(1, $periodStart->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1);
+        $previousPeriodEnd = $periodStart->copy()->subDay()->endOfDay();
+        $previousPeriodStart = $previousPeriodEnd->copy()->subDays($durationDays - 1)->startOfDay();
+
+        return [
+            'filterMode' => $filterMode,
+            'filterDate' => $filterDate,
+            'filterMonth' => $filterMonth,
+            'filterYear' => $filterYear,
+            'filterStart' => $filterStart,
+            'filterEnd' => $filterEnd,
+            'periodStart' => $periodStart,
+            'periodEnd' => $periodEnd,
+            'previousPeriodStart' => $previousPeriodStart,
+            'previousPeriodEnd' => $previousPeriodEnd,
+        ];
+    }
+
+    private function applyReportFilter(\Illuminate\Database\Eloquent\Builder $query, ?Carbon $start, ?Carbon $end): \Illuminate\Database\Eloquent\Builder
+    {
+        if ($start && $end) {
+            $query->whereBetween('created_at', [$start, $end]);
+        }
+
+        return $query;
+    }
+
+    private function buildRelativeGrowthText(int|float $current, int|float $previous): array
+    {
+        if ($previous <= 0) {
+            if ($current > 0) {
+                return [
+                    'direction' => 'up',
+                    'value' => '100,0%',
+                    'suffix' => 'vs periode sebelumnya',
+                    'tone' => 'positive',
+                ];
+            }
+
+            return [
+                'direction' => 'flat',
+                'value' => '0,0%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'neutral',
+            ];
+        }
+
+        $growth = round((($current - $previous) / $previous) * 100, 1);
+
+        if ($growth > 0) {
+            return [
+                'direction' => 'up',
+                'value' => number_format($growth, 1, ',', '.') . '%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'positive',
+            ];
+        }
+
+        if ($growth < 0) {
+            return [
+                'direction' => 'down',
+                'value' => number_format(abs($growth), 1, ',', '.') . '%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'negative',
+            ];
+        }
+
+        return [
+            'direction' => 'flat',
+            'value' => '0,0%',
+            'suffix' => 'vs periode sebelumnya',
+            'tone' => 'neutral',
+        ];
+    }
+
+    private function buildPointChangeText(float $currentRate, float $previousRate, bool $lowerIsBetter = false): array
+    {
+        $delta = round($currentRate - $previousRate, 1);
+
+        if ($delta === 0.0) {
+            return [
+                'direction' => 'flat',
+                'value' => '0,0%',
+                'suffix' => 'vs periode sebelumnya',
+                'tone' => 'neutral',
+            ];
+        }
+
+        $arrow = $delta > 0 ? '▲' : '▼';
+        $formatted = number_format(abs($delta), 1, ',', '.');
+        $tone = $lowerIsBetter
+            ? ($delta < 0 ? 'positive' : 'negative')
+            : ($delta > 0 ? 'positive' : 'negative');
+
+        return [
+            'direction' => $delta > 0 ? 'up' : 'down',
+            'value' => "{$formatted}%",
+            'suffix' => 'vs periode sebelumnya',
+            'tone' => $tone,
+        ];
     }
 }
