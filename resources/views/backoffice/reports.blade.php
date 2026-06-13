@@ -262,7 +262,7 @@
                         <option value="month" @selected($filterMode === 'month')>Spesifik Bulan</option>
                         <option value="year" @selected($filterMode === 'year')>Spesifik Tahun</option>
                     </select>
-                    <p class="report-filter-hint" style="margin-top: 2px;">Default otomatis menampilkan 4 bulan terakhir.</p>
+                    <p class="report-filter-hint" style="margin-top: 2px;">Default otomatis menampilkan laporan bulan berjalan.</p>
                 </div>
 
                 <div class="report-filter-detail" data-filter-detail>
@@ -354,6 +354,11 @@
                 padding: 10px;
                 border-radius: 18px;
                 height: 100%;
+            }
+
+            .dashboard-reveal.smooth-reveal {
+                transition-duration: 980ms;
+                transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
             }
 
             .chart-header-meta {
@@ -510,6 +515,10 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                --trend-rotate: 0deg;
+                opacity: 0;
+                transform: translateY(8px) rotate(var(--trend-rotate));
+                transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
             }
 
             .kpi-trend-icon svg {
@@ -519,7 +528,12 @@
             }
 
             .kpi-trend-icon.is-up {
-                transform: rotate(180deg);
+                --trend-rotate: 180deg;
+            }
+
+            .kpi-card.is-graphic-active .kpi-trend-icon {
+                opacity: 1;
+                transform: translateY(0) rotate(var(--trend-rotate));
             }
 
             .kpi-trend-suffix {
@@ -527,6 +541,11 @@
                 line-height: 1.1;
                 font-weight: 700;
                 opacity: 0.85;
+            }
+
+            .kpi-trend-value {
+                display: inline-block;
+                min-width: 3.2ch;
             }
 
             .kpi-graphic {
@@ -553,6 +572,89 @@
 
             .kpi-card.revenue .kpi-spark path {
                 stroke-width: 4.5 !important;
+            }
+
+            .kpi-spark .mini-bar {
+                transform-box: fill-box;
+                transform-origin: center bottom;
+                opacity: 0.22;
+                transform: scaleY(0.18);
+            }
+
+            .kpi-spark .mini-line {
+                stroke-dasharray: var(--mini-line-length, 100);
+                stroke-dashoffset: var(--mini-line-length, 100);
+            }
+
+            .kpi-spark .mini-dot {
+                opacity: 0;
+                transform-box: fill-box;
+                transform-origin: center center;
+            }
+
+            .kpi-card.is-graphic-active .kpi-spark .mini-bar {
+                animation: kpiBarRise 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+
+            .kpi-card.is-graphic-active .kpi-spark .mini-line {
+                animation: kpiLineDraw 1.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            }
+
+            .kpi-card.is-graphic-active .kpi-spark .mini-dot {
+                animation: kpiDotPop 0.5s ease-out forwards;
+            }
+
+            .kpi-card.is-graphic-active .kpi-spark .bar-1 { animation-delay: 0.02s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-2 { animation-delay: 0.16s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-3 { animation-delay: 0.3s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-4 { animation-delay: 0.44s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-5 { animation-delay: 0.58s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-6 { animation-delay: 0.72s; }
+            .kpi-card.is-graphic-active .kpi-spark .bar-7 { animation-delay: 0.86s; }
+
+            .kpi-card.is-graphic-active .kpi-spark .line-main { animation-delay: 0.12s; }
+            .kpi-card.is-graphic-active .kpi-spark .line-accent { animation-delay: 0.38s; }
+            .kpi-card.is-graphic-active .kpi-spark .dot-end { animation-delay: 1.18s; }
+
+            @keyframes kpiBarRise {
+                0% {
+                    opacity: 0.2;
+                    transform: scaleY(0.18);
+                }
+                65% {
+                    opacity: 1;
+                    transform: scaleY(1.08);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scaleY(1);
+                }
+            }
+
+            @keyframes kpiLineDraw {
+                0% {
+                    opacity: 0.35;
+                    stroke-dashoffset: var(--mini-line-length, 100);
+                }
+                100% {
+                    opacity: 1;
+                    stroke-dashoffset: 0;
+                }
+            }
+
+            @keyframes kpiDotPop {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.2);
+                }
+                70% {
+                    opacity: 1;
+                    transform: scale(1.18);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
             }
 
             .kpi-expand-grid {
@@ -752,8 +854,13 @@
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
-                                    <path d="M8 38V18M18 38V30M28 38V22M38 38V14M48 38V28M58 38V10" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
-                                    <path d="M58 38V16" stroke="#3f5ed7" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-1" x1="8" y1="38" x2="8" y2="18" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-2" x1="18" y1="38" x2="18" y2="30" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-3" x1="28" y1="38" x2="28" y2="22" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-4" x1="38" y1="38" x2="38" y2="14" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-5" x1="48" y1="38" x2="48" y2="28" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-6" x1="58" y1="38" x2="58" y2="10" stroke="#dbe5f5" stroke-width="4" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-7" x1="58" y1="38" x2="58" y2="16" stroke="#3f5ed7" stroke-width="4" stroke-linecap="round"/>
                                 </svg>
                             </div>
                         </div>
@@ -778,7 +885,8 @@
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
-                                    <path d="M6 34C12 24 16 20 22 22C28 24 30 34 36 30C42 26 44 12 50 12C56 12 60 22 66 18" stroke="#94a3b8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path class="mini-line line-main" d="M6 34C12 24 16 20 22 22C28 24 30 34 36 30C42 26 44 12 50 12C56 12 60 22 66 18" stroke="#94a3b8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="--mini-line-length: 94;"/>
+                                    <circle class="mini-dot dot-end" cx="66" cy="18" r="2.8" fill="#94a3b8" stroke="none"/>
                                 </svg>
                             </div>
                         </div>
@@ -806,7 +914,9 @@
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
-                                    <path d="M10 30L22 18L32 24L42 14L54 20L62 10" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path class="mini-line line-main" d="M10 30L22 18L32 24L42 14L54 20L62 10" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="--mini-line-length: 76;"/>
+                                    <path class="mini-line line-accent" d="M42 14L54 20L62 10" stroke="#b7c5da" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="--mini-line-length: 28;"/>
+                                    <circle class="mini-dot dot-end" cx="62" cy="10" r="2.6" fill="#b7c5da" stroke="none"/>
                                 </svg>
                             </div>
                         </div>
@@ -834,8 +944,12 @@
                             </div>
                             <div class="kpi-graphic" aria-hidden="true">
                                 <svg class="kpi-spark" viewBox="0 0 72 48" fill="none">
-                                    <path d="M10 12V38M22 20V38M34 8V38M46 24V38M58 16V38" stroke="#f5c56b" stroke-width="5" stroke-linecap="round"/>
-                                    <path d="M58 16V30" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-1" x1="10" y1="38" x2="10" y2="12" stroke="#f5c56b" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-2" x1="22" y1="38" x2="22" y2="20" stroke="#f5c56b" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-3" x1="34" y1="38" x2="34" y2="8" stroke="#f5c56b" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-4" x1="46" y1="38" x2="46" y2="24" stroke="#f5c56b" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-5" x1="58" y1="38" x2="58" y2="16" stroke="#f7d48d" stroke-width="5" stroke-linecap="round"/>
+                                    <line class="mini-bar bar-6" x1="58" y1="38" x2="58" y2="30" stroke="#d97706" stroke-width="5" stroke-linecap="round"/>
                                 </svg>
                             </div>
                         </div>
@@ -845,7 +959,7 @@
 
             <section class="overview-charts">
                 <div class="chart-column">
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
+                    <article class="card overview-card dashboard-reveal smooth-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Tren Periode Aktif</h2>
@@ -888,7 +1002,7 @@
                 </div>
 
                 <div class="chart-column">
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
+                    <article class="card overview-card dashboard-reveal smooth-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Distribusi Status Rental</h2>
@@ -902,12 +1016,12 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="chart-box status chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-status-chart" data-chart-group="0"></canvas>
+                        <div class="chart-box status chart-stage dashboard-reveal smooth-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                            <canvas id="overview-status-chart" data-chart-group="0" data-chart-delay="620"></canvas>
                         </div>
                     </article>
 
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="1">
+                    <article class="card overview-card dashboard-reveal smooth-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="1">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Reservasi Berdasarkan Tipe Layanan</h2>
@@ -921,8 +1035,8 @@
                                 @endif
                             </p>
                         </div>
-                        <div class="chart-box service-type chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-service-type-chart" data-chart-group="1"></canvas>
+                        <div class="chart-box service-type chart-stage dashboard-reveal smooth-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                            <canvas id="overview-service-type-chart" data-chart-group="1" data-chart-delay="520"></canvas>
                         </div>
                     </article>
                 </div>
@@ -1412,9 +1526,12 @@
                 const blue = getCssVar('--blue', '#3f5ed7');
                 const green = getCssVar('--green', '#1dbb84');
                 const textColor = getCssVar('--text', '#202636');
-                const dashboardBaseDelay = 220;
+                const dashboardBaseDelay = 540;
                 const dashboardGroupGap = 180;
                 const revealDuration = 700;
+                const kpiSectionDelay = 110;
+                const kpiCardBaseDelay = 180;
+                const kpiCardGap = 70;
                 const formatInteger = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCurrency = (value) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCompactCurrency = (value) => {
@@ -1441,17 +1558,91 @@
                     }, index * 120);
                 });
 
+                const getKpiCardRevealDelay = (card) => {
+                    const kpiCards = Array.from(document.querySelectorAll('.kpi-card.dashboard-reveal'));
+                    const revealIndex = Math.max(kpiCards.indexOf(card), 0);
+                    return kpiCardBaseDelay + (revealIndex * kpiCardGap);
+                };
+
+                const getElementRevealDelay = (element) => {
+                    if (element.matches('.overview-kpi-row > .dashboard-reveal')) {
+                        return kpiSectionDelay;
+                    }
+
+                    if (element.classList.contains('kpi-card')) {
+                        return getKpiCardRevealDelay(element);
+                    }
+
+                    const revealCard = element.closest('[data-dashboard-group]');
+                    if (revealCard) {
+                        const revealGroup = Number(revealCard.dataset.dashboardGroup || 0);
+                        return dashboardBaseDelay + (revealGroup * dashboardGroupGap) + revealDuration + 40;
+                    }
+
+                    return dashboardBaseDelay + revealDuration + 160;
+                };
+
                 document.querySelectorAll('.dashboard-reveal[data-dashboard-group]').forEach((element) => {
                     const group = Number(element.dataset.dashboardGroup || 0);
                     window.setTimeout(() => {
                         element.classList.remove('opacity-0', 'translate-y-4');
-                    }, 220 + (group * 180));
+                    }, dashboardBaseDelay + (group * dashboardGroupGap));
                 });
 
                 document.querySelectorAll('.dashboard-reveal:not([data-dashboard-group])').forEach((element, index) => {
+                    const revealDelay = getElementRevealDelay(element);
                     window.setTimeout(() => {
                         element.classList.remove('opacity-0', 'translate-y-4');
-                    }, 820 + (index * 90));
+                    }, revealDelay);
+
+                    if (element.classList.contains('kpi-card')) {
+                        window.setTimeout(() => {
+                            element.classList.add('is-graphic-active');
+                        }, revealDelay + 170);
+                    }
+                });
+
+                document.querySelectorAll('.kpi-card .kpi-trend-value').forEach((element) => {
+                    const rawValue = (element.textContent || '').trim();
+                    const normalizedValue = rawValue.replace('%', '').replace(/\./g, '').replace(',', '.');
+                    const target = Number.parseFloat(normalizedValue);
+                    const decimals = rawValue.includes(',') ? rawValue.split(',')[1].replace('%', '').length : 0;
+
+                    const renderTrendValue = (value) => {
+                        element.textContent = `${value.toLocaleString('id-ID', {
+                            minimumFractionDigits: decimals,
+                            maximumFractionDigits: decimals
+                        })}%`;
+                    };
+
+                    const animateTrendValue = () => {
+                        if (!Number.isFinite(target)) {
+                            return;
+                        }
+
+                        const duration = 1200;
+                        const startTime = performance.now();
+
+                        const animate = (currentTime) => {
+                            const progress = Math.min((currentTime - startTime) / duration, 1);
+                            const eased = 1 - Math.pow(1 - progress, 4);
+                            renderTrendValue(target * eased);
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animate);
+                            }
+                        };
+
+                        requestAnimationFrame(animate);
+                    };
+
+                    const revealCard = element.closest('.kpi-card');
+                    const revealDelay = getKpiCardRevealDelay(revealCard);
+
+                    renderTrendValue(0);
+                    window.setTimeout(() => {
+                        animateTrendValue();
+                    }, revealDelay + 240);
                 });
 
                 document.querySelectorAll('[data-countup-target]').forEach((element) => {
@@ -1482,8 +1673,10 @@
                     };
 
                     const revealCard = element.closest('[data-dashboard-group]');
-                    const revealGroup = Number(revealCard?.dataset.dashboardGroup || 0);
-                    const revealDelay = dashboardBaseDelay + (revealGroup * dashboardGroupGap) + revealDuration;
+                    const kpiCard = element.closest('.kpi-card');
+                    const revealDelay = kpiCard
+                        ? getKpiCardRevealDelay(kpiCard) + revealDuration
+                        : dashboardBaseDelay + (Number(revealCard?.dataset.dashboardGroup || 0) * dashboardGroupGap) + revealDuration;
 
                     render(0);
                     window.setTimeout(() => {
@@ -1497,7 +1690,8 @@
                     }
 
                     const group = Number(element.dataset.chartGroup || 0);
-                    const startDelay = dashboardBaseDelay + (group * dashboardGroupGap) + revealDuration;
+                    const extraDelay = Number(element.dataset.chartDelay || 0);
+                    const startDelay = dashboardBaseDelay + (group * dashboardGroupGap) + revealDuration + extraDelay;
 
                     window.setTimeout(() => {
                         renderChart();

@@ -1624,7 +1624,7 @@ class BackofficeController extends Controller
         $now = Carbon::now();
         $filterMode = (string) $request->query('filter_mode', 'none');
 
-        $defaultStart = $now->copy()->subMonthsNoOverflow(3)->startOfMonth()->startOfDay();
+        $defaultStart = $now->copy()->startOfMonth()->startOfDay();
         $defaultEnd = $now->copy()->endOfDay();
 
         $filterDate = (string) $request->query('filter_date', $defaultEnd->toDateString());
