@@ -1807,7 +1807,7 @@
     </aside>
 
     <main class="main">
-        <div class="topbar">
+        <div class="topbar {{ $active === 'reports' ? 'page-top-reveal opacity-0 -translate-y-4 transition-all duration-700 ease-out' : '' }}">
             <form method="GET" action="" style="margin: 0; display: block; flex: 1; max-width: min(100%, 520px);">
                 @foreach (request()->except('search', 'page') as $key => $value)
                     @if (is_array($value))

@@ -217,7 +217,7 @@
     </style>
 
     <section class="page-head" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        <div>
+        <div class="page-top-reveal opacity-0 -translate-y-4 transition-all duration-700 ease-out">
             <details style="position: relative; display: inline-block;">
                 <summary class="report-switcher-trigger report-switcher-summary" style="list-style: none; display: inline-flex; align-items: center; gap: 10px; user-select: none; padding: 2px 0;">
                     <span style="display: grid; gap: 4px;">
@@ -250,7 +250,7 @@
             <p class="page-subtitle">{{ $tab === 'overview' ? 'Ringkasan performa bisnis secara visual' : 'Rekap data pendapatan, reservasi, dan armada perusahaan.' }}</p>
         </div>
 
-        <form method="GET" action="{{ route('backoffice.reports') }}" class="report-filter-panel">
+        <form method="GET" action="{{ route('backoffice.reports') }}" class="report-filter-panel page-top-reveal opacity-0 -translate-y-4 transition-all duration-700 ease-out">
             <input type="hidden" name="tab" value="{{ $tab }}">
             <div class="report-filter-row">
                 <div class="report-filter-group report-filter-mode">
@@ -845,7 +845,7 @@
 
             <section class="overview-charts">
                 <div class="chart-column">
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Tren Periode Aktif</h2>
@@ -863,11 +863,11 @@
                             </div>
                         </div>
                         <div class="chart-box trend chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-bookings-chart"></canvas>
+                            <canvas id="overview-bookings-chart" data-chart-group="0"></canvas>
                         </div>
                     </article>
 
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="1">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Pendapatan Masuk</h2>
@@ -882,13 +882,13 @@
                             </p>
                         </div>
                         <div class="chart-box revenue chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-revenue-chart"></canvas>
+                            <canvas id="overview-revenue-chart" data-chart-group="1"></canvas>
                         </div>
                     </article>
                 </div>
 
                 <div class="chart-column">
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="0">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Distribusi Status Rental</h2>
@@ -903,11 +903,11 @@
                             </p>
                         </div>
                         <div class="chart-box status chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-status-chart"></canvas>
+                            <canvas id="overview-status-chart" data-chart-group="0"></canvas>
                         </div>
                     </article>
 
-                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                    <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="1">
                         <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                             <div>
                                 <h2 class="section-title" style="margin-bottom: 2px;">Reservasi Berdasarkan Tipe Layanan</h2>
@@ -922,14 +922,14 @@
                             </p>
                         </div>
                         <div class="chart-box service-type chart-stage dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
-                            <canvas id="overview-service-type-chart"></canvas>
+                            <canvas id="overview-service-type-chart" data-chart-group="1"></canvas>
                         </div>
                     </article>
                 </div>
             </section>
 
             <section class="overview-charts">
-                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="2">
                     <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                         <div>
                             <h2 class="section-title" style="margin-bottom: 2px;">Top Armada Terpopuler</h2>
@@ -958,7 +958,7 @@
                     </div>
                 </article>
 
-                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out">
+                <article class="card overview-card dashboard-reveal opacity-0 translate-y-4 transition-all duration-700 ease-out" data-dashboard-group="2">
                     <div class="section-head" style="margin-bottom: 4px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                         <div>
                             <h2 class="section-title" style="margin-bottom: 2px;">Status Ketersediaan Armada</h2>
@@ -1412,6 +1412,9 @@
                 const blue = getCssVar('--blue', '#3f5ed7');
                 const green = getCssVar('--green', '#1dbb84');
                 const textColor = getCssVar('--text', '#202636');
+                const dashboardBaseDelay = 220;
+                const dashboardGroupGap = 180;
+                const revealDuration = 700;
                 const formatInteger = (value) => new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCurrency = (value) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value) || 0);
                 const formatCompactCurrency = (value) => {
@@ -1432,17 +1435,29 @@
                 };
                 const sumValues = (items) => items.reduce((sum, item) => sum + (Number(item) || 0), 0);
 
-                document.querySelectorAll('.dashboard-reveal').forEach((element, index) => {
+                document.querySelectorAll('.page-top-reveal').forEach((element, index) => {
+                    window.setTimeout(() => {
+                        element.classList.remove('opacity-0', '-translate-y-4');
+                    }, index * 120);
+                });
+
+                document.querySelectorAll('.dashboard-reveal[data-dashboard-group]').forEach((element) => {
+                    const group = Number(element.dataset.dashboardGroup || 0);
                     window.setTimeout(() => {
                         element.classList.remove('opacity-0', 'translate-y-4');
-                    }, index * 100);
+                    }, 220 + (group * 180));
+                });
+
+                document.querySelectorAll('.dashboard-reveal:not([data-dashboard-group])').forEach((element, index) => {
+                    window.setTimeout(() => {
+                        element.classList.remove('opacity-0', 'translate-y-4');
+                    }, 820 + (index * 90));
                 });
 
                 document.querySelectorAll('[data-countup-target]').forEach((element) => {
                     const target = Number(element.dataset.countupTarget || 0);
                     const type = element.dataset.countupType || 'number';
                     const duration = 1400;
-                    const startTime = performance.now();
 
                     const render = (value) => {
                         element.textContent = type === 'currency'
@@ -1450,18 +1465,30 @@
                             : formatInteger(value);
                     };
 
-                    const animate = (currentTime) => {
-                        const progress = Math.min((currentTime - startTime) / duration, 1);
-                        const eased = 1 - Math.pow(1 - progress, 4);
-                        render(Math.round(target * eased));
+                    const animateCount = () => {
+                        const startTime = performance.now();
 
-                        if (progress < 1) {
-                            requestAnimationFrame(animate);
-                        }
+                        const animate = (currentTime) => {
+                            const progress = Math.min((currentTime - startTime) / duration, 1);
+                            const eased = 1 - Math.pow(1 - progress, 4);
+                            render(Math.round(target * eased));
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animate);
+                            }
+                        };
+
+                        requestAnimationFrame(animate);
                     };
 
+                    const revealCard = element.closest('[data-dashboard-group]');
+                    const revealGroup = Number(revealCard?.dataset.dashboardGroup || 0);
+                    const revealDelay = dashboardBaseDelay + (revealGroup * dashboardGroupGap) + revealDuration;
+
                     render(0);
-                    requestAnimationFrame(animate);
+                    window.setTimeout(() => {
+                        animateCount();
+                    }, revealDelay);
                 });
 
                 const makeLineAnimation = (pointCount) => ({
@@ -1490,6 +1517,19 @@
                         }
                     }
                 });
+
+                const scheduleChartRender = (element, renderChart) => {
+                    if (!element) {
+                        return;
+                    }
+
+                    const group = Number(element.dataset.chartGroup || 0);
+                    const startDelay = dashboardBaseDelay + (group * dashboardGroupGap) + revealDuration;
+
+                    window.setTimeout(() => {
+                        renderChart();
+                    }, startDelay);
+                };
 
                 const valueLabelsPlugin = {
                     id: 'valueLabelsPlugin',
@@ -1572,7 +1612,7 @@
 
                 // 1. Overview Bookings Line Chart
                 const overviewBookingsCtx = document.getElementById('overview-bookings-chart');
-                if (overviewBookingsCtx) {
+                scheduleChartRender(overviewBookingsCtx, () => {
                     new Chart(overviewBookingsCtx, {
                         type: 'line',
                         data: {
@@ -1627,11 +1667,11 @@
                             }
                         }
                     });
-                }
+                });
 
                 // 2. Overview Revenue Bar Chart
                 const overviewRevenueCtx = document.getElementById('overview-revenue-chart');
-                if (overviewRevenueCtx) {
+                scheduleChartRender(overviewRevenueCtx, () => {
                     new Chart(overviewRevenueCtx, {
                         type: 'bar',
                         data: {
@@ -1697,14 +1737,14 @@
                             }
                         }
                     });
-                }
+                });
 
                 const statusValues = @json($statusDistribution->pluck('value'));
                 const statusTotal = sumValues(statusValues);
 
                 // 3. Overview Status Distribution Doughnut Chart
                 const overviewStatusCtx = document.getElementById('overview-status-chart');
-                if (overviewStatusCtx) {
+                scheduleChartRender(overviewStatusCtx, () => {
                     new Chart(overviewStatusCtx, {
                         type: 'doughnut',
                         data: {
@@ -1771,14 +1811,14 @@
                             }
                         }
                     });
-                }
+                });
 
                 const serviceValues = @json($serviceTypeDistribution->pluck('value'));
                 const serviceTotal = sumValues(serviceValues);
 
                 // 4. Overview Service Type Distribution Doughnut Chart
                 const overviewServiceTypeCtx = document.getElementById('overview-service-type-chart');
-                if (overviewServiceTypeCtx) {
+                scheduleChartRender(overviewServiceTypeCtx, () => {
                     new Chart(overviewServiceTypeCtx, {
                         type: 'doughnut',
                         data: {
@@ -1845,7 +1885,7 @@
                             }
                         }
                     });
-                }
+                });
             @elseif ($tab === 'revenue')
                 const revenueCtx = document.getElementById('revenue-chart');
                 if (revenueCtx) {
