@@ -18,6 +18,8 @@ class CustomerNotificationService
             'verification',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyReservationSubmitted($rental);
     }
 
     public function notifyVerificationSubmitted(Rental $rental): void
@@ -54,6 +56,8 @@ class CustomerNotificationService
             'verification-needs-review',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyReservationNeedsReview($rental);
     }
 
     public function notifyVerificationRejected(Rental $rental): void
@@ -90,6 +94,8 @@ class CustomerNotificationService
             'payment-paid',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentPaid($rental);
     }
 
     public function notifyPaymentCancelled(Rental $rental): void
@@ -102,6 +108,8 @@ class CustomerNotificationService
             'payment-cancelled',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentFailed($rental, \App\Enums\PaymentStatus::CANCELLED);
     }
 
     public function notifyPaymentExpired(Rental $rental): void
@@ -114,6 +122,8 @@ class CustomerNotificationService
             'payment-expired',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentFailed($rental, \App\Enums\PaymentStatus::EXPIRED);
     }
 
     public function notifyRentalCancelled(Rental $rental): void

@@ -81,32 +81,46 @@
                 </button>
 
                 <div id="notification-dropdown-menu"
-                    class="absolute right-0 top-full mt-2.5 w-[22rem] max-w-[calc(100vw-1.5rem)] bg-white border border-slate-100 rounded-3xl shadow-2xl shadow-slate-200/40 hidden opacity-0 translate-y-1 transition-all duration-200 z-50 overflow-hidden">
-                    <div class="p-4 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="text-sm font-semibold text-slate-900">Notifikasi</p>
-                                <p class="text-xs text-slate-500 mt-1">
-                                    {{ $unreadNotificationCount > 0 ? $unreadNotificationCount.' belum dibaca' : 'Belum ada notifikasi baru' }}
+                    class="absolute right-0 top-full mt-3 w-[25rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[2rem] border border-slate-300 bg-slate-300 shadow-2xl shadow-slate-400/30 hidden opacity-0 translate-y-1 transition-all duration-200 z-50">
+                    <div class="relative overflow-hidden border-b border-blue-100 bg-gradient-to-br from-[#123C7A] via-[#1E4E9A] to-[#2C6DD5] px-5 py-4 text-white">
+                        <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.24),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(191,219,254,0.18),_transparent_32%)]"></div>
+                        <div class="relative flex items-start justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <p class="text-sm font-bold tracking-tight">Notifikasi</p>
+                                    <span class="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100">
+                                        Inbox
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-200">
+                                    {{ $unreadNotificationCount > 0 ? $unreadNotificationCount.' perlu perhatian' : 'Semua notifikasi sudah dibaca' }}
                                 </p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('notifications.index') }}"
-                                    class="text-xs font-semibold text-blue-600 hover:text-blue-700">Lihat Semua</a>
-                                @if($unreadNotificationCount > 0)
-                                <form method="POST" action="{{ route('notifications.read-all') }}">
-                                    @csrf
-                                    <button type="submit"
-                                        class="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer">
-                                        Tandai semua dibaca
-                                    </button>
-                                </form>
-                                @endif
+                                    class="inline-flex items-center rounded-full bg-white px-3 py-2 text-[11px] font-bold text-slate-900 shadow-lg shadow-black/10 transition hover:-translate-y-0.5">
+                                    Lihat Semua
+                                </a>
                             </div>
                         </div>
+                        @if($unreadNotificationCount > 0)
+                        <div class="relative mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-3.5 py-3 backdrop-blur">
+                            <div>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">Belum dibaca</p>
+                                <p class="mt-1 text-lg font-extrabold">{{ $unreadNotificationCount }}</p>
+                            </div>
+                            <form method="POST" action="{{ route('notifications.read-all') }}">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center rounded-xl border border-white/15 bg-white/90 px-3 py-2 text-[11px] font-bold text-slate-900 transition hover:bg-white cursor-pointer">
+                                    Tandai semua dibaca
+                                </button>
+                            </form>
+                        </div>
+                        @endif
                     </div>
 
-                    <div class="max-h-96 overflow-y-auto divide-y divide-slate-100">
+                    <div class="max-h-[28rem] overflow-y-auto bg-slate-300 p-2.5">
                         @forelse($notifications as $notification)
                         @php
                         $data = $notification->data ?? [];
@@ -130,7 +144,7 @@
                         $notification->created_at->locale('id')->diffForHumans() : '';
                         $message = (string) ($data['message'] ?? '');
                         $title = (string) ($data['title'] ?? 'Notifikasi');
-                        $url = $data['url'] ?? route('notifications.index');
+                        $url = route('notifications.open', $notification->id);
                         $buttonRoute = route('notifications.read', $notification->id);
                         $toneClasses = match ($meta['tone']) {
                         'blue' => ['bg-blue-50 text-blue-600 border-blue-100', 'bg-blue-600/10 text-blue-700'],
@@ -141,7 +155,7 @@
                         default => ['bg-slate-50 text-slate-500 border-slate-100', 'bg-slate-600/10 text-slate-700'],
                         };
                         @endphp
-                        <div class="p-3.5 {{ $isUnread ? 'bg-blue-50/60' : 'bg-white' }}">
+                        <article class="mb-2 last:mb-0 rounded-[1.5rem] border p-3.5 transition {{ $isUnread ? 'border-blue-200 bg-white shadow-md shadow-blue-100/50' : 'border-slate-300 bg-slate-100/95' }}">
                             <div class="flex gap-3">
                                 <div
                                     class="shrink-0 w-10 h-10 rounded-2xl border {{ $toneClasses[0] }} flex items-center justify-center">
@@ -152,37 +166,52 @@
                                     </svg>
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide {{ $toneClasses[1] }}">
+                                                    {{ $meta['label'] }}
+                                                </span>
+                                                @if($isUnread)
+                                                <span class="inline-flex items-center rounded-full bg-[#2C6DD5] px-2.5 py-1 text-[10px] font-bold tracking-wide text-white">
+                                                    Baru
+                                                </span>
+                                                @endif
+                                            </div>
                                             <a href="{{ $url }}"
-                                                class="block text-sm font-semibold text-slate-900 hover:text-blue-700 transition truncate">
+                                                class="mt-2 block text-sm font-bold text-slate-900 hover:text-blue-700 transition leading-5">
                                                 {{ $title }}
                                             </a>
-                                            <p class="text-xs text-slate-500 mt-1 leading-5 max-h-10 overflow-hidden">
+                                            <p class="mt-1.5 text-xs text-slate-600 leading-5 max-h-10 overflow-hidden">
                                                 {{ $message }}
                                             </p>
                                         </div>
                                         @if($isUnread)
-                                        <span class="shrink-0 mt-0.5 w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                        <span class="shrink-0 mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#2C6DD5] ring-4 ring-blue-100"></span>
                                         @endif
                                     </div>
                                     <div class="mt-3 flex items-center justify-between gap-2">
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide {{ $toneClasses[1] }}">
-                                            {{ $meta['label'] }}
-                                        </span>
-                                        <span class="text-[11px] text-slate-400">{{ $createdAt }}</span>
+                                        <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                                            <span>{{ $createdAt }}</span>
+                                            @if(! empty($data['rental_id']))
+                                            <span class="text-slate-400">•</span>
+                                            <span>Booking #{{ $data['rental_id'] }}</span>
+                                            @endif
+                                        </div>
+                                        @unless($isUnread)
+                                        <span class="text-[11px] font-semibold text-slate-500">Sudah dibaca</span>
+                                        @endunless
                                     </div>
                                     <div class="mt-3 flex items-center gap-2">
                                         <a href="{{ $url }}"
-                                            class="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                                            class="inline-flex items-center rounded-xl bg-[#123C7A] px-3 py-2 text-[11px] font-bold text-white transition hover:bg-[#1E4E9A]">
                                             Buka detail
                                         </a>
                                         @if($isUnread)
                                         <form method="POST" action="{{ $buttonRoute }}">
                                             @csrf
                                             <button type="submit"
-                                                class="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer">
+                                                class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 cursor-pointer">
                                                 Tandai dibaca
                                             </button>
                                         </form>
@@ -190,11 +219,11 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                         @empty
-                        <div class="p-6 text-center">
+                        <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-100 p-6 text-center">
                             <div
-                                class="w-12 h-12 mx-auto rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center">
+                                class="w-12 h-12 mx-auto rounded-2xl bg-white text-slate-400 flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round"
@@ -203,7 +232,7 @@
                                     </path>
                                 </svg>
                             </div>
-                            <p class="mt-3 text-sm font-semibold text-slate-900">Belum ada notifikasi</p>
+                            <p class="mt-3 text-sm font-bold text-slate-900">Belum ada notifikasi</p>
                             <p class="mt-1 text-xs text-slate-500">Update booking akan muncul di sini.</p>
                         </div>
                         @endforelse

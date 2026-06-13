@@ -5,6 +5,45 @@
     'searchPlaceholder' => 'Cari data, reservasi, atau mobil...',
 ])
 
+@php
+    $adminNotificationItems = collect();
+    $adminNotificationSummary = [
+        'reservations' => 0,
+        'reviews' => 0,
+        'payments' => 0,
+        'failed' => 0,
+    ];
+    $adminNotificationCount = 0;
+
+    if ($admin && $admin->hasNotificationsTable()) {
+        $adminNotificationItems = $admin->notifications()
+            ->latest()
+            ->take(24)
+            ->get()
+            ->filter(function ($notification) {
+                return ($notification->data['audience'] ?? null) === 'admin';
+            })
+            ->take(8)
+            ->values();
+
+        $adminUnreadNotifications = $admin->unreadNotifications()
+            ->get()
+            ->filter(function ($notification) {
+                return ($notification->data['audience'] ?? null) === 'admin';
+            })
+            ->values();
+
+        $adminNotificationSummary = [
+            'reservations' => $adminUnreadNotifications->where('data.category', 'reservations')->count(),
+            'reviews' => $adminUnreadNotifications->where('data.category', 'reviews')->count(),
+            'payments' => $adminUnreadNotifications->where('data.category', 'payments')->count(),
+            'failed' => $adminUnreadNotifications->where('data.category', 'failed')->count(),
+        ];
+
+        $adminNotificationCount = $adminUnreadNotifications->count();
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -180,6 +219,271 @@
             place-items: center;
             background: rgba(255, 255, 255, 0.72);
             border: 1px solid rgba(219, 227, 239, 0.9);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .icon-button:hover {
+            border-color: rgba(164, 177, 202, 0.95);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            padding: 0 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #2563eb;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            border: 2px solid #f7f9fc;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+        }
+
+        .notification-shell {
+            position: relative;
+        }
+
+        .notification-menu {
+            position: absolute;
+            top: calc(100% + 14px);
+            right: 0;
+            width: min(420px, calc(100vw - 48px));
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(203, 213, 225, 0.95);
+            background: #cbd5e1;
+            box-shadow: 0 28px 70px rgba(15, 29, 51, 0.18);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 35;
+        }
+
+        .notification-menu.is-open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .notification-menu-head {
+            position: relative;
+            overflow: hidden;
+            padding: 18px 18px 16px;
+            background: linear-gradient(135deg, #123c7a 0%, #1e4e9a 55%, #2c6dd5 100%);
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .notification-menu-head::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(191, 219, 254, 0.18), transparent 36%);
+            pointer-events: none;
+        }
+
+        .notification-menu-head > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification-menu-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .notification-menu-subtitle {
+            margin: 4px 0 0;
+            color: rgba(236, 244, 255, 0.86);
+            font-size: 12px;
+        }
+
+        .notification-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .notification-summary-item {
+            border-radius: 16px;
+            padding: 12px 13px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .notification-summary-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(219, 234, 254, 0.92);
+        }
+
+        .notification-summary-value {
+            margin-top: 4px;
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .notification-list {
+            padding: 10px;
+            background: #cbd5e1;
+            max-height: 460px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: block;
+            text-decoration: none;
+            margin-bottom: 10px;
+            padding: 14px;
+            border-radius: 22px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 10px 24px rgba(15, 29, 51, 0.05);
+            color: inherit;
+        }
+
+        .notification-item.is-unread {
+            border-color: rgba(147, 197, 253, 0.95);
+            background: #ffffff;
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.10);
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .notification-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .notification-chip.blue {
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+        }
+
+        .notification-chip.amber {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b96e00;
+        }
+
+        .notification-chip.green {
+            background: rgba(29, 187, 132, 0.14);
+            color: #0f8f63;
+        }
+
+        .notification-chip.red {
+            background: rgba(239, 68, 68, 0.14);
+            color: #d03a3a;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .notification-item-title {
+            margin: 10px 0 0;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.35;
+        }
+
+        .notification-item-message {
+            margin: 6px 0 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #475569;
+        }
+
+        .notification-item-meta {
+            margin-top: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .notification-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .notification-link-button,
+        .notification-read-button {
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .notification-link-button {
+            background: #123c7a;
+            color: #fff;
+        }
+
+        .notification-read-button {
+            border: 1px solid rgba(203, 213, 225, 0.95);
+            background: #fff;
+            color: #334155;
+        }
+
+        .notification-read-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .notification-empty {
+            padding: 22px 18px;
+            border-radius: 22px;
+            border: 1px dashed rgba(148, 163, 184, 0.9);
+            background: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            color: #475569;
+        }
+
+        .notification-empty strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #0f172a;
         }
 
         .profile {
@@ -1670,6 +1974,11 @@
             .topbar-right {
                 justify-content: space-between;
             }
+
+            .notification-menu {
+                width: min(100vw - 32px, 420px);
+                right: 0;
+            }
         }
 
         @media (max-width: 560px) {
@@ -1828,11 +2137,100 @@
             </form>
 
             <div class="topbar-right">
-                <div class="icon-button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
-                        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/>
-                        <path d="M10 21a2 2 0 0 0 4 0"/>
-                    </svg>
+                <div class="notification-shell">
+                    <button type="button" class="icon-button" id="backoffice-notification-button" aria-label="Notifikasi admin" aria-expanded="false">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
+                            <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/>
+                            <path d="M10 21a2 2 0 0 0 4 0"/>
+                        </svg>
+                        @if ($adminNotificationCount > 0)
+                            <span class="notification-badge">{{ $adminNotificationCount > 99 ? '99+' : $adminNotificationCount }}</span>
+                        @endif
+                    </button>
+
+                    <div class="notification-menu" id="backoffice-notification-menu">
+                        <div class="notification-menu-head">
+                            <p class="notification-menu-title">Notifikasi Operasional</p>
+                            <p class="notification-menu-subtitle">Reservasi masuk, butuh review, pembayaran masuk, dan pembayaran gagal.</p>
+
+                            @if ($adminNotificationCount > 0)
+                                <form method="POST" action="{{ route('backoffice.notifications.read-all') }}" style="margin-top: 12px;">
+                                    @csrf
+                                    <button type="submit" class="notification-read-button" style="border-color: rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.92); color: #0f172a;">
+                                        Tandai semua dibaca
+                                    </button>
+                                </form>
+                            @endif
+
+                            <div class="notification-summary-grid">
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Reservasi Masuk</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['reservations'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Butuh Review</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['reviews'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Pembayaran Masuk</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['payments'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Gagal</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['failed'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="notification-list">
+                            @forelse ($adminNotificationItems as $item)
+                                @php
+                                    $data = $item->data ?? [];
+                                    $category = (string) ($data['category'] ?? 'reservations');
+                                    $isUnread = is_null($item->read_at);
+                                    $tone = match ($category) {
+                                        'reviews' => 'amber',
+                                        'payments' => 'green',
+                                        'failed' => 'red',
+                                        default => 'blue',
+                                    };
+                                    $label = match ($category) {
+                                        'reviews' => 'Review',
+                                        'payments' => 'Pembayaran',
+                                        'failed' => 'Gagal',
+                                        default => 'Reservasi',
+                                    };
+                                @endphp
+                                <div class="notification-item {{ $isUnread ? 'is-unread' : '' }}">
+                                    <div class="notification-item-top">
+                                        <span class="notification-chip {{ $tone }}">{{ $label }}</span>
+                                        <span class="notification-time">{{ $item->created_at?->locale('id')->diffForHumans() ?? '' }}</span>
+                                    </div>
+                                    <div class="notification-item-title">{{ $data['title'] ?? 'Notifikasi Admin' }}</div>
+                                    <p class="notification-item-message">{{ $data['message'] ?? '' }}</p>
+                                    <div class="notification-item-meta">{{ $data['meta'] ?? ('Booking #'.($data['rental_id'] ?? '-')) }}</div>
+                                    <div class="notification-actions">
+                                        <a href="{{ route('backoffice.notifications.open', $item->id) }}" class="notification-link-button">
+                                            Buka
+                                        </a>
+                                        @if ($isUnread)
+                                            <form method="POST" action="{{ route('backoffice.notifications.read', $item->id) }}">
+                                                @csrf
+                                                <button type="submit" class="notification-read-button">Tandai dibaca</button>
+                                            </form>
+                                        @else
+                                            <span class="notification-read-label">Sudah dibaca</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="notification-empty">
+                                    <strong>Belum ada update operasional</strong>
+                                    Semua aktivitas reservasi dan pembayaran penting akan tampil di sini.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
                 <div class="icon-button">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
@@ -1852,6 +2250,47 @@
         {{ $slot }}
     </main>
 </div>
+<script>
+    (function () {
+        const notificationButton = document.getElementById('backoffice-notification-button');
+        const notificationMenu = document.getElementById('backoffice-notification-menu');
+
+        if (!notificationButton || !notificationMenu) {
+            return;
+        }
+
+        function closeNotificationMenu() {
+            notificationMenu.classList.remove('is-open');
+            notificationButton.setAttribute('aria-expanded', 'false');
+        }
+
+        notificationButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const isOpen = notificationMenu.classList.contains('is-open');
+            if (isOpen) {
+                closeNotificationMenu();
+                return;
+            }
+
+            notificationMenu.classList.add('is-open');
+            notificationButton.setAttribute('aria-expanded', 'true');
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!notificationButton.contains(event.target) && !notificationMenu.contains(event.target)) {
+                closeNotificationMenu();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeNotificationMenu();
+            }
+        });
+    })();
+</script>
 @stack('scripts')
 </body>
 </html>

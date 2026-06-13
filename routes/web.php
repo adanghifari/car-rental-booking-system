@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BackofficeController;
+use App\Http\Controllers\BackofficeNotificationController;
 use App\Http\Controllers\CustomerNotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CustomerAccountController;
@@ -917,6 +918,10 @@ Route::get('/notifications', [CustomerNotificationController::class, 'index'])
     ->middleware('auth')
     ->name('notifications.index');
 
+Route::get('/notifications/{notification}/open', [CustomerNotificationController::class, 'open'])
+    ->middleware('auth')
+    ->name('notifications.open');
+
 Route::post('/notifications/{notification}/read', [CustomerNotificationController::class, 'markRead'])
     ->middleware('auth')
     ->name('notifications.read');
@@ -924,6 +929,18 @@ Route::post('/notifications/{notification}/read', [CustomerNotificationControlle
 Route::post('/notifications/read-all', [CustomerNotificationController::class, 'markAllRead'])
     ->middleware('auth')
     ->name('notifications.read-all');
+
+Route::get('/dashboard/notifications/{notification}/open', [BackofficeNotificationController::class, 'open'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.open');
+
+Route::post('/dashboard/notifications/{notification}/read', [BackofficeNotificationController::class, 'markRead'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.read');
+
+Route::post('/dashboard/notifications/read-all', [BackofficeNotificationController::class, 'markAllRead'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.read-all');
 
 Route::get('/booking/simulate-payment', function (Request $request) {
     $rentalId = $request->query('rental_id');
