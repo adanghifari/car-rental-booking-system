@@ -33,11 +33,11 @@
                 class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
             <a href="{{ route('armada') }}"
                 class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
+            <a href="{{ route('testimoni') }}"
+                class="{{ Route::currentRouteName() === 'testimoni' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Testimoni</a>
             <a href="{{ route('pesanan-saya') }}"
                 class="{{ Route::currentRouteName() === 'pesanan-saya' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Pesanan
                 Saya</a>
-            <a href="{{ route('testimoni') }}"
-                class="{{ Route::currentRouteName() === 'testimoni' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Testimoni</a>
             @endauth
         </nav>
 
