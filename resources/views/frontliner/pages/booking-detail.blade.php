@@ -342,6 +342,72 @@
                                 <span class="bg-[#10B981]/10 text-[#059669] text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">Final Price</span>
                             </div>
                         </div>
+
+                        {{-- Informasi Pembayaran --}}
+                        @if($payment)
+                            @php
+                                $paymentMethodLabel = null;
+                                $payload = $payment->payload;
+                                $type = $payload['payment_type'] ?? null;
+                                if ($type === 'bank_transfer') {
+                                    $bank = $payload['va_numbers'][0]['bank'] ?? null;
+                                    if ($bank) {
+                                        $paymentMethodLabel = strtoupper($bank) . ' Virtual Account';
+                                    } elseif (isset($payload['permata_va_number'])) {
+                                        $paymentMethodLabel = 'Permata Virtual Account';
+                                    } else {
+                                        $paymentMethodLabel = 'Transfer Bank (VA)';
+                                    }
+                                } elseif ($type === 'gopay') {
+                                    $paymentMethodLabel = 'GoPay';
+                                } elseif ($type === 'qris') {
+                                    $paymentMethodLabel = 'QRIS';
+                                } elseif ($type === 'cstore') {
+                                    $store = $payload['store'] ?? 'Gerai';
+                                    $paymentMethodLabel = ucfirst($store);
+                                } elseif ($type === 'credit_card') {
+                                    $paymentMethodLabel = 'Kartu Kredit';
+                                } elseif ($type === 'echannel') {
+                                    $paymentMethodLabel = 'Mandiri Bill';
+                                } elseif ($type === 'shopeepay') {
+                                    $paymentMethodLabel = 'ShopeePay';
+                                } elseif ($payment->provider === 'midtrans' && empty(config('services.midtrans.server_key'))) {
+                                    $paymentMethodLabel = 'Simulasi Pembayaran';
+                                }
+                            @endphp
+
+                            @if($paymentMethodLabel || $payment->status === \App\Enums\PaymentStatus::PAID)
+                                <div class="pt-4 border-t border-gray-100 space-y-3">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Detail Pembayaran</span>
+                                    <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                                        @if($paymentMethodLabel)
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Metode:</span>
+                                                <span class="font-bold text-slate-800">{{ $paymentMethodLabel }}</span>
+                                            </div>
+                                        @endif
+                                        
+                                        @if($payment->status === \App\Enums\PaymentStatus::PAID)
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Status:</span>
+                                                <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wide">Lunas</span>
+                                            </div>
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Waktu Bayar:</span>
+                                                <span class="font-bold text-slate-800">
+                                                    {{ $payment->updated_at->translatedFormat('d M Y, H:i') }} WIB
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Status:</span>
+                                                <span class="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wide">Menunggu</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 </div>
 
