@@ -40,6 +40,9 @@
                     @if(request('start_date'))
                         <input type="hidden" name="start_date" value="{{ request('start_date') }}">
                     @endif
+                    @if(request('max_price'))
+                        <input type="hidden" name="max_price" value="{{ request('max_price') }}">
+                    @endif
 
                     <div class="mb-6">
                         <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Tipe Mobil</h4>
@@ -54,17 +57,6 @@
                                 </label>
                             @endforeach
                         </div>
-                    </div>
-
-                    <div class="mb-6 border-t pt-5 border-gray-50">
-                        <h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Harga Per Hari Maksimal</h4>
-                        <div class="relative rounded-xl shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                <span class="text-gray-400 text-xs font-semibold">Rp</span>
-                            </div>
-                            <input type="number" name="max_price" id="max_price" value="{{ request('max_price') }}" min="0" step="50000" class="focus:ring-[#0B3C9B] focus:border-[#0B3C9B] block w-full pl-9 pr-3 py-2.5 text-xs font-semibold border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 transition" placeholder="Contoh: 500000" onkeypress="if(event.key === 'Enter') { this.form.submit(); }" onblur="this.form.submit()">
-                        </div>
-                        <p class="text-[10px] text-gray-400 mt-1.5">Tekan Enter atau klik di luar untuk menerapkan.</p>
                     </div>
 
                     <div class="mb-6 border-t pt-5 border-gray-50">
@@ -140,12 +132,51 @@
                             @endif
                         </p>
                     </div>
-                    <a href="{{ auth()->check() ? route('frontliner') : route('home') }}" class="bg-white text-[#0B3C9B] hover:bg-blue-50 transition px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center space-x-2 shadow-sm shrink-0">
+                    <button type="button" id="toggle-detail-filter" class="bg-white text-[#0B3C9B] hover:bg-blue-50 transition px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center space-x-2 shadow-sm shrink-0 cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5.25h18M3 12h18M3 18.75h18" />
                         </svg>
-                        <span>Ubah Detail</span>
-                    </a>
+                        <span>Ubah Filter</span>
+                    </button>
+                </div>
+
+                <div id="detail-filter-panel" class="hidden overflow-hidden">
+                    <div class="mt-4 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                        <form id="detailFilterForm" method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end">
+                            @foreach((array) request('types') as $selectedType)
+                                <input type="hidden" name="types[]" value="{{ $selectedType }}">
+                            @endforeach
+                            @if(request('capacity'))
+                                <input type="hidden" name="capacity" value="{{ request('capacity') }}">
+                            @endif
+                            @foreach((array) request('service_types') as $serviceType)
+                                <input type="hidden" name="service_types[]" value="{{ $serviceType }}">
+                            @endforeach
+
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
+                                <input type="date" name="start_date" value="{{ request('start_date') }}"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Harga Maksimal</label>
+                                <div class="relative rounded-xl shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <span class="text-gray-400 text-xs font-semibold">Rp</span>
+                                    </div>
+                                    <input type="number" name="max_price" value="{{ request('max_price') }}" min="0" step="50000"
+                                        class="focus:ring-[#0B3C9B] focus:border-[#0B3C9B] block w-full pl-9 pr-3 py-3 text-sm font-semibold border-gray-200 rounded-xl bg-gray-50 text-gray-900 placeholder-gray-400 transition"
+                                        placeholder="Contoh: 500000">
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white font-semibold px-5 py-3 rounded-xl text-sm transition cursor-pointer">
+                                Terapkan
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Rekomendasi Utama -->
@@ -173,8 +204,14 @@
                                 </div>
                             </div>
                         @else
-                            <div class="lg:col-span-2 bg-slate-900 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col justify-center items-center p-6 text-center text-white">
-                                <p class="text-gray-400">Tidak ada rekomendasi mobil tersedia.</p>
+                            <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[300px] flex flex-col justify-center items-center p-8 text-center">
+                                <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mb-4">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h3m5-10H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2z" />
+                                    </svg>
+                                </div>
+                                <p class="text-base font-semibold text-slate-700">Tidak ada rekomendasi mobil tersedia.</p>
+                                <p class="text-sm text-slate-400 mt-2">Coba ubah tanggal sewa, budget, atau filter kendaraan.</p>
                             </div>
                         @endif
 
@@ -189,8 +226,15 @@
                                 </div>
                             </div>
                         @else
-                            <div class="bg-slate-800 rounded-2xl overflow-hidden relative min-h-[300px] flex flex-col justify-center items-center p-6 text-center text-white">
-                                <p class="text-gray-400">Armada alternatif tidak tersedia.</p>
+                            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm min-h-[300px] flex flex-col justify-center items-center p-8 text-center">
+                                <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mb-4">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 11-6.364-6.364 4.5 4.5 0 016.364 6.364z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 22a8.5 8.5 0 118-4.4"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-base font-semibold text-slate-700">Armada alternatif tidak tersedia.</p>
+                                <p class="text-sm text-slate-400 mt-2">Belum ada unit lain yang cocok dengan filter ini.</p>
                             </div>
                         @endif
                     </div>
@@ -219,7 +263,7 @@
                                         </div>
                                         <div class="flex flex-col items-end gap-1 shrink-0">
                                             <span class="bg-blue-50 text-[#0B3C9B] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center">
-                                                ★ {{ $car->rating ?? '4.8' }}
+                                                ★ {{ number_format($car->average_rating, 1) }}
                                             </span>
                                             <button type="button" 
                                                 onclick="toggleFavorite({{ $car->id }}, event)"
@@ -271,6 +315,37 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const toggleDetailFilterButton = document.getElementById('toggle-detail-filter');
+            const detailFilterPanel = document.getElementById('detail-filter-panel');
+
+            if (toggleDetailFilterButton && detailFilterPanel) {
+                toggleDetailFilterButton.addEventListener('click', function() {
+                    if (detailFilterPanel.classList.contains('hidden')) {
+                        detailFilterPanel.classList.remove('hidden');
+                        detailFilterPanel.style.maxHeight = '0px';
+                        detailFilterPanel.style.opacity = '0';
+                        detailFilterPanel.style.transition = 'max-height 0.3s ease, opacity 0.25s ease';
+
+                        requestAnimationFrame(() => {
+                            detailFilterPanel.style.maxHeight = detailFilterPanel.scrollHeight + 'px';
+                            detailFilterPanel.style.opacity = '1';
+                        });
+                    } else {
+                        detailFilterPanel.style.maxHeight = detailFilterPanel.scrollHeight + 'px';
+                        detailFilterPanel.style.opacity = '1';
+
+                        requestAnimationFrame(() => {
+                            detailFilterPanel.style.maxHeight = '0px';
+                            detailFilterPanel.style.opacity = '0';
+                        });
+
+                        setTimeout(() => {
+                            detailFilterPanel.classList.add('hidden');
+                        }, 300);
+                    }
+                });
+            }
+
             const userId = '{{ auth()->id() }}';
             const isGuest = !userId;
             const storageKey = 'favorites_' + (userId || 'guest');

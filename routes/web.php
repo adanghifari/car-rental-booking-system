@@ -72,7 +72,7 @@ Route::get('/', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -94,10 +94,26 @@ Route::get('/', function (Request $request) {
     }
 
     $cars = $query->limit(3)->get();
-    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
+    $featuredCars = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->withCount([
+            'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
+                ->whereIn('status', booking_active_rental_statuses()),
+        ])
+        ->orderByDesc('rentals_count')
+        ->latest()
+        ->limit(3)
+        ->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->latest()
+        ->orderByDesc('rating')
+        ->limit(3)
+        ->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'featuredCars' => $featuredCars,
         'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('home');
@@ -113,7 +129,7 @@ Route::get('/beranda', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -135,10 +151,26 @@ Route::get('/beranda', function (Request $request) {
     }
 
     $cars = $query->limit(3)->get();
-    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
+    $featuredCars = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->withCount([
+            'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
+                ->whereIn('status', booking_active_rental_statuses()),
+        ])
+        ->orderByDesc('rentals_count')
+        ->latest()
+        ->limit(3)
+        ->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->latest()
+        ->orderByDesc('rating')
+        ->limit(3)
+        ->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'featuredCars' => $featuredCars,
         'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('beranda');
@@ -150,7 +182,7 @@ Route::get('/frontliner', function (Request $request) {
         return redirect()->route('dashboard');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -1099,7 +1131,7 @@ Route::get('/register', function (Request $request) {
     return view('frontliner.auth.register');
 })->name('register');
 Route::get('/search-result', function (Request $request) {
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
 
     if ($request->filled('start_date')) {
         $startDate = $request->input('start_date');
@@ -1157,13 +1189,25 @@ Route::get('/search-result', function (Request $request) {
     ]);
 })->middleware('token.cookie')->name('search-result');
 Route::get('/armada', function (Request $request) {
+    $search = trim($request->string('q')->toString());
+
     $cars = Car::query()
+        ->withReviewMetrics()
+        ->when($search !== '', function ($query) use ($search) {
+            $query->where(function ($innerQuery) use ($search) {
+                $innerQuery->where('name', 'like', "%{$search}%")
+                    ->orWhere('brand', 'like', "%{$search}%")
+                    ->orWhere('license_plate', 'like', "%{$search}%")
+                    ->orWhere('vehicle_type', 'like', "%{$search}%");
+            });
+        })
         ->orderByDesc('created_at')
         ->paginate(8)
         ->withQueryString();
 
     return view('frontliner.pages.armada', [
         'cars' => $cars,
+        'search' => $search,
     ]);
 })->middleware('token.cookie')->name('armada');
 Route::get('/car-detail/{car}', function (Car $car) {
@@ -1193,8 +1237,40 @@ Route::get('/car-detail/{car}', function (Car $car) {
 })->middleware('token.cookie')->name('car-detail');
 
 Route::get('/favorite', function (Request $request) {
-    $cars = \App\Models\Car::all();
+    $cars = \App\Models\Car::query()
+        ->withReviewMetrics()
+        ->get();
     return view('frontliner.pages.favorite', [
         'cars' => $cars,
     ]);
 })->middleware(['token.cookie', 'auth'])->name('favorite');
+
+Route::get('/testimoni', function (Request $request) {
+    $sort = $request->string('sort', 'latest')->toString();
+    $selectedVehicleType = $request->string('vehicle_type')->toString();
+    $selectedMinimumRating = (int) $request->integer('min_rating', 0);
+
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->when($selectedVehicleType !== '', function ($query) use ($selectedVehicleType) {
+            $query->whereHas('car', function ($carQuery) use ($selectedVehicleType) {
+                $carQuery->where('vehicle_type', $selectedVehicleType);
+            });
+        })
+        ->when($selectedMinimumRating > 0, function ($query) use ($selectedMinimumRating) {
+            $query->where('rating', '>=', $selectedMinimumRating);
+        })
+        ->when($sort === 'oldest', fn ($query) => $query->oldest())
+        ->when($sort === 'highest_rating', fn ($query) => $query->orderByDesc('rating')->latest())
+        ->when($sort === 'lowest_rating', fn ($query) => $query->orderBy('rating')->latest())
+        ->when(! in_array($sort, ['oldest', 'highest_rating', 'lowest_rating'], true), fn ($query) => $query->latest())
+        ->paginate(6)
+        ->withQueryString();
+
+    return view('frontliner.pages.testimoni', [
+        'reviews' => $reviews,
+        'vehicleTypes' => VehicleType::cases(),
+        'selectedVehicleType' => $selectedVehicleType,
+        'selectedMinimumRating' => $selectedMinimumRating,
+        'selectedSort' => $sort,
+    ]);
+})->middleware('token.cookie')->name('testimoni');

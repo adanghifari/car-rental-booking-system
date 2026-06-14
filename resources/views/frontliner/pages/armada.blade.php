@@ -40,10 +40,60 @@
                 </div>
             </div>
 
+            <section class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-5">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <form method="GET" action="{{ route('armada') }}" class="flex-1">
+                        <div class="flex flex-col gap-3 sm:flex-row">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.604 10.604Z" />
+                                    </svg>
+                                </span>
+                                <input type="text" name="q" value="{{ $search ?? request('q') }}"
+                                    placeholder="Cari nama mobil, brand, tipe, atau plat nomor..."
+                                    class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]">
+                            </div>
+                            <div class="flex gap-3">
+                                <button type="submit"
+                                    class="inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-5 py-3 rounded-xl text-sm font-semibold transition whitespace-nowrap">
+                                    Cari
+                                </button>
+                                @if(($search ?? request('q')) !== '')
+                                <a href="{{ route('armada') }}"
+                                    class="inline-flex items-center justify-center border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 px-5 py-3 rounded-xl text-sm font-semibold transition whitespace-nowrap">
+                                    Reset
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
+
+                    <a href="{{ route('search-result') }}"
+                        class="inline-flex items-center justify-center gap-2 border border-[#0B3C9B] text-[#0B3C9B] hover:bg-blue-50 px-5 py-3 rounded-xl text-sm font-semibold transition whitespace-nowrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 5.25h18M3 12h18M3 18.75h18" />
+                        </svg>
+                        Cari dengan Filter
+                    </a>
+                </div>
+            </section>
+
             <!-- Semua Hasil Pencarian -->
             <section>
                 <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
-                    <h2 class="text-xl font-bold text-gray-900 tracking-tight">Semua Armada</h2>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 tracking-tight">Semua Armada</h2>
+                        @if(($search ?? request('q')) !== '')
+                        <p class="text-sm text-gray-500 mt-1">
+                            Hasil pencarian untuk "<span class="font-semibold text-gray-700">{{ $search ?? request('q') }}</span>"
+                        </p>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -75,7 +125,7 @@
                                 <div class="flex flex-col items-end gap-1 shrink-0">
                                     <span
                                         class="bg-blue-50 text-[#0B3C9B] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center">
-                                        ★ {{ $car->rating ?? '4.8' }}
+                                        ★ {{ number_format($car->average_rating, 1) }}
                                     </span>
                                     <button type="button" onclick="toggleFavorite({{ $car->id }}, event)"
                                         data-car-id="{{ $car->id }}"

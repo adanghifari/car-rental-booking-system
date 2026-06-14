@@ -85,7 +85,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 tracking-tight mb-3">Armada Unggulan</h2>
                 <p class="text-gray-500 max-w-xl">Kurasi eksklusif kendaraan performa tinggi dan SUV mewah untuk pengalaman berkendara terbaik.</p>
             </div>
-            <a href="#" class="text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0">
+            <a href="{{ route('armada') }}" class="text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0">
                 Lihat Semua 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 ml-1">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -94,25 +94,29 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            @forelse($cars as $car)
+            @forelse(($featuredCars ?? collect()) as $car)
+                @php
+                    $isAvailable = ($car->status->value ?? $car->status) === 'available';
+                    $isRented = ! $isAvailable && (($car->active_rentals_count ?? 0) > 0);
+                    $statusLabel = $isAvailable ? 'Tersedia' : ($isRented ? 'Sedang Disewa' : 'Maintenance');
+                    $statusBadgeClass = $isAvailable ? 'bg-[#10B981]' : ($isRented ? 'bg-[#F59E0B]' : 'bg-slate-600');
+                @endphp
                 <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div>
                         <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
-                            @if(($car->status->value ?? $car->status) === 'available')
-                                <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                                    Tersedia
-                                </span>
-                            @else
-                                <span class="absolute top-3 left-3 bg-[#EF4444] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                                    Disewa
-                                </span>
-                            @endif
+                            <span class="absolute top-3 left-3 {{ $statusBadgeClass }} text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                                {{ $statusLabel }}
+                            </span>
                         </div>
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900">{{ $car->name }}</h3>
                                 <p class="text-xs text-gray-400">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
+                                <div class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600 border border-amber-100">
+                                    <span>★</span>
+                                    <span>{{ number_format($car->average_rating, 1) }}</span>
+                                </div>
                             </div>
                             <div class="text-right">
                                 <span class="text-lg font-bold text-gray-900">Rp {{ number_format($car->daily_rate, 0, ',', '.') }}</span>
@@ -125,19 +129,19 @@
                             <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
                         </div>
                     </div>
-                    @if(($car->status->value ?? $car->status) === 'available')
+                    @if($isAvailable)
                         <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang
                         </button>
                     @else
                         <button type="button" disabled class="w-full text-center block bg-gray-100 border border-gray-200 text-gray-400 py-3 rounded-xl font-semibold text-sm cursor-not-allowed">
-                            Pesan Sekarang
+                            {{ $isRented ? 'Armada Sedang di Sewa' : 'Sedang Maintenance' }}
                         </button>
                     @endif
                 </div>
             @empty
                 <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-100">
-                    <p class="text-gray-500">Tidak ada mobil yang tersedia.</p>
+                    <p class="text-gray-500">Belum ada armada unggulan yang tersedia.</p>
                 </div>
             @endforelse
         </div>
@@ -150,116 +154,69 @@
         </div>
 
         <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            @forelse($reviews as $index => $review)
+            @forelse($reviews as $review)
                 @php
-                    $isFeatured = ($index === 1);
                     $initials = '';
                     $names = explode(' ', $review->user->name);
                     foreach (array_slice($names, 0, 2) as $n) {
                         $initials .= strtoupper(substr($n, 0, 1));
                     }
                 @endphp
-                @if($isFeatured)
-                    <div class="bg-[#0B3C9B] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[280px] md:-translate-y-4 transition">
-                        <div>
-                            <div class="flex text-[#10B981] space-x-1 mb-4 text-xs font-bold">
-                                @for($i = 1; $i <= 5; $i++)
-                                    {{ $i <= $review->rating ? '★' : '☆' }}
-                                @endfor
+
+                <article class="group bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between min-h-[280px] transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70">
+                    <div>
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-slate-100 text-[#123C7A] flex items-center justify-center font-extrabold text-sm shrink-0">
+                                    {{ $initials ?: 'U' }}
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-base font-bold text-slate-900 truncate">{{ $review->user->name }}</h4>
+                                </div>
                             </div>
-                            <p class="text-blue-100 italic text-sm leading-relaxed mb-6 font-light">
-                                "{{ $review->comment ?? 'Sangat puas dengan layanan MD CAR RENTAL!' }}"
+                            <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600 border border-amber-100 shrink-0">
+                                ★ {{ $review->rating }}/5
+                            </span>
+                        </div>
+
+                        <p class="mt-4 text-xs text-slate-500">
+                            Mobil: {{ $review->car->name }} ({{ $review->car->brand }})
+                        </p>
+
+                        <div class="mt-3 flex items-center gap-1 text-amber-400 text-sm">
+                            @for($i = 1; $i <= 5; $i++)
+                                <span>{{ $i <= $review->rating ? '★' : '☆' }}</span>
+                            @endfor
+                        </div>
+
+                        <div class="mt-4 rounded-2xl bg-slate-50 border border-slate-100 p-4 min-h-[8.5rem]">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan</p>
+                            <p class="mt-2 text-sm leading-7 text-slate-600 italic">
+                                "{{ $review->comment ?: 'Customer tidak menuliskan ulasan tambahan.' }}"
                             </p>
                         </div>
-                        <div class="flex items-center space-x-3 border-t border-white/10 pt-4">
-                            <div class="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                {{ $initials ?: 'U' }}
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">{{ $review->user->name }}</h4>
-                                <p class="text-[10px] text-blue-300">{{ $review->car->name }} ({{ $review->car->brand }})</p>
-                            </div>
-                        </div>
                     </div>
-                @else
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
-                        <div>
-                            <div class="flex text-[#10B981] space-x-1 mb-4 text-xs font-bold">
-                                @for($i = 1; $i <= 5; $i++)
-                                    {{ $i <= $review->rating ? '★' : '☆' }}
-                                @endfor
-                            </div>
-                            <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
-                                "{{ $review->comment ?? 'Layanan yang luar biasa, unit bersih dan terawat!' }}"
-                            </p>
-                        </div>
-                        <div class="flex items-center space-x-3 border-t border-gray-50 pt-4">
-                            <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold text-sm">
-                                {{ $initials ?: 'U' }}
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-gray-900">{{ $review->user->name }}</h4>
-                                <p class="text-[10px] text-gray-400">{{ $review->car->name }} ({{ $review->car->brand }})</p>
-                            </div>
-                        </div>
+
+                    <div class="mt-4 text-xs text-slate-400">
+                        <span>{{ optional($review->created_at)->locale('id')->diffForHumans() }}</span>
                     </div>
-                @endif
+                </article>
             @empty
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
-                    <div>
-                        <div class="flex text-[#10B981] space-x-1 mb-4">
-                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                        </div>
-                        <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
-                            "Pelayanan yang benar-benar presisi. Mobil dalam kondisi sempurna saat dikirim ke hotel saya di Bali. Tidak ada yang menandingi standar ini."
-                        </p>
+                <div class="md:col-span-3 rounded-[1.75rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
+                    <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12h6m-6 4h3m5-10H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2z" />
+                        </svg>
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Adrian" class="w-10 h-10 rounded-full object-cover">
-                        <div>
-                            <h4 class="text-sm font-bold text-gray-900">Adrian Prasetya</h4>
-                            <p class="text-[10px] text-gray-400">CEO, Tech Global</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-[#0B3C9B] text-white p-8 rounded-2xl shadow-xl flex flex-col justify-between h-full min-h-[280px] md:-translate-y-4 transition">
-                    <div>
-                        <div class="flex text-[#10B981] space-x-1 mb-4">
-                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                        </div>
-                        <p class="text-blue-100 italic text-sm leading-relaxed mb-6 font-light">
-                            "Azure Velocity memahami arti dari 'Precision Concierge'. Setiap detail dari proses pemesanan hingga pengembalian berjalan sangat mulus."
-                        </p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Siska" class="w-10 h-10 rounded-full object-cover">
-                        <div>
-                            <h4 class="text-sm font-bold text-white">Siska Wijaya</h4>
-                            <p class="text-[10px] text-blue-300">Lifestyle Influencer</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-full min-h-[250px]">
-                    <div>
-                        <div class="flex text-[#10B981] space-x-1 mb-4">
-                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                        </div>
-                        <p class="text-gray-600 italic text-sm leading-relaxed mb-6 font-light">
-                            "Menyewa supercar biasanya rumit, tapi di sini sangat mudah. Verifikasi cepat dan unit selalu terbaru. Sangat direkomendasikan!"
-                        </p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="Bima" class="w-10 h-10 rounded-full object-cover">
-                        <div>
-                            <h4 class="text-sm font-bold text-gray-900">Bima Arya</h4>
-                            <p class="text-[10px] text-gray-400">Entrepreneur</p>
-                        </div>
-                    </div>
+                    <h2 class="mt-4 text-lg font-bold text-slate-900">Belum ada testimoni</h2>
+                    <p class="mt-2 text-sm text-slate-500">
+                        Testimoni customer akan tampil di sini setelah ulasan mulai masuk.
+                    </p>
                 </div>
             @endforelse
         </div>
+
     </section>
 
     <section class="max-w-7xl mx-auto px-6 py-16">

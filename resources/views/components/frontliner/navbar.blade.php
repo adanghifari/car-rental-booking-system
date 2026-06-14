@@ -25,7 +25,8 @@
                 class="{{ Route::currentRouteName() === 'home' || Route::currentRouteName() === 'beranda' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
             <a href="{{ route('armada') }}"
                 class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
-            <a href="#testimoni" class="text-slate-600 hover:text-blue-600 transition font-medium">Testimoni Kami</a>
+            <a href="{{ route('testimoni') }}"
+                class="{{ Route::currentRouteName() === 'testimoni' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Testimoni Kami</a>
             @endguest
 
             @auth
@@ -33,11 +34,11 @@
                 class="{{ Route::currentRouteName() === 'frontliner' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
             <a href="{{ route('armada') }}"
                 class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
+            <a href="{{ route('testimoni') }}"
+                class="{{ Route::currentRouteName() === 'testimoni' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Testimoni</a>
             <a href="{{ route('pesanan-saya') }}"
                 class="{{ Route::currentRouteName() === 'pesanan-saya' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Pesanan
                 Saya</a>
-            <a href="{{ route('favorite') }}"
-                class="{{ Route::currentRouteName() === 'favorite' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Favorite</a>
             @endauth
         </nav>
 
@@ -291,6 +292,15 @@
                                 d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                         </svg>
                         Pembayaran
+                    </a>
+                    <a href="{{ route('favorite') }}"
+                        class="group/item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium {{ Route::currentRouteName() === 'favorite' ? 'text-blue-600 bg-blue-50/50' : 'text-slate-600' }} hover:text-blue-600 hover:bg-blue-50/50 transition-all duration-200">
+                        <svg class="w-[18px] h-[18px] {{ Route::currentRouteName() === 'favorite' ? 'text-blue-500' : 'text-slate-400' }} group-hover/item:text-blue-500 transition-colors duration-200"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        Favorite
                     </a>
                             <div class="h-px bg-slate-100/80 my-1 mx-2"></div>
                             <form method="POST" action="{{ route('logout') }}">

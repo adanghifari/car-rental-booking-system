@@ -89,6 +89,7 @@
         }
 
         .form-area {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -98,6 +99,45 @@
         .card {
             width: min(460px, 100%);
             background: transparent;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 28px;
+            left: 28px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #5d6680;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .back-link-icon {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .back-link:hover {
+            color: #1a51d6;
+            transform: translateX(-1px);
+        }
+
+        .form-brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .form-brand img {
+            width: 178px;
+            max-width: 100%;
+            height: auto;
+            display: block;
         }
 
         .card h2 {
@@ -266,6 +306,10 @@
             .hero { min-height: 390px; }
             .card h2 { font-size: 32px; }
             .footer { font-size: 10px; }
+            .back-link {
+                top: 22px;
+                left: 22px;
+            }
         }
     </style>
 </head>
@@ -290,7 +334,14 @@
         </aside>
 
         <main class="form-area">
+            <a href="{{ route('home') }}" class="back-link" aria-label="Kembali ke beranda">
+                <span class="back-link-icon" aria-hidden="true">←</span>
+                <span>Kembali ke Beranda</span>
+            </a>
             <section class="card">
+                <a href="{{ route('home') }}" class="form-brand" aria-label="MD CAR RENTAL">
+                    <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL">
+                </a>
                 <h2>Masuk ke Akun</h2>
                 <p class="subtitle">Masuk untuk mengelola reservasi dan akses layanan concierge.</p>
 
