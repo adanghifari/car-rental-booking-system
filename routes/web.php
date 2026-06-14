@@ -1198,3 +1198,14 @@ Route::get('/favorite', function (Request $request) {
         'cars' => $cars,
     ]);
 })->middleware(['token.cookie', 'auth'])->name('favorite');
+
+Route::get('/testimoni', function () {
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->latest()
+        ->paginate(9)
+        ->withQueryString();
+
+    return view('frontliner.pages.testimoni', [
+        'reviews' => $reviews,
+    ]);
+})->middleware(['token.cookie', 'auth'])->name('testimoni');
