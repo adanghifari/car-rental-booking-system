@@ -409,7 +409,7 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @forelse($cars as $car)
 
             <div
@@ -735,69 +735,7 @@
                 </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-300 py-12 border-t border-gray-800">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <!-- Company Info -->
-                <div>
-                    <h3 class="text-white font-bold text-lg mb-4">MD CAR RENTAL</h3>
-                    <p class="text-sm text-gray-400">
-                        Penyewaan mobil terpercaya dengan armada terlengkap dan harga terjangkau.
-                    </p>
-                </div>
-
-                <!-- Rental Models -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Model Rental</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Harian</a></li>
-                        <li><a href="#" class="hover:text-white transition">Mingguan</a></li>
-                        <li><a href="#" class="hover:text-white transition">Bulanan</a></li>
-                        <li><a href="#" class="hover:text-white transition">Long-term</a></li>
-                    </ul>
-                </div>
-
-                <!-- Services -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Layanan</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white transition">Penjemput Bandara</a></li>
-                        <li><a href="#" class="hover:text-white transition">Sopir Profesional</a></li>
-                        <li><a href="#" class="hover:text-white transition">Asuransi Komprehensif</a></li>
-                        <li><a href="#" class="hover:text-white transition">24/7 Support</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact Info -->
-                <div>
-                    <h4 class="text-white font-semibold mb-4">Hubungi Kami</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="tel:+62212345678" class="hover:text-white transition">+62 (21) 2345678</a></li>
-                        <li><a href="mailto:info@hdrentalcar.com"
-                                class="hover:text-white transition">info@hdrentalcar.com</a></li>
-                        <li>
-                            <p>Jakarta, Indonesia</p>
-                        </li>
-                        <li>
-                            <p>Jam Operasional: 24/7</p>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <hr class="border-gray-700 mb-8">
-
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">&copy; 2024 MD CAR RENTAL. All rights reserved.</p>
-                <div class="flex gap-4 mt-4 md:mt-0">
-                    <a href="#" class="text-gray-400 hover:text-white transition">Privacy Policy</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">Terms of Service</a>
-                    <a href="#" class="text-gray-400 hover:text-white transition">Contact Us</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <x-frontliner.footer />
     <x-frontliner.booking-modal />
 </body>
 

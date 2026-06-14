@@ -3,21 +3,25 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 pb-12">
             
+            <!-- KOLOM KIRI: Identitas Perusahaan -->
             <div class="space-y-4">
-                <h4 class="text-white font-bold tracking-wider uppercase text-xs">Rental Mobil</h4>
-                <ul class="space-y-2.5 text-xs font-medium">
-                    <li><a href="#" class="hover:text-white transition">Tentang Kami</a></li>
-                    <li><a href="#" class="hover:text-white transition">Karir</a></li>
-                    <li><a href="#" class="hover:text-white transition">Layanan Concierge</a></li>
-                    <li><a href="#" class="hover:text-white transition">FAQ</a></li>
-                </ul>
+                <div class="flex items-center space-x-3">
+                    <img src="{{ asset('images/logo-footer.png') }}" alt="MD Car Rental" class="h-auto" style="height: 120px;">
+                    <h3 class="text-white font-bold text-lg tracking-tight">MD Car Rental</h3>
+                </div>
+                <p class="text-xs text-gray-400 leading-relaxed max-w-sm">
+                    MD Car Rental adalah penyedia layanan sewa mobil terpercaya, aman, dan nyaman untuk berbagai kebutuhan perjalanan.
+                </p>
             </div>
 
+            <!-- KOLOM TENGAH: Menu Navigasi & Bantuan -->
             <div class="space-y-4">
-                <h4 class="text-white font-bold tracking-wider uppercase text-xs">Bantuan</h4>
+                <h4 class="text-white font-bold tracking-wider uppercase text-xs">Informasi</h4>
                 <ul class="space-y-2.5 text-xs font-medium">
-                    <li><a href="#" class="hover:text-white transition">Hubungi Kami</a></li>
-                    <li><a href="#" class="hover:text-white transition">Pusat Bantuan (FAQ)</a></li>
+                    <li><a href="#" class="hover:text-white transition">Bantuan</a></li>
+                    <li><a href="#" class="hover:text-white transition">Cara Sewa</a></li>
+                    <li><a href="#" class="hover:text-white transition">FAQ</a></li>
+                    <li><a href="#" class="hover:text-white transition">Ketentuan Layanan</a></li>
                     <li><a href="#" class="hover:text-white transition">Syarat & Ketentuan</a></li>
                     <li><a href="#" class="hover:text-white transition">Kebijakan Privasi</a></li>
                 </ul>
