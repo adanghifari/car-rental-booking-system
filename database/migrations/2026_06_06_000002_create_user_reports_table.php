@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->text('issue');
             $table->string('category');
-            $table->string('status')->default('open'); // open, solved
+            $table->string('status')->default('open');
             $table->timestamps();
         });
     }
