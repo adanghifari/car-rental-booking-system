@@ -85,7 +85,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 tracking-tight mb-3">Armada Unggulan</h2>
                 <p class="text-gray-500 max-w-xl">Kurasi eksklusif kendaraan performa tinggi dan SUV mewah untuk pengalaman berkendara terbaik.</p>
             </div>
-            <a href="#" class="text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0">
+            <a href="{{ route('armada') }}" class="text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0">
                 Lihat Semua 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 ml-1">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -94,25 +94,29 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            @forelse($cars as $car)
+            @forelse(($featuredCars ?? collect()) as $car)
+                @php
+                    $isAvailable = ($car->status->value ?? $car->status) === 'available';
+                    $isRented = ! $isAvailable && (($car->active_rentals_count ?? 0) > 0);
+                    $statusLabel = $isAvailable ? 'Tersedia' : ($isRented ? 'Sedang Disewa' : 'Maintenance');
+                    $statusBadgeClass = $isAvailable ? 'bg-[#10B981]' : ($isRented ? 'bg-[#F59E0B]' : 'bg-slate-600');
+                @endphp
                 <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div>
                         <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
-                            @if(($car->status->value ?? $car->status) === 'available')
-                                <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                                    Tersedia
-                                </span>
-                            @else
-                                <span class="absolute top-3 left-3 bg-[#EF4444] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                                    Disewa
-                                </span>
-                            @endif
+                            <span class="absolute top-3 left-3 {{ $statusBadgeClass }} text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
+                                {{ $statusLabel }}
+                            </span>
                         </div>
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 class="text-lg font-bold text-gray-900">{{ $car->name }}</h3>
                                 <p class="text-xs text-gray-400">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
+                                <div class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600 border border-amber-100">
+                                    <span>★</span>
+                                    <span>{{ number_format($car->average_rating, 1) }}</span>
+                                </div>
                             </div>
                             <div class="text-right">
                                 <span class="text-lg font-bold text-gray-900">Rp {{ number_format($car->daily_rate, 0, ',', '.') }}</span>
@@ -125,19 +129,19 @@
                             <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
                         </div>
                     </div>
-                    @if(($car->status->value ?? $car->status) === 'available')
+                    @if($isAvailable)
                         <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang
                         </button>
                     @else
                         <button type="button" disabled class="w-full text-center block bg-gray-100 border border-gray-200 text-gray-400 py-3 rounded-xl font-semibold text-sm cursor-not-allowed">
-                            Pesan Sekarang
+                            {{ $isRented ? 'Armada Sedang di Sewa' : 'Sedang Maintenance' }}
                         </button>
                     @endif
                 </div>
             @empty
                 <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-gray-100">
-                    <p class="text-gray-500">Tidak ada mobil yang tersedia.</p>
+                    <p class="text-gray-500">Belum ada armada unggulan yang tersedia.</p>
                 </div>
             @endforelse
         </div>
@@ -212,6 +216,7 @@
                 </div>
             @endforelse
         </div>
+
     </section>
 
     <section class="max-w-7xl mx-auto px-6 py-16">

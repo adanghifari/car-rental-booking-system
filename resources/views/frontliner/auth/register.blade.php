@@ -37,8 +37,38 @@
         .stats { display: flex; gap: 34px; margin-top: 28px; }
         .stat strong { display: block; font-size: 34px; line-height: 1; }
         .stat span { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.78); }
-        .form-area { display: flex; align-items: center; justify-content: center; padding: 38px 28px; }
+        .form-area { position: relative; display: flex; align-items: center; justify-content: center; padding: 38px 28px; }
         .card { width: min(480px, 100%); }
+        .back-link {
+            position: absolute;
+            top: 28px;
+            left: 28px;
+            display: inline-flex;
+            align-items: center;
+            color: #5d6680;
+            text-decoration: none;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+        .back-link:hover {
+            color: #1a51d6;
+            transform: translateX(-1px);
+        }
+        .form-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .form-brand img {
+            width: 182px;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
         .card h2 { margin: 0; font-size: 42px; font-weight: 500; }
         .subtitle { margin-top: 8px; font-size: 14px; color: var(--muted); }
         .feedback { margin-top: 14px; padding: 11px 12px; border-radius: 10px; font-size: 13px; display: none; }
@@ -73,6 +103,7 @@
             .hero { min-height: 360px; }
             .card h2 { font-size: 34px; }
             .footer { text-align: center; }
+            .back-link { top: 22px; left: 22px; }
         }
     </style>
 </head>
@@ -92,7 +123,13 @@
         </aside>
 
         <main class="form-area">
+            <a href="{{ route('login') }}" class="back-link" aria-label="Kembali ke halaman login">
+                <span aria-hidden="true">←</span>
+            </a>
             <section class="card">
+                <a href="{{ route('home') }}" class="form-brand" aria-label="MD CAR RENTAL">
+                    <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL">
+                </a>
                 <h2>Buat Akun Baru</h2>
                 <p class="subtitle">Mulai perjalanan kemewahan Anda hari ini.</p>
 
