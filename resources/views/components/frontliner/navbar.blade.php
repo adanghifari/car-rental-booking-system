@@ -25,7 +25,8 @@
                 class="{{ Route::currentRouteName() === 'home' || Route::currentRouteName() === 'beranda' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Beranda</a>
             <a href="{{ route('armada') }}"
                 class="{{ in_array(Route::currentRouteName(), ['armada', 'search-result', 'car-detail']) ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Armada</a>
-            <a href="#testimoni" class="text-slate-600 hover:text-blue-600 transition font-medium">Testimoni Kami</a>
+            <a href="{{ route('testimoni') }}"
+                class="{{ Route::currentRouteName() === 'testimoni' ? 'text-blue-600 border-b-2 border-blue-600 pb-1 font-semibold' : 'text-slate-600 hover:text-blue-600 transition font-medium' }}">Testimoni Kami</a>
             @endguest
 
             @auth

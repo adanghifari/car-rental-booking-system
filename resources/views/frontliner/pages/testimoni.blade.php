@@ -52,6 +52,86 @@
             </div>
         </section>
 
+        <section class="bg-white border border-slate-200 rounded-[1.5rem] p-4 shadow-sm shadow-slate-200/50">
+            <form method="GET" action="{{ route('testimoni') }}" class="space-y-3">
+                <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-center flex-1">
+                        <div class="shrink-0">
+                            <p class="text-sm font-bold text-slate-900">Filter</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 flex-1">
+                            <select id="vehicle_type" name="vehicle_type"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300">
+                                <option value="">Semua kategori mobil</option>
+                                @foreach($vehicleTypes as $vehicleType)
+                                    <option value="{{ $vehicleType->value }}" {{ $selectedVehicleType === $vehicleType->value ? 'selected' : '' }}>
+                                        {{ $vehicleType->label() }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            <select id="min_rating" name="min_rating"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300">
+                                <option value="0" {{ $selectedMinimumRating === 0 ? 'selected' : '' }}>Semua rating</option>
+                                <option value="5" {{ $selectedMinimumRating === 5 ? 'selected' : '' }}>5 bintang</option>
+                                <option value="4" {{ $selectedMinimumRating === 4 ? 'selected' : '' }}>4 bintang ke atas</option>
+                                <option value="3" {{ $selectedMinimumRating === 3 ? 'selected' : '' }}>3 bintang ke atas</option>
+                                <option value="2" {{ $selectedMinimumRating === 2 ? 'selected' : '' }}>2 bintang ke atas</option>
+                                <option value="1" {{ $selectedMinimumRating === 1 ? 'selected' : '' }}>1 bintang ke atas</option>
+                            </select>
+
+                            <select id="sort" name="sort"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300">
+                                <option value="latest" {{ $selectedSort === 'latest' ? 'selected' : '' }}>Urutkan: Terbaru</option>
+                                <option value="oldest" {{ $selectedSort === 'oldest' ? 'selected' : '' }}>Urutkan: Terlama</option>
+                                <option value="highest_rating" {{ $selectedSort === 'highest_rating' ? 'selected' : '' }}>Urutkan: Bintang tertinggi</option>
+                                <option value="lowest_rating" {{ $selectedSort === 'lowest_rating' ? 'selected' : '' }}>Urutkan: Bintang terendah</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <button type="submit"
+                            class="inline-flex items-center justify-center rounded-xl bg-[#123C7A] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1E4E9A] transition">
+                            Terapkan
+                        </button>
+                        <a href="{{ route('testimoni') }}"
+                            class="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                            Reset
+                        </a>
+                    </div>
+                </div>
+
+                @if($selectedVehicleType !== '' || $selectedMinimumRating > 0 || $selectedSort !== 'latest')
+                    <div class="flex flex-wrap items-center gap-2 pt-1">
+                        @if($selectedVehicleType !== '')
+                            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+                                {{ collect($vehicleTypes)->firstWhere('value', $selectedVehicleType)?->label() }}
+                            </span>
+                        @endif
+                        @if($selectedMinimumRating > 0)
+                            <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-100">
+                                Min {{ $selectedMinimumRating }} bintang
+                            </span>
+                        @endif
+                        @if($selectedSort !== 'latest')
+                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200">
+                                {{
+                                    match ($selectedSort) {
+                                        'oldest' => 'Urutan: Terlama',
+                                        'highest_rating' => 'Urutan: Bintang tertinggi',
+                                        'lowest_rating' => 'Urutan: Bintang terendah',
+                                        default => 'Urutan: Terbaru',
+                                    }
+                                }}
+                            </span>
+                        @endif
+                    </div>
+                @endif
+            </form>
+        </section>
+
         <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             @forelse($reviews as $review)
                 @php
@@ -72,8 +152,6 @@
                             </div>
                             <div class="min-w-0">
                                 <h2 class="text-base font-bold text-slate-900 truncate">{{ $review->user->name }}</h2>
-                                <p class="text-xs text-slate-500 truncate">Mobil: {{ $review->car->name }}
-                                    ({{ $review->car->brand }})</p>
                             </div>
                         </div>
                         <span
@@ -82,7 +160,11 @@
                         </span>
                     </div>
 
-                    <div class="mt-5 flex items-center gap-1 text-amber-400 text-sm">
+                    <p class="mt-4 text-xs text-slate-500">
+                        Mobil: {{ $review->car->name }} ({{ $review->car->brand }})
+                    </p>
+
+                    <div class="mt-3 flex items-center gap-1 text-amber-400 text-sm">
                         @for($i = 1; $i <= 5; $i++)
                             <span>{{ $i <= $review->rating ? '★' : '☆' }}</span>
                         @endfor
@@ -116,29 +198,65 @@
         </section>
 
         @if($reviews->hasPages())
-            <div class="flex items-center justify-between gap-4 flex-col sm:flex-row bg-white border border-slate-200 rounded-2xl px-4 py-4 shadow-sm">
-                <div class="text-sm text-slate-500">
-                    Menampilkan {{ $reviews->firstItem() ?? 0 }} - {{ $reviews->lastItem() ?? 0 }} dari {{ $reviews->total() }} testimoni
-                </div>
-                <div class="flex items-center gap-1.5">
+            @php
+                $currentPage = $reviews->currentPage();
+                $lastPage = $reviews->lastPage();
+                $windowStart = max(1, $currentPage - 1);
+                $windowEnd = min($lastPage, $currentPage + 1);
+
+                if ($lastPage <= 5) {
+                    $pageItems = range(1, $lastPage);
+                } else {
+                    $pageItems = [1];
+
+                    if ($windowStart > 2) {
+                        $pageItems[] = '...';
+                    }
+
+                    for ($page = $windowStart; $page <= $windowEnd; $page++) {
+                        if ($page > 1 && $page < $lastPage) {
+                            $pageItems[] = $page;
+                        }
+                    }
+
+                    if ($windowEnd < $lastPage - 1) {
+                        $pageItems[] = '...';
+                    }
+
+                    $pageItems[] = $lastPage;
+                    $pageItems = array_values(array_unique($pageItems, SORT_REGULAR));
+                }
+            @endphp
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-4 flex items-center justify-between gap-4 flex-col sm:flex-row">
+                <p class="text-sm text-slate-500">
+                    Menampilkan {{ $reviews->firstItem() ?? 0 }}-{{ $reviews->lastItem() ?? 0 }} dari {{ $reviews->total() }} testimoni
+                </p>
+
+                <div class="flex items-center gap-2">
                     @if ($reviews->onFirstPage())
-                        <span class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-300 text-xs cursor-not-allowed select-none">&lt;</span>
+                        <span class="px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-blue-300 text-sm font-semibold">‹</span>
                     @else
-                        <a href="{{ $reviews->previousPageUrl() }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-blue-50 text-xs transition">&lt;</a>
+                        <a href="{{ $reviews->previousPageUrl() }}"
+                            class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">‹</a>
                     @endif
 
-                    @foreach ($reviews->getUrlRange(1, $reviews->lastPage()) as $page => $url)
-                        @if ($page == $reviews->currentPage())
-                            <span class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs select-none">{{ $page }}</span>
+                    @foreach ($pageItems as $pageItem)
+                        @if ($pageItem === '...')
+                            <span class="px-3 py-2 rounded-xl border border-transparent text-blue-300 text-sm font-semibold">...</span>
+                        @elseif ($pageItem === $currentPage)
+                            <span class="px-3 py-2 rounded-xl bg-[#0B3C9B] text-white text-sm font-semibold">{{ $pageItem }}</span>
                         @else
-                            <a href="{{ $url }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-blue-50 text-xs transition">{{ $page }}</a>
+                            <a href="{{ $reviews->url($pageItem) }}"
+                                class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">{{ $pageItem }}</a>
                         @endif
                     @endforeach
 
                     @if ($reviews->hasMorePages())
-                        <a href="{{ $reviews->nextPageUrl() }}" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-blue-50 text-xs transition">&gt;</a>
+                        <a href="{{ $reviews->nextPageUrl() }}"
+                            class="px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition text-sm font-semibold">›</a>
                     @else
-                        <span class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-300 text-xs cursor-not-allowed select-none">&gt;</span>
+                        <span class="px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-blue-300 text-sm font-semibold">›</span>
                     @endif
                 </div>
             </div>

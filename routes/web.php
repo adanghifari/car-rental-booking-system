@@ -1199,13 +1199,32 @@ Route::get('/favorite', function (Request $request) {
     ]);
 })->middleware(['token.cookie', 'auth'])->name('favorite');
 
-Route::get('/testimoni', function () {
+Route::get('/testimoni', function (Request $request) {
+    $sort = $request->string('sort', 'latest')->toString();
+    $selectedVehicleType = $request->string('vehicle_type')->toString();
+    $selectedMinimumRating = (int) $request->integer('min_rating', 0);
+
     $reviews = \App\Models\Review::with(['user', 'car'])
-        ->latest()
-        ->paginate(9)
+        ->when($selectedVehicleType !== '', function ($query) use ($selectedVehicleType) {
+            $query->whereHas('car', function ($carQuery) use ($selectedVehicleType) {
+                $carQuery->where('vehicle_type', $selectedVehicleType);
+            });
+        })
+        ->when($selectedMinimumRating > 0, function ($query) use ($selectedMinimumRating) {
+            $query->where('rating', '>=', $selectedMinimumRating);
+        })
+        ->when($sort === 'oldest', fn ($query) => $query->oldest())
+        ->when($sort === 'highest_rating', fn ($query) => $query->orderByDesc('rating')->latest())
+        ->when($sort === 'lowest_rating', fn ($query) => $query->orderBy('rating')->latest())
+        ->when(! in_array($sort, ['oldest', 'highest_rating', 'lowest_rating'], true), fn ($query) => $query->latest())
+        ->paginate(6)
         ->withQueryString();
 
     return view('frontliner.pages.testimoni', [
         'reviews' => $reviews,
+        'vehicleTypes' => VehicleType::cases(),
+        'selectedVehicleType' => $selectedVehicleType,
+        'selectedMinimumRating' => $selectedMinimumRating,
+        'selectedSort' => $sort,
     ]);
-})->middleware(['token.cookie', 'auth'])->name('testimoni');
+})->middleware('token.cookie')->name('testimoni');
