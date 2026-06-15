@@ -376,7 +376,53 @@ Route::post('/booking/identity', function (Request $request) {
     ]);
 })->middleware(['token.cookie', 'auth'])->name('booking.identity');
 
-Route::get('/booking/identity', function () {
+Route::get('/booking/identity', function (Request $request) {
+    if ($request->has(['car_id', 'start_date', 'end_date', 'service_type'])) {
+        $validator = Validator::make($request->all(), [
+            'car_id' => 'required|integer|exists:cars,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'service_type' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('frontliner')->with('error', 'Parameter booking tidak valid.');
+        }
+
+        $carId = $request->input('car_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $serviceType = $request->input('service_type');
+        $car = Car::findOrFail($carId);
+
+        $availability = booking_car_availability_result($car, $startDate, $endDate);
+        if (! $availability['available']) {
+            return redirect()->route('car-detail', $carId)
+                ->with('error', booking_unavailability_message($availability['reason'] ?? 'overlap'));
+        }
+
+        $start = \Carbon\Carbon::parse($startDate);
+        $end = \Carbon\Carbon::parse($endDate);
+        $days = max(1, $start->diffInDays($end));
+
+        $rentCost = $car->daily_rate * $days;
+        $driverCost = ($serviceType === 'with_driver') ? 150000 * $days : 0;
+        $serviceCost = 100000 + $driverCost;
+        $totalPrice = $rentCost + $serviceCost;
+
+        return view('frontliner.pages.booking-identity', [
+            'car' => $car,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'service_type' => $serviceType,
+            'days' => $days,
+            'rentCost' => $rentCost,
+            'driverCost' => $driverCost,
+            'serviceCost' => $serviceCost,
+            'totalPrice' => $totalPrice,
+        ]);
+    }
+
     return redirect()->route('frontliner');
 })->middleware(['token.cookie', 'auth']);
 
@@ -1300,3 +1346,7 @@ Route::get('/testimoni', function (Request $request) {
         'selectedSort' => $sort,
     ]);
 })->middleware('token.cookie')->name('testimoni');
+
+Route::post('/chatbot/message', [\App\Http\Controllers\ChatbotController::class, 'handle'])
+    ->middleware('token.cookie')
+    ->name('chatbot.message');
