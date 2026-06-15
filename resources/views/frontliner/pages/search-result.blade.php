@@ -118,16 +118,18 @@
                         </nav>
                         <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-2">Hasil Pencarian Armada</h1>
                         <p class="text-sm text-blue-100 font-light flex flex-wrap items-center gap-2">
-                            @if(request('start_date'))
-                                <span>Tanggal Mulai: {{ \Carbon\Carbon::parse(request('start_date'))->translatedFormat('d F Y') }}</span>
+                            @if(request('start_date') && request('end_date'))
+                                <span>Waktu rental: {{ \Carbon\Carbon::parse(request('start_date'))->translatedFormat('d F Y') }} - {{ \Carbon\Carbon::parse(request('end_date'))->translatedFormat('d F Y') }}</span>
+                            @elseif(request('start_date'))
+                                <span>Waktu rental: {{ \Carbon\Carbon::parse(request('start_date'))->translatedFormat('d F Y') }}</span>
                             @endif
-                            @if(request('start_date') && request('max_price'))
+                            @if((request('start_date') || request('end_date')) && request('max_price'))
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-300"></span>
                             @endif
                             @if(request('max_price'))
                                 <span>Budget Maksimal: Rp {{ number_format(request('max_price'), 0, ',', '.') }}</span>
                             @endif
-                            @if(!request('start_date') && !request('max_price'))
+                            @if(!request('start_date') && !request('end_date') && !request('max_price'))
                                 <span>Menampilkan semua armada tersedia</span>
                             @endif
                         </p>
@@ -142,7 +144,10 @@
 
                 <div id="detail-filter-panel" class="hidden overflow-hidden">
                     <div class="mt-4 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                        <form id="detailFilterForm" method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end">
+                        @php
+                            $today = now()->toDateString();
+                        @endphp
+                        <form id="detailFilterForm" method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-end">
                             @foreach((array) request('types') as $selectedType)
                                 <input type="hidden" name="types[]" value="{{ $selectedType }}">
                             @endforeach
@@ -155,12 +160,19 @@
 
                             <div>
                                 <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
-                                <input type="date" name="start_date" value="{{ request('start_date') }}"
+                                <input type="date" name="start_date" value="{{ request('start_date') }}" min="{{ $today }}"
+                                    oninput="if(this.form.end_date.value && this.form.end_date.value < this.value){this.form.end_date.value=this.value} this.form.end_date.min=this.value;"
                                     class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
 
                             <div>
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Harga Maksimal</label>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Selesai</label>
+                                <input type="date" name="end_date" value="{{ request('end_date') }}" min="{{ request('start_date', $today) }}"
+                                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Budget Harian Maksimal</label>
                                 <div class="relative rounded-xl shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                         <span class="text-gray-400 text-xs font-semibold">Rp</span>

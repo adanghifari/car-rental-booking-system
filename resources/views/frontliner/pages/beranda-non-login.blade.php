@@ -54,15 +54,24 @@
     </header>
 
     <div class="max-w-6xl mx-auto px-6 -mt-10 relative z-20">
-        <form method="GET" action="{{ route('search-result') }}" class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        @php
+            $today = now()->toDateString();
+        @endphp
+        <form method="GET" action="{{ route('search-result') }}" class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
             <div>
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
-                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full">
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" min="{{ $today }}" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full" oninput="if(this.form.end_date.value && this.form.end_date.value < this.value){this.form.end_date.value=this.value} this.form.end_date.min=this.value;">
                 </div>
             </div>
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Harga Maksimal (Budget)</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Selesai</label>
+                <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" min="{{ request('start_date', $today) }}" class="bg-transparent text-sm text-gray-600 focus:outline-none w-full">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Budget Harian Maksimal</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
                     <span class="text-sm text-gray-400 mr-2">Rp</span>
                     <input type="number" name="max_price" placeholder="Contoh: 500000" value="{{ request('max_price') }}" class="bg-transparent text-sm text-gray-700 focus:outline-none w-full">
@@ -95,19 +104,10 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             @forelse(($featuredCars ?? collect()) as $car)
-                @php
-                    $isAvailable = ($car->status->value ?? $car->status) === 'available';
-                    $isRented = ! $isAvailable && (($car->active_rentals_count ?? 0) > 0);
-                    $statusLabel = $isAvailable ? 'Tersedia' : ($isRented ? 'Sedang Disewa' : 'Maintenance');
-                    $statusBadgeClass = $isAvailable ? 'bg-[#10B981]' : ($isRented ? 'bg-[#F59E0B]' : 'bg-slate-600');
-                @endphp
                 <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                     <div>
                         <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
-                            <span class="absolute top-3 left-3 {{ $statusBadgeClass }} text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide">
-                                {{ $statusLabel }}
-                            </span>
                         </div>
                         <div class="flex justify-between items-start mb-4">
                             <div>
@@ -129,6 +129,10 @@
                             <span class="flex items-center">⚡ {{ $car->cc }} cc</span>
                         </div>
                     </div>
+                    @php
+                        $isAvailable = $car->status->value === 'available';
+                        $isRented = !$isAvailable && ($car->active_rentals_count ?? 0) > 0;
+                    @endphp
                     @if($isAvailable)
                         <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang

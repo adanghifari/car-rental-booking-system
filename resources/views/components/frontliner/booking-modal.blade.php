@@ -26,7 +26,7 @@
         </div>
 
         <div class="p-6 space-y-5">
-            <!-- Tarif Sewa & Status -->
+            <!-- Tarif Sewa -->
             <div class="flex justify-between items-center">
                 <div>
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tarif Sewa</p>
@@ -35,7 +35,6 @@
                         <span class="text-xs font-normal text-gray-400">/hari</span>
                     </p>
                 </div>
-                <span id="modal-status-badge" class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Tersedia</span>
             </div>
 
             <form id="booking-modal-form" method="GET" class="space-y-4">
@@ -53,6 +52,16 @@
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Selesai Sewa</label>
                         <input type="date" name="end_date" id="modal-end-date" onchange="modalCalculatePrice()"
                             class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20 focus:border-[#0B3C9B]/30 transition">
+                    </div>
+                </div>
+
+                <div id="modal-availability-banner" class="rounded-2xl border px-4 py-3 hidden">
+                    <div class="flex items-start gap-3">
+                        <div id="modal-availability-dot" class="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0"></div>
+                        <div>
+                            <p id="modal-availability-label" class="text-sm font-bold text-slate-900">Pilih tanggal untuk cek ketersediaan</p>
+                            <p id="modal-availability-message" class="mt-1 text-xs text-slate-600">Status mobil akan menyesuaikan dengan tanggal yang dipilih.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -123,6 +132,8 @@
     let modalSelectedService = 'self_drive';
     let modalSelfDriveAvail = true;
     let modalDriverAvail = true;
+    let modalCarId = null;
+    const modalAvailabilityUrl = "{{ route('booking.availability') }}";
 
     /**
      * Open the booking modal with car data.
@@ -144,21 +155,12 @@
         modalDailyRate = carData.dailyRate || 0;
         modalSelfDriveAvail = carData.selfDriveAvailable !== false;
         modalDriverAvail = carData.driverAvailable !== false;
+        modalCarId = carData.id;
 
         document.getElementById('modal-car-id').value = carData.id;
         document.getElementById('modal-car-image').src = carData.image || '';
         document.getElementById('modal-car-image').alt = carData.name || 'Car';
         document.getElementById('modal-daily-rate').textContent = 'Rp ' + modalDailyRate.toLocaleString('id-ID');
-
-        // Status badge
-        const badge = document.getElementById('modal-status-badge');
-        if (carData.status === 'available') {
-            badge.textContent = 'TERSEDIA';
-            badge.className = 'bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase';
-        } else {
-            badge.textContent = 'DISEWA';
-            badge.className = 'bg-amber-50 text-amber-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase';
-        }
 
         // Service availability
         const selfBtn = document.getElementById('modal-btn-self-drive');
@@ -185,6 +187,7 @@
         startEl.min = formatDate(tomorrow);
         endEl.value = formatDate(threeDaysLater);
         endEl.min = formatDate(tomorrow);
+        modalSyncBookingDates();
 
         // Select default service
         modalSelectedService = modalSelfDriveAvail ? 'self_drive' : (modalDriverAvail ? 'with_driver' : 'self_drive');
@@ -261,6 +264,68 @@
         modalCalculatePrice();
     }
 
+    function renderModalAvailability(state) {
+        const banner = document.getElementById('modal-availability-banner');
+        const dot = document.getElementById('modal-availability-dot');
+        const label = document.getElementById('modal-availability-label');
+        const message = document.getElementById('modal-availability-message');
+        const submitButton = document.getElementById('modal-booking-btn');
+
+        if (!banner || !dot || !label || !message || !submitButton) return;
+
+        banner.classList.remove('hidden', 'border-emerald-200', 'bg-emerald-50/70', 'border-amber-200', 'bg-amber-50/70', 'border-rose-200', 'bg-rose-50/70');
+        dot.classList.remove('bg-emerald-500', 'bg-amber-500', 'bg-rose-500');
+
+        const tone = state.tone || 'emerald';
+        if (tone === 'rose') {
+            banner.classList.add('border-rose-200', 'bg-rose-50/70');
+            dot.classList.add('bg-rose-500');
+        } else if (tone === 'amber') {
+            banner.classList.add('border-amber-200', 'bg-amber-50/70');
+            dot.classList.add('bg-amber-500');
+        } else {
+            banner.classList.add('border-emerald-200', 'bg-emerald-50/70');
+            dot.classList.add('bg-emerald-500');
+        }
+
+        label.textContent = state.label;
+        message.textContent = state.message;
+
+        submitButton.disabled = state.available === false;
+        submitButton.classList.toggle('opacity-60', state.available === false);
+        submitButton.classList.toggle('cursor-not-allowed', state.available === false);
+    }
+
+    async function refreshModalAvailability() {
+        const startEl = document.getElementById('modal-start-date');
+        const endEl = document.getElementById('modal-end-date');
+
+        if (!modalCarId || !startEl?.value || !endEl?.value) return;
+
+        const params = new URLSearchParams({
+            car_id: String(modalCarId),
+            start_date: startEl.value,
+            end_date: endEl.value,
+        });
+
+        try {
+            const response = await fetch(`${modalAvailabilityUrl}?${params.toString()}`, {
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
+            const payload = await response.json();
+            renderModalAvailability(payload);
+        } catch (error) {
+            renderModalAvailability({
+                available: false,
+                tone: 'rose',
+                label: 'Gagal memeriksa ketersediaan',
+                message: 'Silakan coba lagi setelah mengubah tanggal sewa.',
+            });
+        }
+    }
+
     function modalCalculatePrice() {
         const startVal = document.getElementById('modal-start-date').value;
         const endVal = document.getElementById('modal-end-date').value;
@@ -289,4 +354,25 @@
         document.getElementById('modal-display-service-cost').textContent = fmt(serviceCost);
         document.getElementById('modal-display-total-cost').textContent = fmt(totalCost);
     }
+
+    function modalSyncBookingDates() {
+        const startEl = document.getElementById('modal-start-date');
+        const endEl = document.getElementById('modal-end-date');
+
+        if (!startEl || !endEl || !startEl.value) return;
+
+        endEl.min = startEl.value;
+        if (!endEl.value || endEl.value < startEl.value) {
+            endEl.value = startEl.value;
+        }
+
+        modalCalculatePrice();
+        refreshModalAvailability();
+    }
+
+    document.getElementById('modal-start-date')?.addEventListener('change', modalSyncBookingDates);
+    document.getElementById('modal-end-date')?.addEventListener('change', () => {
+        modalCalculatePrice();
+        refreshModalAvailability();
+    });
 </script>

@@ -84,11 +84,6 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tarif Sewa</p>
                         <p class="text-xl font-bold text-[#0B3C9B]">Rp {{ number_format($car->daily_rate, 0, ',', '.') }} <span class="text-xs font-normal text-gray-400">/hari</span></p>
                     </div>
-                    @if($car->status->value === 'available')
-                        <span class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Tersedia</span>
-                    @else
-                        <span class="bg-amber-50 text-amber-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Disewa</span>
-                    @endif
                 </div>
 
                 <form id="detail-booking-form" action="{{ route('booking.start') }}" method="GET" class="space-y-4">
@@ -104,6 +99,16 @@
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Selesai Sewa</label>
                             <input type="date" name="end_date" id="rent_end_date" onchange="calculatePrice()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B3C9B]/20 focus:border-[#0B3C9B]/30 transition">
+                        </div>
+                    </div>
+
+                    <div id="detail-availability-banner" class="mb-1 rounded-2xl border px-4 py-3 hidden">
+                        <div class="flex items-start gap-3">
+                            <div id="detail-availability-dot" class="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0"></div>
+                            <div>
+                                <p id="detail-availability-label" class="text-sm font-bold text-slate-900">Pilih tanggal untuk cek ketersediaan</p>
+                                <p id="detail-availability-message" class="mt-1 text-xs text-slate-600">Status mobil akan menyesuaikan dengan tanggal yang Anda pilih.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -260,6 +265,7 @@
         const dailyRate = {{ $car->daily_rate }};
         const selfDriveAvailable = {{ $car->self_drive_available ? 'true' : 'false' }};
         const driverAvailable = {{ $car->driver_available ? 'true' : 'false' }};
+        const availabilityUrl = "{{ route('booking.availability') }}";
         
         let selectedService = selfDriveAvailable ? 'self_drive' : (driverAvailable ? 'with_driver' : '');
         
@@ -310,6 +316,81 @@
             document.getElementById('display-service-cost').textContent = fmt(serviceCost);
             document.getElementById('display-total-cost').textContent = fmt(totalCost);
         }
+
+        function renderDetailAvailability(state) {
+            const banner = document.getElementById('detail-availability-banner');
+            const dot = document.getElementById('detail-availability-dot');
+            const label = document.getElementById('detail-availability-label');
+            const message = document.getElementById('detail-availability-message');
+            const submitButton = document.querySelector('#detail-booking-form button[type="submit"]');
+
+            if (!banner || !dot || !label || !message || !submitButton) return;
+
+            banner.classList.remove('hidden', 'border-emerald-200', 'bg-emerald-50/70', 'border-amber-200', 'bg-amber-50/70', 'border-rose-200', 'bg-rose-50/70');
+            dot.classList.remove('bg-emerald-500', 'bg-amber-500', 'bg-rose-500');
+
+            const tone = state.tone || 'emerald';
+            if (tone === 'rose') {
+                banner.classList.add('border-rose-200', 'bg-rose-50/70');
+                dot.classList.add('bg-rose-500');
+            } else if (tone === 'amber') {
+                banner.classList.add('border-amber-200', 'bg-amber-50/70');
+                dot.classList.add('bg-amber-500');
+            } else {
+                banner.classList.add('border-emerald-200', 'bg-emerald-50/70');
+                dot.classList.add('bg-emerald-500');
+            }
+
+            label.textContent = state.label;
+            message.textContent = state.message;
+
+            submitButton.disabled = state.available === false;
+            submitButton.classList.toggle('opacity-60', state.available === false);
+            submitButton.classList.toggle('cursor-not-allowed', state.available === false);
+        }
+
+        async function refreshDetailAvailability() {
+            const startEl = document.getElementById('rent_start_date');
+            const endEl = document.getElementById('rent_end_date');
+            if (!startEl?.value || !endEl?.value) return;
+
+            const params = new URLSearchParams({
+                car_id: "{{ $car->id }}",
+                start_date: startEl.value,
+                end_date: endEl.value,
+            });
+
+            try {
+                const response = await fetch(`${availabilityUrl}?${params.toString()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const payload = await response.json();
+                renderDetailAvailability(payload);
+            } catch (error) {
+                renderDetailAvailability({
+                    available: false,
+                    tone: 'rose',
+                    label: 'Gagal memeriksa ketersediaan',
+                    message: 'Silakan coba lagi setelah mengubah tanggal sewa.',
+                });
+            }
+        }
+
+        function syncDetailBookingDates() {
+            const startEl = document.getElementById('rent_start_date');
+            const endEl = document.getElementById('rent_end_date');
+            if (!startEl || !endEl || !startEl.value) return;
+
+            endEl.min = startEl.value;
+            if (!endEl.value || endEl.value < startEl.value) {
+                endEl.value = startEl.value;
+            }
+
+            calculatePrice();
+            refreshDetailAvailability();
+        }
         
         // Auth check on form submit
         document.getElementById('detail-booking-form').addEventListener('submit', function(e) {
@@ -340,16 +421,23 @@
             if (startEl) { 
                 startEl.value = qStart || formatDate(tomorrow); 
                 startEl.min = formatDate(tomorrow); 
+                startEl.addEventListener('change', syncDetailBookingDates);
             }
             if (endEl) { 
                 endEl.value = qEnd || formatDate(threeDaysLater); 
                 endEl.min = formatDate(tomorrow); 
+                endEl.addEventListener('change', () => {
+                    calculatePrice();
+                    refreshDetailAvailability();
+                });
             }
             
             if (qService) {
                 selectedService = qService;
             }
+            syncDetailBookingDates();
             selectService(selectedService);
+            refreshDetailAvailability();
         });
     </script>
 </body>

@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\CarStatus;
 use App\Enums\RentalStatus;
 use App\Models\Rental;
 use Illuminate\Console\Command;
@@ -13,7 +12,7 @@ class ExpirePrepaidRentals extends Command
 {
     protected $signature = 'rentals:expire-prepaid';
 
-    protected $description = 'Clean up expired prepaid rentals and expired verified rentals, release car status, mark payment as expired, and delete identity files.';
+    protected $description = 'Clean up expired prepaid rentals and expired verified rentals, mark payment as expired, and delete identity files.';
 
     public function handle(): int
     {
@@ -57,11 +56,6 @@ class ExpirePrepaidRentals extends Command
 
                 if ($rental->selfie_path) {
                     Storage::disk('local')->delete($rental->selfie_path);
-                }
-
-                if ($rental->car) {
-                    $rental->car->status = CarStatus::AVAILABLE;
-                    $rental->car->save();
                 }
 
                 $latestPayment = $rental->paymentHistories()->latest()->first();

@@ -65,7 +65,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Verifikasi Ditolak',
-            'Verifikasi data penyewa belum dapat disetujui. Booking dibatalkan dan mobil kembali tersedia.',
+            'Verifikasi data penyewa belum dapat disetujui. Booking dibatalkan.',
             'CANCELLATION',
             'verification-rejected',
             route('booking.detail', ['rental' => $rental->id])
@@ -103,7 +103,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Pembayaran Dibatalkan',
-            'Pembayaran belum berhasil atau dibatalkan. Booking Anda telah dibatalkan dan mobil kembali tersedia.',
+            'Pembayaran belum berhasil atau dibatalkan. Booking Anda telah dibatalkan.',
             'PAYMENT',
             'payment-cancelled',
             route('booking.detail', ['rental' => $rental->id])
@@ -117,7 +117,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Waktu Pembayaran Habis',
-            'Batas waktu pembayaran telah habis. Booking dibatalkan dan mobil kembali tersedia.',
+            'Batas waktu pembayaran telah habis. Booking dibatalkan.',
             'CANCELLATION',
             'payment-expired',
             route('booking.detail', ['rental' => $rental->id])
@@ -131,7 +131,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Booking Dibatalkan',
-            'Booking Anda telah dibatalkan. Mobil kembali tersedia dan data verifikasi dihapus sesuai kebijakan sistem.',
+            'Booking Anda telah dibatalkan dan data verifikasi dihapus sesuai kebijakan sistem.',
             'CANCELLATION',
             'booking-cancelled',
             route('booking.detail', ['rental' => $rental->id])

@@ -347,23 +347,33 @@
             <div class="max-w-3xl mb-8">
                 <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Pesan Mobil</span>
                 <h2 class="text-2xl font-bold text-slate-900 mt-1">Pesan Kendaraan Baru</h2>
-                <p class="text-slate-500 text-sm mt-1">Tentukan tanggal mulai dan budget harian Anda untuk menemukan
+                <p class="text-slate-500 text-sm mt-1">Tentukan periode sewa dan budget harian Anda untuk menemukan
                     mobil terbaik yang siap disewa.</p>
             </div>
 
             <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 md:p-8">
-                <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Tanggal -->
+                @php
+                    $today = now()->toDateString();
+                @endphp
+                <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Tanggal Mulai -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">📅 Tanggal Mulai</label>
-                        <input type="date" name="start_date" value="{{ request('start_date') }}"
+                        <input type="date" name="start_date" value="{{ request('start_date') }}" min="{{ $today }}"
+                            oninput="if(this.form.end_date.value && this.form.end_date.value < this.value){this.form.end_date.value=this.value} this.form.end_date.min=this.value;"
                             class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
                     </div>
 
-                    <!-- Harga -->
+                    <!-- Tanggal Selesai -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">💰 Harga Maksimal
-                            (Budget)</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">🏁 Tanggal Selesai</label>
+                        <input type="date" name="end_date" value="{{ request('end_date') }}" min="{{ request('start_date', $today) }}"
+                            class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
+                    </div>
+
+                    <!-- Harga Harian -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">💰 Budget Harian Maksimal</label>
                         <div class="relative flex items-center">
                             <span class="absolute left-4 text-slate-400 text-sm">Rp</span>
                             <input type="number" name="max_price" placeholder="Contoh: 500000"
@@ -421,18 +431,6 @@
                     <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
                         <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
                             alt="{{ $car->name }}" class="w-full h-full object-cover">
-
-                        @if(($car->status->value ?? $car->status) === 'available')
-                        <span
-                            class="absolute top-3 left-3 bg-[#10B981] text-white text-[9px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
-                            Tersedia
-                        </span>
-                        @else
-                        <span
-                            class="absolute top-3 left-3 bg-[#EF4444] text-white text-[9px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
-                            Disewa
-                        </span>
-                        @endif
                     </div>
 
                     <div class="flex justify-between items-start mb-2">
