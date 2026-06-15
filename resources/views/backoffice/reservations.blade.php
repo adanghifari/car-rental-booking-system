@@ -163,38 +163,38 @@
                 font-size:14px;
                 color:#334155;
             ">
+                
                 <option value="">Semua Status</option>
-
+                
                 <option value="waiting_review" {{ request('status_filter') === 'waiting_review' ? 'selected' : '' }}>
                     Butuh Review
                 </option>
-
-                <option value="upcoming" {{ request('status_filter') === 'upcoming' ? 'selected' : '' }}>
-                    Akan Datang
-                </option>
-
+                
                 <option value="waiting_pay" {{ request('status_filter') === 'waiting_pay' ? 'selected' : '' }}>
                     Menunggu Pembayaran
                 </option>
-
+                
+                <option value="upcoming" {{ request('status_filter') === 'upcoming' ? 'selected' : '' }}>
+                    Akan Datang
+                </option>
+                
                 <option value="active" {{ request('status_filter') === 'active' ? 'selected' : '' }}>
                     Aktif
                 </option>
-
+                
                 <option value="overdue" {{ request('status_filter') === 'overdue' ? 'selected' : '' }}>
                     Terlambat
                 </option>
-
-                <option value="cancelled_expired"
-                    {{ request('status_filter') === 'cancelled_expired' ? 'selected' : '' }}>
-                    Dibatalkan
-                </option>
-
+                    
                 <option value="returned" {{ request('status_filter') === 'returned' ? 'selected' : '' }}>
                     Selesai
                 </option>
             </select>
-
+            
+            <option value="cancelled_expired"
+                {{ request('status_filter') === 'cancelled_expired' ? 'selected' : '' }}>
+                Dibatalkan
+            </option>
                     <select name="car_type" onchange="this.form.submit()" style="
                 min-width:200px;
                 padding:12px 14px;
