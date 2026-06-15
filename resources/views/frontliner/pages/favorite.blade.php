@@ -46,15 +46,6 @@
                             <div>
                                 <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
                                     <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
-                                    @if(($car->status->value ?? $car->status) === 'available')
-                                        <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[9px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
-                                            Tersedia
-                                        </span>
-                                    @else
-                                        <span class="absolute top-3 left-3 bg-[#EF4444] text-white text-[9px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
-                                            Disewa
-                                        </span>
-                                    @endif
                                 </div>
                                 <div class="flex justify-between items-start mb-2">
                                     <div>

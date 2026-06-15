@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CarStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\RentalStatus;
 use App\Enums\VerificationStatus;
@@ -92,7 +91,7 @@ class PaymentController extends Controller
         if ($rental->status === RentalStatus::EXPIRED) {
             return redirect()
                 ->route('booking.detail', ['rental' => $rental->id])
-                ->with('error', 'Waktu pembayaran telah habis. Booking dibatalkan dan mobil kembali tersedia.');
+                ->with('error', 'Waktu pembayaran telah habis. Booking dibatalkan.');
         }
 
         if ($rental->status !== RentalStatus::PREPAID) {
@@ -200,12 +199,6 @@ class PaymentController extends Controller
                     $rental->status = RentalStatus::ONGOING;
                     $rental->save();
 
-                    $car = $rental->car;
-                    if ($car) {
-                        $car->status = CarStatus::UNAVAILABLE;
-                        $car->save();
-                    }
-
                     app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                 } elseif ($paymentStatus === PaymentStatus::EXPIRED) {
                     $this->expireRental($rental);
@@ -234,7 +227,7 @@ class PaymentController extends Controller
 
         return redirect()
             ->route('booking.detail', ['rental' => $rental->id])
-            ->with('error', 'Waktu pembayaran telah habis. Booking dibatalkan dan mobil kembali tersedia.');
+            ->with('error', 'Waktu pembayaran telah habis. Booking dibatalkan.');
     }
 
     private function expireRental(Rental $rental): void
@@ -243,12 +236,6 @@ class PaymentController extends Controller
         $rental->prepaid_expires_at = null;
         $this->releaseIdentityFiles($rental);
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::AVAILABLE;
-            $car->save();
-        }
     }
 
     private function cancelRental(Rental $rental): void
@@ -257,12 +244,6 @@ class PaymentController extends Controller
         $rental->prepaid_expires_at = null;
         $this->releaseIdentityFiles($rental);
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::AVAILABLE;
-            $car->save();
-        }
     }
 
     private function releaseIdentityFiles(Rental $rental): void
@@ -313,12 +294,6 @@ class PaymentController extends Controller
 
                             $rental->status = RentalStatus::ONGOING;
                             $rental->save();
-
-                            $car = $rental->car;
-                            if ($car) {
-                                $car->status = CarStatus::UNAVAILABLE;
-                                $car->save();
-                            }
                         });
                         app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                     } elseif ($status === 'expire') {
@@ -401,4 +376,3 @@ class PaymentController extends Controller
         ]);
     }
 }
-

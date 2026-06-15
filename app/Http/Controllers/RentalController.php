@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use App\Models\Rental;
 use App\Services\FaceVerificationService;
+use App\Support\BookingAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -60,11 +61,16 @@ class RentalController extends Controller
             }
 
             if ($car->status !== CarStatus::AVAILABLE) {
-                return ApiResponse::error('Car is not available.', 409);
+                return ApiResponse::error(BookingAvailability::unavailabilityMessage('operational_unavailable'), 409);
             }
 
             $startDate = Carbon::parse($validated['start_date']);
             $endDate = Carbon::parse($validated['end_date']);
+            $availability = BookingAvailability::checkCarAvailability($car, $startDate, $endDate);
+            if (! $availability['available']) {
+                return ApiResponse::error(BookingAvailability::unavailabilityMessage($availability['reason'] ?? 'overlap'), 409);
+            }
+
             $days = max(1, $startDate->diffInDays($endDate));
 
             $ktpPath = Storage::disk('local')->putFile('ktp', $request->file('ktp'));
@@ -83,10 +89,9 @@ class RentalController extends Controller
                 'selfie_path' => $selfiePath,
                 'verification_passed' => true,
                 'verified_at' => now(),
+                'buffer_before_days' => BookingAvailability::DEFAULT_BUFFER_BEFORE_DAYS,
+                'buffer_after_days' => BookingAvailability::DEFAULT_BUFFER_AFTER_DAYS,
             ]);
-
-            $car->status = CarStatus::UNAVAILABLE;
-            $car->save();
 
             return ApiResponse::created([
                 'rental' => $rental,
@@ -114,13 +119,9 @@ class RentalController extends Controller
         return DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::RETURNED;
             $rental->returned_at = now();
+            $rental->post_buffer_released_at = null;
+            $rental->post_buffer_released_by = null;
             $rental->save();
-
-            $car = $rental->car;
-            if ($car) {
-                $car->status = CarStatus::AVAILABLE;
-                $car->save();
-            }
 
             return ApiResponse::success([
                 'rental' => $rental,
@@ -210,7 +211,16 @@ class RentalController extends Controller
         $validated = $validator->validated();
 
         return DB::transaction(function () use ($validated, $rental) {
-            $oldCarId = $rental->car_id;
+            $targetCarId = (int) ($validated['car_id'] ?? $rental->car_id);
+            $car = Car::query()->lockForUpdate()->find($targetCarId);
+
+            if (! $car) {
+                return ApiResponse::notFound('Car not found.');
+            }
+
+            if ($car->status !== CarStatus::AVAILABLE) {
+                return ApiResponse::error(BookingAvailability::unavailabilityMessage('operational_unavailable'), 409);
+            }
 
             $rental->fill($validated);
 
@@ -218,7 +228,6 @@ class RentalController extends Controller
                 (!isset($validated['total_price'])) &&
                 (isset($validated['start_date']) || isset($validated['end_date']) || isset($validated['car_id']))
             ) {
-                $car = isset($validated['car_id']) ? Car::find($validated['car_id']) : $rental->car;
                 if ($car) {
                     $startDate = Carbon::parse($rental->start_date);
                     $endDate = Carbon::parse($rental->end_date);
@@ -227,39 +236,23 @@ class RentalController extends Controller
                 }
             }
 
+            $availability = BookingAvailability::checkCarAvailability(
+                $car,
+                Carbon::parse($rental->start_date),
+                Carbon::parse($rental->end_date),
+                $rental->id
+            );
+            if (! $availability['available']) {
+                return ApiResponse::error(BookingAvailability::unavailabilityMessage($availability['reason'] ?? 'overlap'), 409);
+            }
+
             if (isset($validated['status']) && $validated['status'] === RentalStatus::RETURNED->value && !$rental->returned_at) {
                 $rental->returned_at = now();
+                $rental->post_buffer_released_at = null;
+                $rental->post_buffer_released_by = null;
             }
 
             $rental->save();
-
-            if ($rental->status === RentalStatus::RETURNED) {
-                $car = $rental->car;
-                if ($car) {
-                    $car->status = CarStatus::AVAILABLE;
-                    $car->save();
-                }
-                if ($oldCarId !== $rental->car_id) {
-                    $oldCar = Car::find($oldCarId);
-                    if ($oldCar) {
-                        $oldCar->status = CarStatus::AVAILABLE;
-                        $oldCar->save();
-                    }
-                }
-            } else {
-                $car = $rental->car;
-                if ($car) {
-                    $car->status = CarStatus::UNAVAILABLE;
-                    $car->save();
-                }
-                if ($oldCarId !== $rental->car_id) {
-                    $oldCar = Car::find($oldCarId);
-                    if ($oldCar) {
-                        $oldCar->status = CarStatus::AVAILABLE;
-                        $oldCar->save();
-                    }
-                }
-            }
 
             return ApiResponse::success([
                 'rental' => $rental->fresh(['user', 'car']),
@@ -270,14 +263,6 @@ class RentalController extends Controller
     public function destroy(Rental $rental): JsonResponse
     {
         return DB::transaction(function () use ($rental) {
-            if ($rental->status !== RentalStatus::RETURNED) {
-                $car = $rental->car;
-                if ($car) {
-                    $car->status = CarStatus::AVAILABLE;
-                    $car->save();
-                }
-            }
-
             $rental->delete();
 
             return ApiResponse::success(null, 'Rental deleted.');

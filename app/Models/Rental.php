@@ -35,6 +35,10 @@ class Rental extends Model
         'verification_passed',
         'verified_at',
         'verification_status',
+        'buffer_before_days',
+        'buffer_after_days',
+        'post_buffer_released_at',
+        'post_buffer_released_by',
     ];
 
     /**
@@ -48,8 +52,11 @@ class Rental extends Model
         'returned_at' => 'datetime',
         'prepaid_expires_at' => 'datetime',
         'verified_at' => 'datetime',
+        'post_buffer_released_at' => 'datetime',
         'verification_passed' => 'boolean',
         'total_price' => 'integer',
+        'buffer_before_days' => 'integer',
+        'buffer_after_days' => 'integer',
         'status' => RentalStatus::class,
         'type' => RentalType::class,
         'verification_status' => VerificationStatus::class,
@@ -73,5 +80,10 @@ class Rental extends Model
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    public function postBufferReleasedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'post_buffer_released_by');
     }
 }

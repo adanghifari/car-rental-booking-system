@@ -84,7 +84,7 @@
             </div>
         </a>
 
-        <a href="{{ route('backoffice.reservations', ['status_filter' => 'waiting_pay']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='#d97706'; this.style.boxShadow='0 4px 12px rgba(217, 119, 6, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
+        <a href="{{ route('backoffice.reservations', ['status_filter' => 'active']) }}" class="card" style="display: flex; align-items: center; gap: 16px; padding: 22px 24px; text-decoration: none; color: inherit; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;" onmouseover="this.style.borderColor='#d97706'; this.style.boxShadow='0 4px 12px rgba(217, 119, 6, 0.05)'" onmouseout="this.style.borderColor='transparent'; this.style.boxShadow='none'">
             <div
                 style="width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: rgba(255, 193, 7, 0.16); color: #d97706; flex: 0 0 auto;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -95,9 +95,9 @@
             <div>
                 <div class="page-subtitle"
                     style="margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;">
-                    Pending</div>
+                    Aktif</div>
                 <div class="page-title" style="font-size: 28px; margin: 0; line-height: 1;">
-                    {{ number_format($summary['pending'] ?? 0) }}</div>
+                    {{ number_format($summary['active'] ?? 0) }}</div>
             </div>
         </a>
 
@@ -167,6 +167,10 @@
 
                 <option value="waiting_review" {{ request('status_filter') === 'waiting_review' ? 'selected' : '' }}>
                     Butuh Review
+                </option>
+
+                <option value="upcoming" {{ request('status_filter') === 'upcoming' ? 'selected' : '' }}>
+                    Akan Datang
                 </option>
 
                 <option value="waiting_pay" {{ request('status_filter') === 'waiting_pay' ? 'selected' : '' }}>
@@ -358,6 +362,10 @@
                     </div>
                     @endif
 
+                    <div style="padding: 12px 14px; border-radius: 12px; background: rgba(59, 130, 246, 0.08); color: #1d4ed8; margin-bottom: 12px; font-size: 13px; line-height: 1.5;">
+                        Ketersediaan mobil sekarang dihitung berdasarkan tanggal rental + buffer default 2 hari sebelum dan 1 hari sesudah. Status operasional mobil tetap harus tersedia.
+                    </div>
+
                     <div class="form-grid">
                         <div class="form-field">
                             <label class="form-label" for="user_id">Pelanggan</label>
@@ -450,6 +458,20 @@
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                         <span>Pengembalian terlambat selama <strong id="overdue-warning-days">0</strong> hari! Segera hubungi customer untuk konfirmasi pengembalian armada.</span>
+                    </div>
+                    <div id="overdue-next-booking" style="display: none; margin-top: 10px; font-size: 13px; line-height: 1.5; color: #92400e;">
+                        Booking berikutnya yang berpotensi terdampak: <strong id="overdue-next-booking-text">-</strong>
+                    </div>
+                </div>
+
+                <div id="post-buffer-banner" class="flash-banner"
+                    style="display: none; background: rgba(59, 130, 246, 0.10); border-color: rgba(59, 130, 246, 0.20); color: #1d4ed8; margin-bottom: 18px; margin-top: 0; padding: 12px 14px; border-radius: 12px; font-weight: 500;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                            <path d="M12 6v6l4 2" />
+                            <circle cx="12" cy="12" r="9" />
+                        </svg>
+                        <span>Mobil masih berada dalam masa buffer setelah rental sampai <strong id="post-buffer-end-date">-</strong>.</span>
                     </div>
                 </div>
 
@@ -551,6 +573,14 @@
                     <button type="button" class="secondary-button"
                         style="border-color: var(--red); color: var(--red); background: rgba(239, 68, 68, 0.05);"
                         onclick="submitCancelAction()">Batalkan Reservasi</button>
+                </form>
+
+                <form id="release-post-buffer-form" method="POST" action=""
+                    style="display: none; justify-content: flex-end; margin-top: 16px;">
+                    @csrf
+                    <button type="button" class="primary-button"
+                        style="background: #1d4ed8; box-shadow: 0 14px 34px rgba(29, 78, 216, 0.18);"
+                        onclick="submitReleasePostBufferAction()">Lepas Buffer Setelah Rental</button>
                 </form>
             </div>
         </div>
@@ -719,6 +749,15 @@
             }
         };
 
+        window.submitReleasePostBufferAction = function() {
+            const form = document.getElementById('release-post-buffer-form');
+            if (form) {
+                window.showCustomConfirm('Lepas buffer setelah rental ini agar mobil bisa dibooking lebih cepat?', () => {
+                    form.submit();
+                });
+            }
+        };
+
         document.querySelectorAll('[data-reservation-detail]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const payload = btn.dataset.reservation || '{}';
@@ -741,12 +780,34 @@
 
                     const overdueBanner = document.getElementById('overdue-warning-banner');
                     const overdueDaysEl = document.getElementById('overdue-warning-days');
+                    const overdueNextBooking = document.getElementById('overdue-next-booking');
+                    const overdueNextBookingText = document.getElementById('overdue-next-booking-text');
+                    const postBufferBanner = document.getElementById('post-buffer-banner');
+                    const postBufferEndDate = document.getElementById('post-buffer-end-date');
                     if (overdueBanner && overdueDaysEl) {
                         if (data.is_overdue) {
                             overdueDaysEl.textContent = data.overdue_days || '0';
                             overdueBanner.style.display = 'block';
+                            if (overdueNextBooking && overdueNextBookingText) {
+                                if (data.next_impacted_booking) {
+                                    overdueNextBooking.style.display = 'block';
+                                    overdueNextBookingText.textContent =
+                                        `#${data.next_impacted_booking.id} ${data.next_impacted_booking.customer_name} (${data.next_impacted_booking.start_date} - ${data.next_impacted_booking.end_date})`;
+                                } else {
+                                    overdueNextBooking.style.display = 'none';
+                                }
+                            }
                         } else {
                             overdueBanner.style.display = 'none';
+                        }
+                    }
+
+                    if (postBufferBanner && postBufferEndDate) {
+                        if (data.post_buffer_active) {
+                            postBufferEndDate.textContent = data.post_buffer_end_date || '-';
+                            postBufferBanner.style.display = 'block';
+                        } else {
+                            postBufferBanner.style.display = 'none';
                         }
                     }
 
@@ -824,6 +885,14 @@
                         cancelForm.action = '/dashboard/reservations/' + data.id + '/cancel';
                     } else {
                         cancelForm.style.display = 'none';
+                    }
+
+                    const releasePostBufferForm = document.getElementById('release-post-buffer-form');
+                    if (data.status_raw === 'returned' && data.post_buffer_active && !data.post_buffer_released_at) {
+                        releasePostBufferForm.style.display = 'flex';
+                        releasePostBufferForm.action = data.release_post_buffer_url;
+                    } else {
+                        releasePostBufferForm.style.display = 'none';
                     }
 
                     closeForm();

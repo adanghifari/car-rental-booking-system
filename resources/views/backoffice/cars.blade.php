@@ -26,6 +26,18 @@
         </div>
     @endif
 
+    @if (session('warning'))
+        <div class="flash-banner" style="background: rgba(245, 158, 11, 0.10); border-color: rgba(245, 158, 11, 0.22); color: #92400e;">
+            <span>{{ session('warning') }}</span>
+            <button type="button" class="modal-close" data-dismiss-flash aria-label="Tutup notifikasi" style="color: #92400e;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6 6 18"/>
+                    <path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+    @endif
+
     <section class="fleet-stats-grid">
         <div class="card fleet-stat-card">
             <div class="stat-top">
@@ -124,7 +136,7 @@
                 </div>
 
                 <div class="form-field" style="margin: 0;">
-                    <label class="form-label" for="status">Status</label>
+                    <label class="form-label" for="status">Status Hari Ini</label>
                     <select id="status" name="status" class="form-select">
                         <option value="">Semua status</option>
                         <option value="available" @selected($filters['status'] === 'available')>Tersedia</option>
@@ -213,12 +225,10 @@
                             </div>
                         </div>
                     </div>
-
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(248, 250, 252, 0.92); border: 1px solid rgba(226, 232, 240, 0.9);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 10px 14px; border-radius: 14px; background: rgba(248, 250, 252, 0.92); border: 1px solid rgba(226, 232, 240, 0.9);">
                         <div style="min-width: 0;">
                             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #64748b; margin-bottom: 4px;">Status Mobil</div>
                             <div style="font-size: 14px; font-weight: 700; color: #202636; line-height: 1.35;">{{ $car['status'] }}</div>
-                            <div style="font-size: 12px; line-height: 1.45; color: #64748b; margin-top: 4px;">{{ $car['status_note'] }}</div>
                         </div>
 
                         @if (($car['status_action_kind'] ?? '') === 'toggle')
@@ -236,6 +246,7 @@
                             </a>
                         @endif
                     </div>
+
 
                     <div class="fleet-specs">
                         <div class="fleet-spec-item">
@@ -268,6 +279,19 @@
                             <span>{{ $car['type'] }}</span>
                         </div>
                     </div>
+
+                    <button
+                        type="button"
+                        class="text-action"
+                        data-car-schedule
+                        data-car='@json($car)'
+                        style="width: 100%; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 0; border-radius: 10px; border: 1.5px solid #0B3C9B; color: #0B3C9B; background: transparent; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s;"
+                        onmouseover="this.style.background='#0B3C9B';this.style.color='#fff'"
+                        onmouseout="this.style.background='transparent';this.style.color='#0B3C9B'"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        Lihat Jadwal Mobil ini
+                    </button>
 
                     <div class="fleet-price-row" style="margin-top: 14px;">
                         <div>
@@ -612,7 +636,7 @@
                             <div class="detail-value" data-detail-plate>-</div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label">Status</div>
+                            <div class="detail-label">Status Hari Ini</div>
                             <div class="detail-value" data-detail-status>-</div>
                         </div>
                         <div class="detail-item">
@@ -651,10 +675,6 @@
                             <div class="detail-label">Layanan</div>
                             <div class="detail-value" data-detail-services>-</div>
                         </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Penjelasan Status</div>
-                            <div class="detail-value" data-detail-status-note>-</div>
-                        </div>
                     </div>
 
                     <div style="margin-top: 18px;">
@@ -663,6 +683,7 @@
                             <div class="detail-value" data-detail-description>-</div>
                         </div>
                     </div>
+
                 </section>
 
                 <section class="modal-card">
@@ -682,6 +703,29 @@
                         <div class="detail-gallery" data-detail-gallery></div>
                     </div>
                 </section>
+            </div>
+        </div>
+    </div>
+
+    {{-- Schedule Popup Modal --}}
+    <div class="modal-overlay" data-car-schedule-modal style="z-index: 1100;">
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="car-schedule-modal-title" style="max-width: 520px;">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title" id="car-schedule-modal-title">Jadwal Mobil</h2>
+                    <p class="modal-subtitle" data-schedule-subtitle>Daftar jadwal rental dari yang terdekat.</p>
+                </div>
+                <button type="button" class="modal-close" data-close-car-schedule-modal aria-label="Tutup jadwal">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div data-schedule-list style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="page-subtitle">Memuat jadwal...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -716,6 +760,10 @@
                 const carMenuRoots = document.querySelectorAll('[data-car-menu-root]');
                 const editButtons = document.querySelectorAll('[data-car-edit]');
                 const detailButtons = document.querySelectorAll('[data-car-detail]');
+                const scheduleModal = document.querySelector('[data-car-schedule-modal]');
+                const scheduleList = scheduleModal?.querySelector('[data-schedule-list]');
+                const scheduleSubtitle = scheduleModal?.querySelector('[data-schedule-subtitle]');
+
                 const detailFields = {
                     title: detailModal.querySelector('[data-detail-title]'),
                     subtitle: detailModal.querySelector('[data-detail-subtitle]'),
@@ -731,7 +779,6 @@
                     cc: detailModal.querySelector('[data-detail-cc]'),
                     price: detailModal.querySelector('[data-detail-price]'),
                     services: detailModal.querySelector('[data-detail-services]'),
-                    statusNote: detailModal.querySelector('[data-detail-status-note]'),
                     description: detailModal.querySelector('[data-detail-description]'),
                     gallery: detailModal.querySelector('[data-detail-gallery]'),
                 };
@@ -866,12 +913,87 @@
 
                 const buildDetailHtml = (value) => value || '-';
 
+                const formatScheduleDate = (dateStr) => {
+                    if (!dateStr) return '-';
+                    const d = new Date(dateStr);
+                    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                };
+
+                const daysBetween = (startStr, endStr) => {
+                    if (!startStr || !endStr) return null;
+                    const ms = new Date(endStr) - new Date(startStr);
+                    return Math.round(ms / 86400000) + 1;
+                };
+
+                const scheduleLabel = (startStr, endStr) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const start = startStr ? new Date(startStr) : null;
+                    const end = endStr ? new Date(endStr) : null;
+                    if (start && today < start) {
+                        return { label: 'Akan Datang', color: '#2563eb' };
+                    }
+                    if (start && end && today >= start && today <= end) {
+                        return { label: 'Berlangsung', color: '#16a34a' };
+                    }
+                    return { label: 'Akan Datang', color: '#2563eb' };
+                };
+
+                let currentCarData = null;
+
+                const openScheduleModal = (car) => {
+                    if (!scheduleModal || !scheduleList) return;
+                    const name = car.model ?? 'Mobil';
+                    if (scheduleSubtitle) scheduleSubtitle.textContent = `${name} · ${car.plate_raw ?? car.plate ?? '-'}`;
+
+                    const rentals = Array.isArray(car.upcoming_rentals) ? car.upcoming_rentals : [];
+
+                    if (rentals.length === 0) {
+                        scheduleList.innerHTML = `
+                            <div style="text-align:center;padding:32px 16px;color:#64748b;">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;display:block;opacity:.4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                <div style="font-size:13px;font-weight:600;">Tidak ada jadwal</div>
+                                <div style="font-size:12px;margin-top:4px;">Mobil ini belum memiliki booking aktif atau mendatang.</div>
+                            </div>`;
+                    } else {
+                        scheduleList.innerHTML = rentals.map((r, i) => {
+                            const start = formatScheduleDate(r.start_date);
+                            const end = formatScheduleDate(r.end_date);
+                            const days = daysBetween(r.start_date, r.end_date);
+                            const durasi = days !== null ? `${days} hari` : '-';
+                            const s = scheduleLabel(r.start_date, r.end_date);
+                            const isCurrent = r.is_current;
+                            return `
+                            <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;background:${isCurrent ? 'rgba(16,185,129,.06)' : 'rgba(248,250,252,.9)'};border:1.5px solid ${isCurrent ? 'rgba(16,185,129,.25)' : 'rgba(226,232,240,.9)'};">
+                                <div style="flex-shrink:0;width:32px;height:32px;border-radius:8px;background:${isCurrent ? '#d1fae5' : '#f1f5f9'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${isCurrent ? '#065f46' : '#475569'};">${i + 1}</div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:700;color:#0f172a;">${start} &ndash; ${end} <span style="font-weight:500;color:#64748b;">(${durasi})</span></div>
+                                    <div style="font-size:12px;color:#64748b;margin-top:3px;">${r.customer ?? '-'} · #${r.id}</div>
+                                </div>
+                                <div style="flex-shrink:0;">
+                                    <span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${s.color}18;color:${s.color};">${s.label}</span>
+                                    ${isCurrent ? '<div style="font-size:10px;color:#059669;text-align:right;margin-top:4px;font-weight:600;">Saat ini</div>' : ''}
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+
+                    scheduleModal.classList.add('is-open');
+                    document.body.style.overflow = 'hidden';
+                };
+
+                const closeScheduleModal = () => {
+                    scheduleModal?.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                };
+
                 const fillDetailModal = (car) => {
+                    currentCarData = car;
                     detailFields.title.textContent = car.model ?? 'Detail Mobil';
                     detailFields.subtitle.textContent = `${car.brand ?? '-'} • ${car.plate_raw ?? car.plate ?? '-'}`;
                     detailFields.brand.textContent = car.brand ?? '-';
                     detailFields.plate.textContent = car.plate_raw ?? car.plate ?? '-';
-                    detailFields.status.textContent = `${car.status ?? '-'} (${car.status_note ?? '-'})`;
+                    detailFields.status.textContent = car.status ?? '-';
                     detailFields.rating.textContent = car.rating ?? '-';
                     detailFields.transmission.textContent = car.transmission ?? '-';
                     detailFields.type.textContent = car.type ?? '-';
@@ -881,7 +1003,6 @@
                     detailFields.cc.textContent = car.cc ?? '-';
                     detailFields.price.textContent = `Rp ${car.price_label ?? '-'} / hari`;
                     detailFields.services.textContent = car.services_label ?? 'Tidak ada';
-                    detailFields.statusNote.textContent = car.status_note ?? '-';
                     detailFields.description.textContent = buildDetailHtml(car.description);
 
                     if (detailImageShell) {
@@ -1241,6 +1362,15 @@
                     button.addEventListener('click', closeDetailModal);
                 });
 
+                // Schedule modal
+                document.querySelectorAll('[data-close-car-schedule-modal]').forEach((button) => {
+                    button.addEventListener('click', closeScheduleModal);
+                });
+
+                scheduleModal?.addEventListener('click', (event) => {
+                    if (event.target === scheduleModal) closeScheduleModal();
+                });
+
                 flashButtons.forEach((button) => {
                     button.addEventListener('click', () => {
                         const flash = button.closest('.flash-banner');
@@ -1268,6 +1398,14 @@
 
                 detailPanel.addEventListener('click', (event) => {
                     event.stopPropagation();
+                });
+
+                // Bind schedule buttons on each car card
+                document.querySelectorAll('[data-car-schedule]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const car = JSON.parse(btn.dataset.car);
+                        openScheduleModal(car);
+                    });
                 });
 
                 mainImagePreview?.addEventListener('click', (event) => {
