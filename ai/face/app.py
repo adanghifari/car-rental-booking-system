@@ -63,11 +63,10 @@ def clean_text(text):
     return re.sub(r'\s+', ' ', text.upper()).strip()
 
 
-# =========================
-# EXTRACT NIK
-# =========================
 def extract_nik(text):
-    match = re.search(r'\d{16}', text)
+    # Hapus semua karakter non-angka (seperti spasi) sebelum mencocokkan 16 digit NIK
+    digits_only = re.sub(r'\D', '', text)
+    match = re.search(r'\d{16}', digits_only)
     return match.group(0) if match else None
 
 
@@ -115,4 +114,4 @@ def verify():
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(port=3000, debug=True)
