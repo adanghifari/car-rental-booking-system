@@ -65,3 +65,5 @@
 
     </div>
 </footer>
+
+<x-frontliner.chatbot />

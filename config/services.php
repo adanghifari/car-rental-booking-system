@@ -47,4 +47,11 @@ return [
         'mock' => env('FACE_VERIFY_MOCK', false),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'),
+        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.5-flash'),
+        'nlu_cache_ttl_seconds' => env('GEMINI_NLU_CACHE_TTL_SECONDS', 21600),
+    ],
+
 ];
