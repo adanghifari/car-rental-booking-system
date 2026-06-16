@@ -21,9 +21,9 @@
                     <li><a href="#" class="hover:text-white transition">Bantuan</a></li>
                     <li><a href="#" class="hover:text-white transition">Cara Sewa</a></li>
                     <li><a href="#" class="hover:text-white transition">FAQ</a></li>
-                    <li><a href="#" class="hover:text-white transition">Ketentuan Layanan</a></li>
-                    <li><a href="#" class="hover:text-white transition">Syarat & Ketentuan</a></li>
-                    <li><a href="#" class="hover:text-white transition">Kebijakan Privasi</a></li>
+                    <li><a href="{{ route('terms.show') }}" class="hover:text-white transition">Ketentuan Layanan</a></li>
+                    <li><a href="{{ route('terms.show') }}" class="hover:text-white transition">Syarat & Ketentuan</a></li>
+                    <li><a href="{{ route('privacy.show') }}" class="hover:text-white transition">Kebijakan Privasi</a></li>
                 </ul>
             </div>
 
@@ -57,8 +57,8 @@
                 &copy; {{ date('Y') }} Rental Mobil. All rights reserved.
             </div>
             <div class="flex space-x-6">
-                <a href="#" class="hover:text-gray-300 transition">Syarat & Ketentuan</a>
-                <a href="#" class="hover:text-gray-300 transition">Kebijakan Privasi</a>
+                <a href="{{ route('terms.show') }}" class="hover:text-gray-300 transition">Syarat & Ketentuan</a>
+                <a href="{{ route('privacy.show') }}" class="hover:text-gray-300 transition">Kebijakan Privasi</a>
                 <a href="#" class="hover:text-gray-300 transition">Cookies</a>
             </div>
         </div>

@@ -1211,6 +1211,32 @@ Route::get('/register', function (Request $request) {
 
     return view('frontliner.auth.register');
 })->name('register');
+
+Route::get('/forgot-password', function (Request $request) {
+    if ($request->user()) {
+        return redirect()->route('frontliner');
+    }
+    return view('frontliner.auth.forgot-password');
+})->name('password.request');
+
+Route::get('/reset-password/{token}', function (Request $request, $token) {
+    if ($request->user()) {
+        return redirect()->route('frontliner');
+    }
+    return view('frontliner.auth.reset-password', [
+        'token' => $token,
+        'email' => $request->query('email')
+    ]);
+})->name('password.reset');
+
+Route::get('/syarat-ketentuan', function () {
+    return view('frontliner.pages.terms');
+})->name('terms.show');
+
+Route::get('/kebijakan-privasi', function () {
+    return view('frontliner.pages.privacy');
+})->name('privacy.show');
+
 Route::get('/search-result', function (Request $request) {
     $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
     $startDate = $request->input('start_date');

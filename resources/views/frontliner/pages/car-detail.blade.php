@@ -53,24 +53,45 @@
                 </div>
 
                 <!-- Specifications Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">⚙️ Transmisi</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->transmission->label() }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">👥 Kapasitas</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->seat_count }} Kursi</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">⚡ Mesin</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->cc ? number_format($car->cc, 0, ',', '.') : '-' }} cc</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">📅 Tahun</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->year }}</p>
-                    </div>
-                </div>
+                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transmisi</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->transmission->label() }}</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kapasitas</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->seat_count }} Kursi</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mesin</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->cc ? number_format($car->cc, 0, ',', '.') : '-' }} cc</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tahun</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->year }}</p>
+                     </div>
+                 </div>
             </div>
 
             <!-- Sticky Booking Sidebar -->
@@ -118,12 +139,16 @@
                         <div class="grid grid-cols-2 gap-3">
                             <button type="button" id="btn-self-drive" onclick="selectService('self_drive')" 
                                 class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->self_drive_available ? 'opacity-40 cursor-not-allowed' : '' }}">
-                                <span class="text-base">🔑</span>
+                                <svg class="w-5 h-5 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m-2-2a2 2 0 00-2 2m2-2a2 2 0 002 2m0 0a2 2 0 01-2 2m0-4a2 2 0 01-2 2m0 0v5a3 3 0 01-3 3H9a3 3 0 01-3-3V9a3 3 0 013-3h6a3 3 0 013 3z" />
+                                </svg>
                                 <span>Lepas Kunci</span>
                             </button>
                             <button type="button" id="btn-with-driver" onclick="selectService('with_driver')" 
                                 class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->driver_available ? 'opacity-40 cursor-not-allowed' : '' }}">
-                                <span class="text-base">👤</span>
+                                <svg class="w-5 h-5 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
                                 <span>Dengan Sopir</span>
                             </button>
                         </div>
@@ -233,8 +258,19 @@
                             </div>
                         </div>
                         <div class="flex items-center space-x-4 text-[11px] text-gray-500 border-t pt-3 border-gray-50 mt-2">
-                            <span>👥 {{ $similarCar->seat_count }} Kursi</span>
-                            <span>⚙️ {{ $similarCar->transmission->label() }}</span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span>{{ $similarCar->seat_count }} Kursi</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>{{ $similarCar->transmission->label() }}</span>
+                            </span>
                         </div>
                     </div>
                 @empty

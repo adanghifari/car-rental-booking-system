@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
@@ -210,5 +211,73 @@ class AuthController extends Controller
         }
 
         return $redirect;
+    }
+
+    public function sendResetLinkEmail(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'email', 'max:255'],
+        ]);
+
+        if ($validator->fails()) {
+            return ApiResponse::validation($validator->errors()->toArray());
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if (! $user) {
+            return ApiResponse::validation([
+                'email' => ['Alamat email tidak terdaftar dalam sistem kami.']
+            ]);
+        }
+
+        $status = Password::sendResetLink($request->only('email'));
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return ApiResponse::success(null, 'Tautan setel ulang kata sandi telah dikirim ke email Anda.');
+        }
+
+        return ApiResponse::error('Gagal mengirim email reset password, silakan coba lagi.', 400);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => ['required'],
+            'email' => ['required', 'string', 'email', 'max:255'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if ($validator->fails()) {
+            return ApiResponse::validation($validator->errors()->toArray());
+        }
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                event(new \Illuminate\Auth\Events\PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return ApiResponse::success(null, 'Kata sandi Anda berhasil diperbarui. Silakan login kembali.');
+        }
+
+        $errorMessage = match ($status) {
+            Password::INVALID_USER => 'Alamat email tidak ditemukan.',
+            Password::INVALID_TOKEN => 'Token setel ulang kata sandi tidak valid atau telah kedaluwarsa.',
+            Password::INVALID_PASSWORD => 'Kata sandi tidak valid.',
+            Password::RESET_THROTTLED => 'Terlalu banyak mencoba, silakan tunggu beberapa saat.',
+            default => 'Gagal menyetel ulang kata sandi. Silakan coba lagi.'
+        };
+
+        return ApiResponse::validation([
+            'email' => [$errorMessage]
+        ], $errorMessage);
     }
 }

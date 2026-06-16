@@ -151,23 +151,6 @@ class BackofficeController extends Controller
             }
         }
 
-        // Membership Filter
-        if ($request->filled('membership')) {
-            $membership = $request->input('membership');
-            $usersQuery->where(function ($q) use ($membership) {
-                $sumQuery = "(SELECT COALESCE(SUM(total_price), 0) FROM rentals WHERE rentals.user_id = users.id)";
-
-                if ($membership === 'platinum') {
-                    $q->whereRaw("$sumQuery >= 40000000");
-                } elseif ($membership === 'gold') {
-                    $q->whereRaw("$sumQuery >= 20000000")
-                      ->whereRaw("$sumQuery < 40000000");
-                } elseif ($membership === 'silver') {
-                    $q->whereRaw("$sumQuery < 20000000");
-                }
-            });
-        }
-
         // Sorting
         $sort = $request->query('sort', 'latest');
         if ($sort === 'oldest') {
@@ -187,12 +170,6 @@ class BackofficeController extends Controller
             ->through(function (User $user, int $index) {
                 $totalTransactions = (int) ($user->rentals_sum_total_price ?? 0);
 
-                [$membership, $membershipTone] = match (true) {
-                    $totalTransactions >= 40000000 => ['PLATINUM', 'platinum'],
-                    $totalTransactions >= 20000000 => ['GOLD', 'gold'],
-                    default => ['SILVER', 'silver'],
-                };
-
                 $isSuspended = $user->role !== User::ROLE_ADMIN && $user->rentals_count === 0 && $user->created_at->lt(now()->subMonths(2));
                 $status = $isSuspended ? 'SUSPEND' : 'AKTIF';
                 $statusTone = $isSuspended ? 'suspend' : 'active';
@@ -210,8 +187,6 @@ class BackofficeController extends Controller
                     'email' => $user->email,
                     'username' => $user->username ?? 'user'.$user->id,
                     'contact' => $user->role === User::ROLE_ADMIN ? 'Admin system' : 'Customer rental',
-                    'membership' => $membership,
-                    'membership_tone' => $membershipTone,
                     'total_transactions' => $totalTransactions,
                     'status' => $status,
                     'status_tone' => $statusTone,

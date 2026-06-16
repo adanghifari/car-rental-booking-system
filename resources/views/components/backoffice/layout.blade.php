@@ -2232,11 +2232,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="icon-button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
-                        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
-                    </svg>
-                </div>
                 <div class="profile">
                     <div>
                         <div class="profile-name">{{ $admin->name }}</div>
