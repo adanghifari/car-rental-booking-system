@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Rental Mobil</title>
+    <title>Lupa Kata Sandi - Rental Mobil</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -191,13 +191,6 @@
             font-weight: 500;
         }
 
-        .field a {
-            font-size: 12px;
-            color: #3059c0;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
         .field input {
             width: 100%;
             border: 1px solid transparent;
@@ -231,81 +224,23 @@
         .submit-btn:active { transform: translateY(1px); }
         .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        .divider {
-            margin: 24px 0 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #7c8497;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: "";
-            height: 1px;
-            flex: 1;
-            background: var(--line);
-        }
-
-        .socials {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .social {
-            border: 0;
-            background: #d8dff0;
-            color: #1f2635;
-            border-radius: 999px;
-            padding: 11px;
-            font-family: inherit;
-            font-weight: 500;
-            cursor: not-allowed;
-            opacity: 0.8;
-        }
-
-        .register-link {
+        .back-to-login {
             margin-top: 18px;
             text-align: center;
             font-size: 13px;
             color: #6f7687;
         }
 
-        .register-link a {
+        .back-to-login a {
             color: #2f58c1;
             text-decoration: none;
             font-weight: 600;
         }
 
-        .footer {
-            grid-column: 1 / -1;
-            border-top: 1px solid var(--line);
-            padding: 14px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 10px 24px;
-            color: #687086;
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .footer .links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
         @media (max-width: 980px) {
             .page { grid-template-columns: 1fr; }
-            .hero { min-height: 390px; }
+            .hero { min-height: 300px; }
             .card h2 { font-size: 32px; }
-            .footer { font-size: 10px; }
             .back-link {
                 top: 22px;
                 left: 22px;
@@ -318,8 +253,8 @@
         <aside class="hero">
             <div class="brand">Rental Mobil</div>
             <div class="hero-copy">
-                <h1>Selamat<br>Datang Kembali</h1>
-                <p>Rasakan kebebasan berkendara dengan armada eksklusif kami. Perjalanan premium Anda dimulai dari sini.</p>
+                <h1>Atur Ulang<br>Kata Sandi</h1>
+                <p>Masukkan alamat email Anda untuk menerima tautan khusus penyetelan ulang kata sandi.</p>
                 <div class="stats">
                     <div class="stat">
                         <strong>500+</strong>
@@ -334,48 +269,37 @@
         </aside>
 
         <main class="form-area">
-            <a href="{{ route('home') }}" class="back-link" aria-label="Kembali ke beranda">
+            <a href="{{ route('login') }}" class="back-link" aria-label="Kembali ke halaman masuk">
                 <span class="back-link-icon" aria-hidden="true">←</span>
-                <span>Kembali ke Beranda</span>
+                <span>Kembali ke Halaman Masuk</span>
             </a>
             <section class="card">
                 <a href="{{ route('home') }}" class="form-brand" aria-label="MD CAR RENTAL">
                     <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL">
                 </a>
-                <h2>Masuk ke Akun</h2>
-                <p class="subtitle">Masuk untuk mengelola reservasi dan akses layanan concierge.</p>
+                <h2>Lupa Kata Sandi?</h2>
+                <p class="subtitle">Kami akan mengirimkan instruksi penyetelan ulang melalui email Anda.</p>
 
                 <div id="feedback" class="feedback"></div>
 
-                <form id="loginForm" autocomplete="off">
-                    <input id="redirect" name="redirect" type="hidden" value="{{ request('redirect') }}">
-                    <input type="text" name="fake_username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
-                    <input type="password" name="fake_password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
+                <form id="forgotForm" autocomplete="off">
                     <div class="field">
                         <div class="field-row">
-                            <label for="login">Username atau Email</label>
+                            <label for="email">Alamat Email</label>
                         </div>
-                        <input id="login" name="account_login" type="text" placeholder="Masukkan username atau email" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+                        <input id="email" name="email" type="email" placeholder="Masukkan email terdaftar Anda" autocomplete="off" autocapitalize="none" spellcheck="false" required>
                     </div>
 
-                    <div class="field">
-                        <div class="field-row">
-                            <label for="password">Kata Sandi</label>
-                            <a href="{{ route('password.request') }}">Lupa Kata Sandi?</a>
-                        </div>
-                        <input id="password" name="account_password" type="password" placeholder="Masukkan kata sandi" autocomplete="off" required>
-                    </div>
-
-                    <button id="submitBtn" type="submit" class="submit-btn">Masuk</button>
+                    <button id="submitBtn" type="submit" class="submit-btn">Kirim Tautan Reset</button>
                 </form>
 
-                <p class="register-link">Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a></p>
+                <p class="back-to-login">Ingat kata sandi Anda? <a href="{{ route('login') }}">Masuk</a></p>
             </section>
         </main>
     </div>
 
     <script>
-        const form = document.getElementById('loginForm');
+        const form = document.getElementById('forgotForm');
         const feedback = document.getElementById('feedback');
         const submitBtn = document.getElementById('submitBtn');
 
@@ -388,22 +312,20 @@
             event.preventDefault();
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Memproses...';
+            submitBtn.textContent = 'Mengirim...';
             feedback.className = 'feedback';
             feedback.textContent = '';
 
-            const login = document.getElementById('login').value.trim();
-            const password = document.getElementById('password').value;
-            const redirect = document.getElementById('redirect').value.trim();
+            const email = document.getElementById('email').value.trim();
 
             try {
-                const response = await fetch('/api/v1/auth/login', {
+                const response = await fetch('/api/v1/auth/forgot-password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ login, password, redirect }),
+                    body: JSON.stringify({ email }),
                     credentials: 'include',
                 });
 
@@ -417,7 +339,7 @@
                 }
 
                 if (!response.ok || !result.success) {
-                    let message = result.message || (response.status >= 500 ? 'Server sedang bermasalah. Coba lagi.' : 'Login gagal.');
+                    let message = result.message || (response.status >= 500 ? 'Server sedang bermasalah. Coba lagi.' : 'Gagal mengirim email.');
 
                     if (result.errors) {
                         const firstErrorKey = Object.keys(result.errors)[0];
@@ -431,18 +353,13 @@
                     return;
                 }
 
-                setFeedback('success', 'Login berhasil. Mengarahkan...');
-
-                const nextUrl = result?.data?.redirect_to || (result?.data?.user?.role === 'admin' ? '/dashboard' : '/frontliner');
-
-                setTimeout(() => {
-                    window.location.replace(nextUrl);
-                }, 700);
+                setFeedback('success', result.message || 'Tautan penyetelan ulang berhasil dikirim.');
+                form.reset();
             } catch (error) {
                 setFeedback('error', 'Tidak bisa menghubungi server. Coba lagi.');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Masuk';
+                submitBtn.textContent = 'Kirim Tautan Reset';
             }
         });
     </script>

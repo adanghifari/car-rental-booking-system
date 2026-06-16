@@ -28,6 +28,21 @@ Route::prefix('v1')->group(function () {
                 'throttle:auth-login',
             ]);
 
+        Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])
+            ->middleware([
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+                'throttle:auth-forgot-password',
+            ]);
+
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+            ->middleware([
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+            ]);
+
         Route::middleware(['token.cookie', 'auth:sanctum'])->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
             Route::post('/logout', [AuthController::class, 'logout'])

@@ -105,6 +105,124 @@
             .footer { text-align: center; }
             .back-link { top: 22px; left: 22px; }
         }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-container {
+            background: #fff;
+            width: min(650px, 90%);
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-backdrop.active .modal-container {
+            transform: scale(1);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .modal-close {
+            background: none;
+            border: 0;
+            font-size: 28px;
+            color: var(--muted);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--text);
+        }
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #3f4756;
+            text-align: left;
+        }
+        .modal-body h4 {
+            margin: 18px 0 8px;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 6px;
+        }
+        .modal-body h4:first-of-type {
+            margin-top: 0;
+        }
+        .modal-body p {
+            margin: 0 0 12px;
+        }
+        .modal-body ol {
+            margin: 0 0 16px;
+            padding-left: 20px;
+        }
+        .modal-body ol li {
+            margin-bottom: 8px;
+        }
+        .modal-body ul {
+            margin: 0 0 16px;
+            padding-left: 20px;
+        }
+        .modal-body ul li {
+            margin-bottom: 6px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 10px 24px;
+            background: #0d3fb8;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-btn:hover {
+            background: #0b3499;
+        }
     </style>
 </head>
 <body>
@@ -164,7 +282,7 @@
 
                     <label class="tos">
                         <input id="agreement" type="checkbox" required>
-                        <span>Saya menyetujui <a href="#" onclick="return false;">Syarat &amp; Ketentuan</a> serta <a href="#" onclick="return false;">Kebijakan Privasi</a> Rental Mobil.</span>
+                        <span>Saya menyetujui <a href="#" onclick="openModal('tosModal'); return false;">Syarat &amp; Ketentuan</a> serta <a href="#" onclick="openModal('privacyModal'); return false;">Kebijakan Privasi</a> Rental Mobil.</span>
                     </label>
 
                     <button id="submitBtn" type="submit" class="submit-btn">Daftar Sekarang</button>
@@ -252,6 +370,167 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Daftar Sekarang';
             }
+        });
+    </script>
+
+    <!-- Modal Syarat & Ketentuan -->
+    <div id="tosModal" class="modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Syarat &amp; Ketentuan</h3>
+                <button class="modal-close" onclick="closeModal('tosModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Selamat datang di Website Rental Mobil. Dengan mengakses dan menggunakan layanan ini, pengguna dianggap telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan yang berlaku.</p>
+                
+                <h4>1. Ketentuan Umum</h4>
+                <ol>
+                    <li>Website ini menyediakan layanan informasi dan pemesanan kendaraan rental secara online.</li>
+                    <li>Pengguna wajib memberikan data yang benar, lengkap, dan sesuai dengan identitas yang dimiliki.</li>
+                    <li>Pengguna bertanggung jawab atas keamanan akun dan kerahasiaan informasi login.</li>
+                </ol>
+
+                <h4>2. Registrasi Akun</h4>
+                <ol>
+                    <li>Pengguna harus memiliki akun untuk melakukan pemesanan kendaraan.</li>
+                    <li>Pengguna dilarang menggunakan identitas palsu atau milik pihak lain tanpa izin.</li>
+                    <li>Pengelola berhak menonaktifkan akun yang terbukti memberikan informasi tidak valid atau melakukan penyalahgunaan layanan.</li>
+                </ol>
+
+                <h4>3. Pemesanan Kendaraan</h4>
+                <ol>
+                    <li>Pemesanan kendaraan dilakukan melalui sistem yang tersedia pada website.</li>
+                    <li>Ketersediaan kendaraan mengikuti data yang tercantum pada sistem saat proses pemesanan dilakukan.</li>
+                    <li>Pemesanan dianggap sah setelah pengguna menyelesaikan proses yang ditentukan oleh penyedia layanan.</li>
+                </ol>
+
+                <h4>4. Pembayaran</h4>
+                <ol>
+                    <li>Pembayaran dilakukan sesuai dengan metode pembayaran yang tersedia pada sistem.</li>
+                    <li>Seluruh biaya yang tercantum pada saat pemesanan merupakan biaya yang harus dibayarkan oleh pengguna.</li>
+                    <li>Kegagalan pembayaran dapat menyebabkan pemesanan dibatalkan secara otomatis.</li>
+                </ol>
+
+                <h4>5. Pembatalan dan Pengembalian Dana</h4>
+                <ol>
+                    <li>Pengguna dapat mengajukan pembatalan sesuai dengan kebijakan yang berlaku.</li>
+                    <li>Pengembalian dana, apabila tersedia, akan diproses sesuai ketentuan penyedia layanan.</li>
+                    <li>Waktu pengembalian dana dapat berbeda tergantung metode pembayaran yang digunakan.</li>
+                </ol>
+
+                <h4>6. Kewajiban Pengguna</h4>
+                <ol>
+                    <li>Menggunakan kendaraan sesuai dengan peraturan perundang-undangan yang berlaku.</li>
+                    <li>Menjaga kondisi kendaraan selama masa penyewaan.</li>
+                    <li>Mengembalikan kendaraan tepat waktu sesuai dengan periode sewa yang telah disepakati.</li>
+                    <li>Tidak menggunakan kendaraan untuk kegiatan yang melanggar hukum.</li>
+                </ol>
+
+                <h4>7. Tanggung Jawab</h4>
+                <ol>
+                    <li>Pengelola berupaya menjaga keakuratan informasi yang ditampilkan pada website.</li>
+                    <li>Pengelola tidak bertanggung jawab atas kerugian yang timbul akibat kesalahan pengguna dalam menggunakan layanan.</li>
+                    <li>Pengelola berhak melakukan perubahan, pembaruan, atau penghentian layanan sewaktu-waktu apabila diperlukan.</li>
+                </ol>
+
+                <h4>8. Ulasan dan Testimoni</h4>
+                <ol>
+                    <li>Pengguna dapat memberikan ulasan dan testimoni setelah menggunakan layanan.</li>
+                    <li>Pengguna dilarang mengunggah konten yang mengandung unsur SARA, ujaran kebencian, pornografi, atau informasi yang tidak benar.</li>
+                    <li>Pengelola berhak menghapus ulasan yang melanggar ketentuan.</li>
+                </ol>
+
+                <h4>9. Privasi Data</h4>
+                <ol>
+                    <li>Data pengguna akan digunakan untuk keperluan layanan dan pengelolaan transaksi.</li>
+                    <li>Pengelola berkomitmen menjaga kerahasiaan data pengguna sesuai dengan kebijakan privasi yang berlaku.</li>
+                    <li>Data pengguna tidak akan disebarluaskan kepada pihak lain tanpa persetujuan, kecuali diwajibkan oleh hukum.</li>
+                </ol>
+
+                <h4>10. Perubahan Ketentuan</h4>
+                <p>Pengelola berhak mengubah syarat dan ketentuan ini sewaktu-waktu. Perubahan akan berlaku setelah dipublikasikan pada website.</p>
+
+                <h4>11. Persetujuan</h4>
+                <p>Dengan menggunakan website ini, pengguna dianggap telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan yang berlaku.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('tosModal')">Saya Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Kebijakan Privasi -->
+    <div id="privacyModal" class="modal-backdrop">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Kebijakan Privasi</h3>
+                <button class="modal-close" onclick="closeModal('privacyModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Website MdRentalCar berkomitmen untuk melindungi privasi dan keamanan data pribadi pengguna. Kebijakan Privasi ini menjelaskan bagaimana data pengguna dikumpulkan, digunakan, disimpan, dan dilindungi.</p>
+
+                <h4>1. Informasi yang Kami Kumpulkan</h4>
+                <ul>
+                    <li><strong>Data Pribadi Pengguna</strong>: Nama lengkap, username, alamat email, dan kata sandi saat mendaftar.</li>
+                    <li><strong>Data Verifikasi Identitas (e-KYC)</strong>: Foto Kartu Tanda Penduduk (KTP) serta foto selfie pemohon guna keperluan validasi identitas fisik sebelum pemesanan disetujui.</li>
+                    <li><strong>Data Sewa &amp; Transaksi</strong>: Detail mobil yang dipilih, durasi sewa, status pembayaran, serta riwayat pembayaran.</li>
+                </ul>
+
+                <h4>2. Penggunaan Informasi</h4>
+                <ul>
+                    <li>Memproses dan memvalidasi pendaftaran akun serta otentikasi saat masuk.</li>
+                    <li>Melakukan verifikasi identitas e-KYC demi keselamatan operasional armada kendaraan kami.</li>
+                    <li>Memproses rincian transaksi sewa dan pembayaran secara aman melalui payment gateway resmi.</li>
+                    <li>Mengirimkan notifikasi pemesanan, verifikasi dokumen, serta tanda terima pembayaran.</li>
+                </ul>
+
+                <h4>3. Penyimpanan dan Keamanan Data</h4>
+                <ul>
+                    <li>Semua data kata sandi dienkripsi menggunakan metode hashing satu arah yang aman.</li>
+                    <li>Berkas verifikasi identitas (KTP dan selfie) disimpan dalam sistem database yang aman dan terenkripsi. Berkas identitas ini akan dihapus secara berkala dari penyimpanan lokal setelah periode sewa selesai guna mencegah penyalahgunaan data pribadi.</li>
+                </ul>
+
+                <h4>4. Pembagian Informasi dengan Pihak Ketiga</h4>
+                <ul>
+                    <li>Kami membagikan data transaksi secara aman kepada mitra payment gateway (seperti Midtrans) guna pemrosesan dan verifikasi pembayaran.</li>
+                    <li>Kami berkomitmen tidak akan menjual, menyewakan, atau menyebarkan informasi pribadi Anda kepada pihak ketiga mana pun tanpa persetujuan, kecuali diwajibkan oleh peraturan hukum yang berlaku.</li>
+                </ul>
+
+                <h4>5. Hak Pengguna</h4>
+                <ul>
+                    <li>Pengguna berhak memeriksa, mengoreksi, atau memperbarui informasi profil akun pribadi mereka.</li>
+                    <li>Pengguna berhak mengajukan permohonan penonaktifan akun serta penghapusan data pribadi apabila memutuskan untuk tidak lagi menggunakan layanan kami.</li>
+                </ul>
+
+                <h4>6. Perubahan Kebijakan</h4>
+                <p>Kami berhak melakukan perubahan pada Kebijakan Privasi ini sewaktu-waktu. Perubahan kebijakan akan mulai berlaku segera setelah dipublikasikan pada halaman ini.</p>
+                <h4>7. Cookie dan Teknologi Serupa</h4>
+                <p>Website dapat menggunakan cookie untuk meningkatkan pengalaman pengguna, menyimpan preferensi, dan membantu analisis penggunaan layanan.</p>
+                <h4>8. Persetujuan</h4>
+                <p>Dengan menggunakan website ini, pengguna dianggap telah membaca, memahami, dan menyetujui Kebijakan Privasi yang berlaku.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" onclick="closeModal('privacyModal')">Saya Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        // Close modal when clicking backdrop area
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    closeModal(backdrop.id);
+                }
+            });
         });
     </script>
 </body>
