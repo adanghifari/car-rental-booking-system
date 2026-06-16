@@ -316,18 +316,18 @@
 <body>
     <div class="page">
         <aside class="hero">
-            <div class="brand">Rental Mobil</div>
+            <div class="brand"></div>
             <div class="hero-copy">
                 <h1>Selamat<br>Datang Kembali</h1>
                 <p>Rasakan kebebasan berkendara dengan armada eksklusif kami. Perjalanan premium Anda dimulai dari sini.</p>
                 <div class="stats">
                     <div class="stat">
-                        <strong>500+</strong>
-                        <span>Armada Mewah</span>
+                        <strong>{{ $cars - 1 }}+</strong>
+                        <span>Armada</span>
                     </div>
                     <div class="stat">
                         <strong>24/7</strong>
-                        <span>Layanan Concierge</span>
+                        <span>Layanan Pelanggan</span>
                     </div>
                 </div>
             </div>

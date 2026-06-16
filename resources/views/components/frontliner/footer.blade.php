@@ -18,7 +18,7 @@
             <div class="space-y-4">
                 <h4 class="text-white font-bold tracking-wider uppercase text-xs">Informasi</h4>
                 <ul class="space-y-2.5 text-xs font-medium">
-                    <li><a href="#" class="hover:text-white transition">Bantuan</a></li>
+                    <li><a href="https://wa.me/6282155402629" class="hover:text-white transition">Bantuan</a></li>
                     <li><a href="#" class="hover:text-white transition">Cara Sewa</a></li>
                     <li><a href="#" class="hover:text-white transition">FAQ</a></li>
                     <li><a href="{{ route('terms.show') }}" class="hover:text-white transition">Ketentuan Layanan</a></li>
