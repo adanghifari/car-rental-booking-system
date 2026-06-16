@@ -1266,11 +1266,16 @@ Route::get('/armada', function (Request $request) {
     $cars = Car::query()
         ->withReviewMetrics()
         ->when($search !== '', function ($query) use ($search) {
+
+            $search = strtolower($search);
+
             $query->where(function ($innerQuery) use ($search) {
-                $innerQuery->where('name', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%")
-                    ->orWhere('license_plate', 'like', "%{$search}%")
-                    ->orWhere('vehicle_type', 'like', "%{$search}%");
+
+                $innerQuery
+                    ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(brand) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(license_plate) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(vehicle_type) LIKE ?', ["%{$search}%"]);
             });
         })
         ->orderByDesc('created_at')

@@ -87,16 +87,58 @@
     </div>
 
     <!-- Floating Chat Button -->
-    <button id="chatbot-toggle-btn" onclick="toggleChatWindow()" class="bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-blue-500/35 hover:shadow-xl flex items-center justify-center text-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative group border border-white/20">
+    <button id="chatbot-toggle-btn"
+        onclick="toggleChatWindow()"
+        class="bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-blue-500/35 hover:shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative group border border-white/20">
+
         <!-- Notification Dot -->
-        <span class="absolute -top-1 -right-1 w-4.5 h-4.5 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow">1</span>
-        
-        <!-- Icons -->
-        <svg class="w-6 h-6 transition-transform duration-300 group-hover:rotate-12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 10.742l4.685-2.228A1 1 0 0013.5 7.625v1.272l4.684-2.228A1 1 0 0019.5 7.625v10.5a1 1 0 00.816-.917l-4.685-2.228v1.272l-4.684-2.228A1 1 0 008.684 10.742zM4.5 18v-7.5M4.5 10.5a3 3 0 013-3h12a3 3 0 013 3v4.5a3 3 0 01-3 3h-12a3 3 0 01-3-3z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 10.5h.008v.008H8.25V10.5zm3.75 0h.008v.008H12V10.5zm3.75 0h.008v.008h-.008V10.5z" />
-        </svg>
-    </button>
+        <span class="absolute -top-1 -right-1 w-4.5 h-4.5 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow">
+        1
+    </span>
+
+    <!-- Robot Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.8"
+        stroke="currentColor"
+        class="w-7 h-7 transition-transform duration-300 group-hover:rotate-6">
+
+        <!-- Antenna -->
+        <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 3v2" />
+
+        <circle cx="12" cy="2" r="1" fill="currentColor" />
+
+        <!-- Head -->
+        <rect x="5" y="6"
+            width="14"
+            height="10"
+            rx="3"
+            stroke="currentColor" />
+
+        <!-- Eyes -->
+        <circle cx="9" cy="11" r="1.2" fill="currentColor" />
+        <circle cx="15" cy="11" r="1.2" fill="currentColor" />
+
+        <!-- Mouth -->
+        <path stroke-linecap="round"
+            d="M9 14h6" />
+
+        <!-- Arms -->
+        <path stroke-linecap="round"
+            d="M5 10H3" />
+        <path stroke-linecap="round"
+            d="M21 10h-2" />
+
+        <!-- Body -->
+        <path stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 16v3m6-3v3M8 22h8" />
+
+    </svg>
+
+</button>
 </div>
 
 <script>
