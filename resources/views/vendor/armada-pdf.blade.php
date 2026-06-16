@@ -127,37 +127,39 @@
         Daftar Armada
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th width="5%">No</th>
-                <th>Nama Mobil</th>
-                <th>Brand</th>
-                <th width="10%">Tahun</th>
-                <th width="15%">Kapasitas</th>
-                <th width="20%">Harga / Hari</th>
-            </tr>
-        </thead>
+<table>
+    <thead>
+        <tr>
+            <th width="5%">No</th>
+            <th>Nama Mobil</th>
+            <th>Brand</th>
+            <th width="10%">Tahun</th>
+            <th width="12%">Transmisi</th>
+            <th width="12%">Kapasitas</th>
+            <th width="20%">Harga / Hari</th>
+        </tr>
+    </thead>
 
-        <tbody>
+    <tbody>
 
-            @foreach($cars as $index => $car)
+        @foreach($cars as $index => $car)
 
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $car['name'] }}</td>
-                <td>{{ $car['brand'] }}</td>
-                <td>{{ $car['year'] }}</td>
-                <td>{{ $car['seat_count'] }} Orang</td>
-                <td>
-                    Rp {{ number_format($car['daily_rate'], 0, ',', '.') }}
-                </td>
-            </tr>
+        <tr>
+            <td>{{ $index + 1 }}</td>
+            <td>{{ $car['name'] }}</td>
+            <td>{{ $car['brand'] }}</td>
+            <td>{{ $car['year'] }}</td>
+            <td>{{ $car['transmission'] }}</td>
+            <td>{{ $car['seat_count'] }} Orang</td>
+            <td>
+                Rp {{ number_format($car['daily_rate'], 0, ',', '.') }}
+            </td>
+        </tr>
 
-            @endforeach
+        @endforeach
 
-        </tbody>
-    </table>
+    </tbody>
+</table>
 
     <div class="page-break"></div>
 
