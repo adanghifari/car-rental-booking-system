@@ -153,8 +153,8 @@ class ChatbotController extends Controller
                 $avg = $matchedCar->average_rating;
                 $count = $matchedCar->total_reviews;
 
-                $reply = "🚘 <strong>MD Review Info - {$matchedCar->brand} {$matchedCar->name}</strong><br>";
-                $reply .= "⭐ Rating: <strong>{$avg} / 5</strong> ({$count} Ulasan)<br><br>";
+                $reply = "<span class=\"inline-flex items-center align-middle mr-1.5 text-blue-600\"><svg class=\"w-4.5 h-4.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.324-5.184a3.375 3.375 0 00-3.37-3.166h-4.83a.75.75 0 01-.52-.22L12.44 4.5h-2.88l-1.24 3.16a.75.75 0 01-.52.22H2.97a3.375 3.375 0 00-3.37 3.166l-.324 5.184c-.04.62.469 1.124 1.09 1.124h1.125m17.25 0h-1.5\" /></svg></span><strong>MD Review Info - {$matchedCar->brand} {$matchedCar->name}</strong><br>";
+                $reply .= "<span class=\"inline-flex items-center align-middle mr-1 text-amber-500\"><svg class=\"w-3.5 h-3.5\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\" /></svg></span> Rating: <strong>{$avg} / 5</strong> ({$count} Ulasan)<br><br>";
 
                 if ($reviews->isEmpty()) {
                     $reply .= "Belum ada ulasan tertulis untuk mobil ini. Namun, mobil ini siap disewa dalam kondisi prima!";
@@ -162,7 +162,7 @@ class ChatbotController extends Controller
                     $reply .= "<strong>Ulasan terbaru dari pelanggan kami:</strong><br>";
                     foreach ($reviews as $rev) {
                         $userName = $rev->user ? $rev->user->name : 'Pelanggan';
-                        $stars = str_repeat('⭐', $rev->rating);
+                        $stars = str_repeat('<span class="inline-flex items-center align-middle text-amber-500"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></span>', $rev->rating);
                         $date = \Carbon\Carbon::parse($rev->created_at)->setTimezone('Asia/Jakarta')->isoFormat('D MMMM YYYY');
                         $comment = e($rev->comment);
                         $reply .= "• {$stars} oleh <strong>{$userName}</strong> ({$date}):<br>   <i>\"{$comment}\"</i><br>";
@@ -552,7 +552,7 @@ class ChatbotController extends Controller
         // Company info - refined to avoid false positive matches on generic terms
         if (preg_match('/\b(alamat kantor|lokasi kantor|alamat md car|lokasi md car|kantor dimana|sejarah md car|profil md car|tentang perusahaan)\b/', $lowerMsg)) {
             return [
-                'reply' => "<strong>MD Car Rental</strong> adalah penyedia layanan sewa mobil terpercaya di Jakarta.<br><br>📍 <strong>Alamat Kantor:</strong> Jl. Jend. Sudirman Kav. 1, Jakarta Pusat, DKI Jakarta 10220.<br>Kami berkomitmen memberikan armada bersih, prima, dan layanan terbaik baik lepas kunci maupun dengan sopir.",
+                'reply' => "<strong>MD Car Rental</strong> adalah penyedia layanan sewa mobil terpercaya di Jakarta.<br><br><span class=\"inline-flex items-center align-middle mr-1.5 text-rose-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 10.5a3 3 0 11-6 0 3 3 0 016 0z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z\" /></svg></span><strong>Alamat Kantor:</strong> Jl. Jend. Sudirman Kav. 1, Jakarta Pusat, DKI Jakarta 10220.<br>Kami berkomitmen memberikan armada bersih, prima, dan layanan terbaik baik lepas kunci maupun dengan sopir.",
                 'bookingState' => $bookingState,
                 'suggestions' => ["Rekomendasi Mobil", "Cara Sewa", "Bantu Saya Booking"],
                 'cars' => [],
@@ -1250,7 +1250,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
             $availability = BookingAvailability::checkCarAvailability($car, $state['startDate'], $state['endDate']);
             if (!$availability['available']) {
                 $reasonMsg = BookingAvailability::unavailabilityMessage($availability['reason'] ?? 'overlap');
-                $data['reply'] = "⚠️ <strong>Mobil Tidak Tersedia:</strong> Mobil <strong>{$car->brand} {$car->name}</strong> tidak tersedia pada tanggal " . 
+                $data['reply'] = "<span class=\"inline-flex items-center align-middle mr-1.5 text-amber-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\" /></svg></span><strong>Mobil Tidak Tersedia:</strong> Mobil <strong>{$car->brand} {$car->name}</strong> tidak tersedia pada tanggal " . 
                     Carbon::parse($state['startDate'])->isoFormat('D MMM') . " s/d " . Carbon::parse($state['endDate'])->isoFormat('D MMM YYYY') . 
                     ".<br><i>Alasan: {$reasonMsg}</i><br><br>Silakan pilih tanggal mulai sewa yang lain:";
                 
@@ -1276,7 +1276,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
 
             $serviceLabel = $state['serviceType'] === 'with_driver' ? 'Dengan Sopir (+Rp150k/hari)' : 'Lepas Kunci';
 
-            $data['reply'] = "🎉 <strong>Mobil Tersedia!</strong> Berikut rincian pemesanan Anda:<br><br>" .
+            $data['reply'] = "<span class=\"inline-flex items-center align-middle mr-1.5 text-emerald-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.813 15.904L9 21l-1.81-5.096L2.096 14.1 7.19 12.29 9 7.19l1.81 5.096 5.096 1.81-5.096 1.81zM19.071 4.929l-.707 1.986-1.986.707 1.986.707.707 1.986.707-1.986 1.986-.707-1.986-.707-.707-1.986zM14 10l-.353.99-.99.353.99.353.353.99.353-.99.99-.353-.99-.353-.353-.99z\" /></svg></span><strong>Mobil Tersedia!</strong> Berikut rincian pemesanan Anda:<br><br>" .
                 "• <strong>Mobil:</strong> {$car->brand} {$car->name} ({$car->transmission?->label()})<br>" .
                 "• <strong>Durasi:</strong> " . $start->isoFormat('D MMMM YYYY') . " s/d " . $end->isoFormat('D MMMM YYYY') . " ({$days} hari)<br>" .
                 "• <strong>Layanan:</strong> {$serviceLabel}<br>" .

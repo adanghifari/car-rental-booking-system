@@ -38,7 +38,9 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-[minmax(0,1.7fr)_minmax(0,0.7fr)] gap-3 flex-1">
                         <div class="relative flex items-center">
-                            <span class="absolute left-4 text-gray-400">🔍</span>
+                            <svg class="absolute left-4 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
+                            </svg>
                             <input type="text" name="q" value="{{ request('q') }}"
                                 placeholder="Cari resi atau kendaraan..."
                                 class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">

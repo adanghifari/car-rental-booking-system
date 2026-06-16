@@ -8,8 +8,10 @@
         <div class="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white px-4 py-4 flex items-center justify-between shadow-md">
             <div class="flex items-center gap-3">
                 <div class="relative">
-                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl shadow-inner border border-white/20">
-                        🤖
+                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shadow-inner border border-white/20">
+                        <svg class="w-5.5 h-5.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2M5 6h14a3 3 0 013 3v4a3 3 0 01-3 3H5a3 3 0 01-3-3V9a3 3 0 013-3zm4 5h.01M15 11h.01M9 16h6" />
+                        </svg>
                     </div>
                     <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-blue-800 rounded-full"></span>
                 </div>
@@ -30,8 +32,10 @@
         <div id="chatbot-messages" class="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50/50">
             <!-- Greeting Message -->
             <div class="flex items-start gap-2.5 max-w-[85%]">
-                <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm shrink-0 border border-blue-200 shadow-sm">
-                    🤖
+                <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-sm">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2M5 6h14a3 3 0 013 3v4a3 3 0 01-3 3H5a3 3 0 01-3-3V9a3 3 0 013-3zm4 5h.01M15 11h.01M9 16h6" />
+                    </svg>
                 </div>
                 @guest
                 <div class="bg-white border border-slate-100 text-[#1E293B] text-xs px-3.5 py-2.5 rounded-2xl rounded-tl-none shadow-sm leading-relaxed">
@@ -42,7 +46,7 @@
                 </div>
                 @else
                 <div class="bg-white border border-slate-100 text-[#1E293B] text-xs px-3.5 py-2.5 rounded-2xl rounded-tl-none shadow-sm leading-relaxed">
-                    Halo, <strong>{{ auth()->user()->name }}</strong>! Saya <strong>Asisten Virtual MD Car Rental</strong>. 👋<br><br>
+                    Halo, <strong>{{ auth()->user()->name }}</strong>! Saya <strong>Asisten Virtual MD Car Rental</strong>.<br><br>
                     Saya bisa membantu memberikan rekomendasi mobil, info alamat perusahaan, panduan cara sewa, atau membantu Anda memesan mobil secara langsung!
                 </div>
                 @endguest
@@ -51,8 +55,10 @@
 
         <!-- Typing Indicator -->
         <div id="chatbot-typing" class="hidden px-4 py-2 flex items-center gap-2 max-w-[85%]">
-            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm shrink-0">
-                🤖
+            <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2M5 6h14a3 3 0 013 3v4a3 3 0 01-3 3H5a3 3 0 01-3-3V9a3 3 0 013-3zm4 5h.01M15 11h.01M9 16h6" />
+                </svg>
             </div>
             <div class="bg-white border border-slate-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
                 <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
@@ -65,12 +71,37 @@
         <div class="px-4 py-2 border-t border-slate-100 bg-white flex flex-wrap gap-2 overflow-x-auto max-h-24 overflow-y-auto shrink-0 select-none">
             <div id="chatbot-suggestions" class="flex flex-wrap gap-2">
                 @guest
-                <a href="{{ route('login') }}" class="text-[11px] bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-1.5 rounded-full shadow-sm hover:shadow transition">🔑 Login Sekarang</a>
+                <a href="{{ route('login') }}" class="text-[11px] bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-1.5 rounded-full shadow-sm hover:shadow transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                    </svg>
+                    <span>Login Sekarang</span>
+                </a>
                 @else
-                <button onclick="handleSuggestion('Rekomendasi Mobil')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer">🚗 Rekomendasi Mobil</button>
-                <button onclick="handleSuggestion('Cara Sewa')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer">📋 Cara Sewa</button>
-                <button onclick="handleSuggestion('Tentang Perusahaan')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer">🏢 Tentang Perusahaan</button>
-                <button onclick="handleSuggestion('Bantu Saya Booking')" class="text-[11px] bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-1.5 rounded-full shadow-sm hover:shadow transition cursor-pointer">⚡ Bantu Booking</button>
+                <button onclick="handleSuggestion('Rekomendasi Mobil')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.324-5.184a3.375 3.375 0 00-3.37-3.166h-4.83a.75.75 0 01-.52-.22L12.44 4.5h-2.88l-1.24 3.16a.75.75 0 01-.52.22H2.97a3.375 3.375 0 00-3.37 3.166l-.324 5.184c-.04.62.469 1.124 1.09 1.124h1.125m17.25 0h-1.5" />
+                    </svg>
+                    <span>Rekomendasi Mobil</span>
+                </button>
+                <button onclick="handleSuggestion('Cara Sewa')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Cara Sewa</span>
+                </button>
+                <button onclick="handleSuggestion('Tentang Perusahaan')" class="text-[11px] bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-full border border-slate-200/50 transition cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-10.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5M6.75 5.25h.75m-.75 3h.75M12 5.25h.75m-.75 3h.75m3.75-3h.75m-.75 3h.75M3 21V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25V21" />
+                    </svg>
+                    <span>Tentang Perusahaan</span>
+                </button>
+                <button onclick="handleSuggestion('Bantu Saya Booking')" class="text-[11px] bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3.5 py-1.5 rounded-full shadow-sm hover:shadow transition cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                    </svg>
+                    <span>Bantu Booking</span>
+                </button>
                 @endguest
             </div>
         </div>
@@ -79,7 +110,7 @@
         <form id="chatbot-form" onsubmit="handleChatSubmit(event)" class="p-3 border-t border-slate-200/60 bg-white flex items-center gap-2 shrink-0">
             <input type="text" id="chatbot-input" placeholder="Ketik pertanyaan atau tanggal..." class="flex-grow text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-600 bg-slate-50/50 focus:bg-white transition" autocomplete="off">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl transition duration-200 hover:shadow-md cursor-pointer shrink-0">
-                <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
             </button>
@@ -279,8 +310,10 @@
             `;
         } else {
             wrapper.innerHTML = `
-                <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm shrink-0 border border-blue-200 shadow-sm">
-                    🤖
+                <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 border border-blue-200 shadow-sm">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2M5 6h14a3 3 0 013 3v4a3 3 0 01-3 3H5a3 3 0 01-3-3V9a3 3 0 013-3zm4 5h.01M15 11h.01M9 16h6" />
+                    </svg>
                 </div>
                 <div class="bg-white border border-slate-100 text-[#1E293B] text-xs px-3.5 py-2.5 rounded-2xl rounded-tl-none shadow-sm leading-relaxed">
                     ${text}
@@ -355,7 +388,10 @@
 
         wrapper.innerHTML = `
             <a href="${link}" class="w-full text-center bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 text-xs flex items-center justify-center gap-2 hover:-translate-y-0.5">
-                <span>🪪</span> Lanjutkan ke Upload Identitas
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm-1.25 6.125c0-1.38-1.12-2.5-2.5-2.5s-2.5 1.12-2.5 2.5v1.25h5V15.5z" />
+                </svg>
+                <span>Lanjutkan ke Upload Identitas</span>
                 <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
