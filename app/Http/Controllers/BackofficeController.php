@@ -2170,29 +2170,4 @@ class BackofficeController extends Controller
         return redirect()->route('backoffice.settings')
             ->with('success', 'Profil admin berhasil diperbarui.');
     }
-
-    public function updatePassword(Request $request)
-    {
-        $admin = Auth::user();
-
-        $request->validate([
-            'old_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ], [
-            'old_password.required' => 'Password lama wajib diisi.',
-            'password.required' => 'Password baru wajib diisi.',
-            'password.min' => 'Password baru minimal 8 karakter.',
-            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
-        ]);
-
-        if (!Hash::check($request->input('old_password'), $admin->password)) {
-            return back()->withErrors(['old_password' => 'Password lama yang Anda masukkan salah.']);
-        }
-
-        $admin->password = Hash::make($request->input('password'));
-        $admin->save();
-
-        return redirect()->route('backoffice.settings')
-            ->with('success', 'Password admin berhasil diperbarui.');
-    }
 }

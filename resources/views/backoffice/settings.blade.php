@@ -52,45 +52,6 @@
                 </div>
             </form>
         </div>
-
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6">
-            <div>
-                <h2 class="text-xl font-bold text-gray-900">Pengaturan Keamanan</h2>
-                <p class="text-xs text-gray-500 mt-1">Ubah password Anda secara berkala dengan kombinasi yang kuat untuk menjaga keamanan akun backoffice.</p>
-            </div>
-
-            <form action="{{ route('backoffice.settings.password') }}" method="POST" class="space-y-5">
-                @csrf
-                @method('PUT')
-                
-                <div class="space-y-1.5">
-                    <label for="old_password" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Password Lama</label>
-                    <input type="password" name="old_password" id="old_password" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
-                    @error('old_password')
-                        <p class="text-red-500 text-xs font-semibold mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="space-y-1.5">
-                    <label for="password" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Password Baru</label>
-                    <input type="password" name="password" id="password" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
-                    @error('password')
-                        <p class="text-red-500 text-xs font-semibold mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="space-y-1.5">
-                    <label for="password_confirmation" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Konfirmasi Password Baru</label>
-                    <input type="password" name="password_confirmation" id="password_confirmation" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
-                </div>
-
-                <div class="pt-2 flex justify-end">
-                    <button type="submit" class="bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.98] text-white font-bold py-3.5 px-8 rounded-xl text-xs transition-all duration-200 shadow-md shadow-blue-200 uppercase tracking-wider">
-                        Perbarui Password Admin
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 
 </x-backoffice.layout>
