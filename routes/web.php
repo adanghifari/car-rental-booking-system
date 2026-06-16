@@ -1091,7 +1091,6 @@ Route::delete('/dashboard/users/{user}', [BackofficeController::class, 'deleteUs
     ->middleware(['auth', 'admin'])
     ->name('backoffice.users.destroy');
 
-
 Route::get('/dashboard/cars', [BackofficeController::class, 'cars'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars');
@@ -1115,14 +1114,6 @@ Route::get('/dashboard/reports', [BackofficeController::class, 'reports'])
 Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReservation'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations.store');
-
-Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
-    ->middleware(['auth', 'admin'])
-    ->name('backoffice.settings');
-
-Route::put('/dashboard/settings/password', [BackofficeController::class, 'updatePassword'])
-    ->middleware(['auth', 'admin'])
-    ->name('backoffice.settings.password');
 
 Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
     ->middleware(['auth', 'admin'])
@@ -1177,6 +1168,7 @@ Route::view('/welcome', 'welcome');
 Route::get('/login', function (Request $request) {
     $user = $request->user();
     $redirect = $request->query('redirect');
+    $cars = Car::count();
 
     if ($user?->role === User::ROLE_ADMIN) {
         return redirect()->route('dashboard');
@@ -1190,7 +1182,7 @@ Route::get('/login', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    return view('frontliner.auth.login');
+    return view('frontliner.auth.login',['cars' => $cars]);
 })->name('login');
 
 Route::get('/register', function (Request $request) {
