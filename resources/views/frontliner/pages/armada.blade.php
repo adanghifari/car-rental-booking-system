@@ -83,6 +83,32 @@
                 </div>
             </section>
 
+    
+            <div class="mt-4">
+                <a href="{{ route('armada.export') }}"
+                    class="w-full inline-flex items-center justify-center gap-3
+                    bg-gradient-to-r from-[#0B3C9B] to-[#1E40AF]
+                    hover:from-[#082D76] hover:to-[#17368F]
+                    text-white px-6 py-4 rounded-2xl
+                    font-semibold transition-all duration-300
+                    shadow-md hover:shadow-lg hover:-translate-y-0.5">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        class="w-5 h-5">
+
+                        <path stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 16V4m0 12-4-4m4 4 4-4M4 20h16" />
+                        </svg>
+
+                        Download Semua Armada
+                    </a>
+                </div>
+
             <!-- Semua Hasil Pencarian -->
             <section>
                 <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-6">
