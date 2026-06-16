@@ -13,7 +13,6 @@
             <input type="hidden" name="search" value="{{ request('search') }}">
         @endif
         <input type="hidden" name="status" id="hidden-status" value="{{ request('status') }}">
-        <input type="hidden" name="membership" id="hidden-membership" value="{{ request('membership') }}">
         <input type="hidden" name="sort" id="hidden-sort" value="{{ request('sort') }}">
 
         <div class="filter-box custom-dropdown" id="dropdown-status" tabindex="0">
@@ -54,51 +53,6 @@
             </div>
         </div>
 
-        <div class="filter-box custom-dropdown" id="dropdown-membership" tabindex="0">
-            <div class="dropdown-trigger">
-                <span class="filter-label">Membership:</span>
-                <span class="filter-value">
-                    @if (request('membership') === 'silver')
-                        Silver
-                    @elseif (request('membership') === 'gold')
-                        Gold
-                    @elseif (request('membership') === 'platinum')
-                        Platinum
-                    @else
-                        Semua Tingkat
-                    @endif
-                </span>
-                <svg class="dropdown-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7b869b" stroke-width="2">
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
-            </div>
-            <div class="dropdown-menu">
-                <div class="dropdown-item @if(!request('membership')) active @endif" data-value="">
-                    <span>Semua Tingkat</span>
-                    @if(!request('membership'))
-                        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
-                    @endif
-                </div>
-                <div class="dropdown-item @if(request('membership') === 'silver') active @endif" data-value="silver">
-                    <span>Silver</span>
-                    @if(request('membership') === 'silver')
-                        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
-                    @endif
-                </div>
-                <div class="dropdown-item @if(request('membership') === 'gold') active @endif" data-value="gold">
-                    <span>Gold</span>
-                    @if(request('membership') === 'gold')
-                        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
-                    @endif
-                </div>
-                <div class="dropdown-item @if(request('membership') === 'platinum') active @endif" data-value="platinum">
-                    <span>Platinum</span>
-                    @if(request('membership') === 'platinum')
-                        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         <div class="filter-box custom-dropdown" id="dropdown-sort" tabindex="0">
             <div class="dropdown-trigger">
@@ -161,9 +115,8 @@
                 <tr>
                     <th>Customer</th>
                     <th>Kontak</th>
-                    <th>Membership</th>
-                    <th style="text-align: right;">Total Transaksi</th>
-                    <th>Status</th>
+                    <th style="text-align: right; padding-right: 200px;">Total Transaksi</th>
+                    <th style="padding-right: 100px;">Status</th>
                     <th>Daftar Pada</th>
                     <th style="text-align: right;">Action</th>
                 </tr>
@@ -188,22 +141,17 @@
                                 <div>{{ $userItem['contact'] }}</div>
                             </div>
                         </td>
-                        <td>
-                            <span class="table-pill {{ strtolower($userItem['membership']) }}">{{ $userItem['membership'] }}</span>
-                        </td>
-                        <td>
+                        <td style="padding-right: 200px;">
                             <div class="money">
-                                <div>Rp</div>
-                                <div>{{ number_format($userItem['total_transactions'], 0, ',', '.') }}</div>
+                                Rp {{ number_format($userItem['total_transactions'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td>
+                        <td style="padding-right: 20px;">
                             <span class="table-pill {{ $userItem['status_tone'] }}">{{ $userItem['status'] }}</span>
                         </td>
                         <td>
                             <div class="muted-stack" style="color: #4a586f;">
-                                <div>{{ $userItem['registered_day'] }}</div>
-                                <div>{{ $userItem['registered_year'] }}</div>
+                                {{ $userItem['registered_day'] }} {{ $userItem['registered_year'] }}
                             </div>
                         </td>
                         <td>
@@ -228,7 +176,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <div style="padding: 24px 0; color: #7b869b;">Belum ada user untuk ditampilkan.</div>
                         </td>
                     </tr>
@@ -270,6 +218,7 @@
         .filter-bar {
             position: relative;
             z-index: 10;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .filter-box.custom-dropdown {
@@ -419,10 +368,7 @@
                             <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Kontak / Peran</div>
                             <div class="detail-value" id="detail-contact" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
                         </div>
-                        <div class="detail-item">
-                            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Membership</div>
-                            <div class="detail-value" id="detail-membership" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
-                        </div>
+
                         <div class="detail-item">
                             <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Total Transaksi</div>
                             <div class="detail-value" id="detail-transactions" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
@@ -531,7 +477,6 @@
                     const detailEmail = document.getElementById('detail-email');
                     const detailUsername = document.getElementById('detail-username');
                     const detailContact = document.getElementById('detail-contact');
-                    const detailMembership = document.getElementById('detail-membership');
                     const detailTransactions = document.getElementById('detail-transactions');
                     const detailStatus = document.getElementById('detail-status');
                     const detailRegistered = document.getElementById('detail-registered');
@@ -550,9 +495,7 @@
                             if (detailUsername) detailUsername.textContent = '@' + user.username;
                             if (detailContact) detailContact.textContent = user.contact;
                             
-                            if (detailMembership) {
-                                detailMembership.innerHTML = `<span class="table-pill ${user.membership.toLowerCase()}">${user.membership}</span>`;
-                            }
+
                             if (detailTransactions) {
                                 const formatted = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(user.total_transactions);
                                 detailTransactions.textContent = formatted;

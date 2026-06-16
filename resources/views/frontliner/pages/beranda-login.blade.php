@@ -57,12 +57,17 @@
             <div class="relative z-10 max-w-2xl">
                 <span
                     class="inline-flex items-center gap-1.5 bg-blue-500/25 border border-blue-400/30 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold mb-6 tracking-wide backdrop-blur-sm">
-                    ✨ Partner Perjalanan Terbaik Anda
+                    <svg class="w-3.5 h-3.5 text-blue-300 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    <span>Partner Perjalanan Terbaik Anda</span>
                 </span>
                 <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
                     Selamat datang kembali, <br class="hidden sm:inline"><span
                         class="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{{ $user->name ?? 'User' }}</span>!
-                    👋
+                    <svg class="w-8 h-8 md:w-10 md:h-10 text-yellow-400 inline-block animate-bounce align-middle ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v1" />
+                    </svg>
                 </h1>
                 <p class="text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed">
                     Lanjutkan perjalanan Anda dengan MD CAR RENTAL. Nikmati berkendara aman dan nyaman dengan armada
@@ -302,8 +307,11 @@
                     <!-- Actions Buttons -->
                     <div class="flex flex-col sm:flex-row gap-3 pt-3 border-t border-slate-50">
                         <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}"
-                            class="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all text-sm border border-slate-200/60 cursor-pointer">
-                            🔍 Lihat Detail Pesanan
+                            class="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all text-sm border border-slate-200/60 cursor-pointer flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span>Lihat Detail Pesanan</span>
                         </a>
                         @if($rental->status === \App\Enums\RentalStatus::PREPAID)
                         @php
@@ -312,8 +320,11 @@
                         $rental->id]);
                         @endphp
                         <a href="{{ $payUrl }}"
-                            class="flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm cursor-pointer hover:-translate-y-0.5">
-                            💳 Lanjutkan Pembayaran
+                            class="flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm cursor-pointer hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            <span>Lanjutkan Pembayaran</span>
                         </a>
                         @endif
                     </div>
@@ -358,7 +369,12 @@
                 <form method="GET" action="{{ route('search-result') }}" class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <!-- Tanggal Mulai -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">📅 Tanggal Mulai</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Tanggal Mulai</span>
+                        </label>
                         <input type="date" name="start_date" value="{{ request('start_date') }}" min="{{ $today }}"
                             oninput="if(this.form.end_date.value && this.form.end_date.value < this.value){this.form.end_date.value=this.value} this.form.end_date.min=this.value;"
                             class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
@@ -366,14 +382,24 @@
 
                     <!-- Tanggal Selesai -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">🏁 Tanggal Selesai</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
+                            <span>Tanggal Selesai</span>
+                        </label>
                         <input type="date" name="end_date" value="{{ request('end_date') }}" min="{{ request('start_date', $today) }}"
                             class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-slate-700 text-sm">
                     </div>
 
                     <!-- Harga Harian -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">💰 Budget Harian Maksimal</label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 14a2 2 0 110-4h.01" />
+                            </svg>
+                            <span>Budget Harian Maksimal</span>
+                        </label>
                         <div class="relative flex items-center">
                             <span class="absolute left-4 text-slate-400 text-sm">Rp</span>
                             <input type="number" name="max_price" placeholder="Contoh: 500000"
@@ -475,20 +501,33 @@
                     <div
                         class="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px] text-gray-500 border-t pt-3 border-gray-50 mb-4">
 
-                        <span>
-                            👥 {{ $car->seat_count }} Penumpang
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span>{{ $car->seat_count }} Penumpang</span>
                         </span>
 
-                        <span>
-                            ⚙️ {{ $car->transmission->label() }}
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{{ $car->transmission->label() }}</span>
                         </span>
 
-                        <span>
-                            ⚡ {{ number_format($car->cc) }} cc
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span>{{ number_format($car->cc) }} cc</span>
                         </span>
 
-                        <span>
-                            📅 Th {{ $car->year }}
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Th {{ $car->year }}</span>
                         </span>
 
                     </div>
