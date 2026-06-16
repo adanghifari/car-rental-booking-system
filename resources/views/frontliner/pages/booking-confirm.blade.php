@@ -12,44 +12,7 @@
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
-    <!-- Header / Navbar -->
-    <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <!-- Logo with Back Button -->
-            <div class="flex items-center gap-3">
-                <a href="{{ route('car-detail', $car->id) }}?start_date={{ $start_date }}&end_date={{ $end_date }}&service_type={{ $service_type }}"
-                    class="group flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200"
-                    title="Kembali ke Detail Mobil">
-                    <svg class="w-5 h-5 text-gray-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
-                    </svg>
-                </a>
-                <div class="w-px h-6 bg-gray-200"></div>
-                <span class="text-2xl font-bold text-blue-600">MD CAR RENTAL</span>
-            </div>
-
-            <!-- Navigation - Hidden on mobile -->
-            <nav class="hidden lg:flex items-center gap-8">
-                <a href="{{ route('frontliner') }}" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
-                <a href="{{ route('armada') }}" class="text-[#0B3C9B] border-b-2 border-[#0B3C9B] pb-1 font-semibold">Armada</a>
-                <a href="{{ route('frontliner') }}#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
-                <a href="{{ route('frontliner') }}#testimoni" class="text-gray-700 hover:text-blue-600 transition">Testimoni</a>
-            </nav>
-
-            <!-- User Profile -->
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
-                    <div class="text-right border-r pr-4 border-gray-100 mr-2">
-                        <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'User' }}</p>
-                        <p class="text-xs text-gray-500">Member</p>
-                    </div>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<x-frontliner.navbar />
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full">

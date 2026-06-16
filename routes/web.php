@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ViewErrorBag;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 if (! function_exists('booking_active_rental_statuses')) {
     function booking_active_rental_statuses(): array
@@ -1115,6 +1116,22 @@ Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReser
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations.store');
 
+Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings');
+
+Route::put('/dashboard/settings/password', [BackofficeController::class, 'updatePassword'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings.password');
+
+Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings');
+
+Route::put('/dashboard/settings/profile', [BackofficeController::class, 'updateProfile'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.profile.update');
+
 Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rental, string $type) {
     $user = auth()->user();
     if (!$user || $user->role !== User::ROLE_ADMIN) {
@@ -1292,11 +1309,16 @@ Route::get('/armada', function (Request $request) {
     $cars = Car::query()
         ->withReviewMetrics()
         ->when($search !== '', function ($query) use ($search) {
+
+            $search = strtolower($search);
+
             $query->where(function ($innerQuery) use ($search) {
-                $innerQuery->where('name', 'like', "%{$search}%")
-                    ->orWhere('brand', 'like', "%{$search}%")
-                    ->orWhere('license_plate', 'like', "%{$search}%")
-                    ->orWhere('vehicle_type', 'like', "%{$search}%");
+
+                $innerQuery
+                    ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(brand) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(license_plate) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(vehicle_type) LIKE ?', ["%{$search}%"]);
             });
         })
         ->orderByDesc('created_at')
@@ -1308,6 +1330,85 @@ Route::get('/armada', function (Request $request) {
         'search' => $search,
     ]);
 })->middleware('token.cookie')->name('armada');
+
+Route::get('/armada/export', function () {
+
+    $cars = Car::query()
+        ->orderBy('brand')
+        ->orderBy('name')
+        ->get()
+        ->map(function ($car) {
+
+            $mainImage = null;
+
+            if (
+                $car->image &&
+                Storage::disk('public')->exists($car->image)
+            ) {
+
+                $path = Storage::disk('public')->path($car->image);
+
+                $mainImage =
+                    'data:image/' .
+                    pathinfo($path, PATHINFO_EXTENSION) .
+                    ';base64,' .
+                    base64_encode(file_get_contents($path));
+            }
+
+            $galleryUrls = [];
+
+            $galleryImages = [];
+
+            if ($car->gallery_images) {
+
+                if (is_array($car->gallery_images)) {
+                    $galleryImages = $car->gallery_images;
+                } else {
+                    $galleryImages = json_decode(
+                        $car->gallery_images,
+                        true
+                    ) ?? [];
+                }
+            }
+
+            foreach ($galleryImages as $image) {
+
+                if (Storage::disk('public')->exists($image)) {
+
+                    $path = Storage::disk('public')->path($image);
+
+                    $galleryUrls[] =
+                        'data:image/' .
+                        pathinfo($path, PATHINFO_EXTENSION) .
+                        ';base64,' .
+                        base64_encode(file_get_contents($path));
+                }
+            }
+
+            return [
+                'name' => $car->name,
+                'brand' => $car->brand,
+                'description' => $car->description,
+                'license_plate' => $car->license_plate,
+                'year' => $car->year,
+                'cc' => $car->cc,
+                'seat_count' => $car->seat_count,
+                'daily_rate' => $car->daily_rate,
+                'transmission' => $car->transmission->label(),
+                'main_image' => $mainImage,
+                'gallery_urls' => $galleryUrls,
+            ];
+        });
+
+    $pdf = Pdf::loadView(
+        'vendor.armada-pdf',
+        compact('cars')
+    )->setPaper('a4', 'portrait');
+
+    return $pdf->download('armada.pdf');
+
+})->middleware('token.cookie')->name('armada.export');
+
 Route::get('/car-detail/{car}', function (Car $car) {
     $similarCars = Car::query()
         ->where('status', CarStatus::AVAILABLE)
@@ -1376,3 +1477,5 @@ Route::get('/testimoni', function (Request $request) {
 Route::post('/chatbot/message', [\App\Http\Controllers\ChatbotController::class, 'handle'])
     ->middleware('token.cookie')
     ->name('chatbot.message');
+
+    

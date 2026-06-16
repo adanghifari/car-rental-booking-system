@@ -13,6 +13,7 @@ use App\Models\Car;
 use App\Models\PaymentHistory;
 use App\Models\Rental;
 use App\Models\User;
+use Illuminate\Support\Str;
 use App\Support\BookingAvailability;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -20,6 +21,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class BackofficeController extends Controller
@@ -2118,5 +2121,53 @@ class BackofficeController extends Controller
         $svg[] = '</svg>';
 
         return implode('', $svg);
+    }
+
+    public function settings()
+    {
+        $admin = Auth::user(); 
+
+        return view('backoffice.settings', [
+            'admin' => $admin,
+            'active' => 'settings'
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $admin = Auth::user();
+
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:50',
+                'alpha_dash',
+                Rule::unique('users', 'username')->ignore($admin->id),
+                static function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                        $fail('Username tidak boleh menggunakan format email.');
+                    }
+                },
+            ],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($admin->id)],
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'username.required' => 'Username wajib diisi.',
+            'username.unique' => 'Username sudah digunakan oleh akun lain.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+        ]);
+
+        $admin->name = $request->input('name');
+        $admin->username = Str::lower($request->input('username'));
+        $admin->email = $request->input('email');
+        $admin->save();
+
+        return redirect()->route('backoffice.settings')
+            ->with('success', 'Profil admin berhasil diperbarui.');
     }
 }
