@@ -1116,6 +1116,22 @@ Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReser
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations.store');
 
+Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings');
+
+Route::put('/dashboard/settings/password', [BackofficeController::class, 'updatePassword'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings.password');
+
+Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings');
+
+Route::put('/dashboard/settings/profile', [BackofficeController::class, 'updateProfile'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.profile.update');
+
 Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rental, string $type) {
     $user = auth()->user();
     if (!$user || $user->role !== User::ROLE_ADMIN) {
@@ -1435,3 +1451,5 @@ Route::get('/testimoni', function (Request $request) {
 Route::post('/chatbot/message', [\App\Http\Controllers\ChatbotController::class, 'handle'])
     ->middleware('token.cookie')
     ->name('chatbot.message');
+
+    
