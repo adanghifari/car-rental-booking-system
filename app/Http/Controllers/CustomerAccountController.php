@@ -44,6 +44,7 @@ class CustomerAccountController extends Controller
                 },
             ],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['required', 'string', 'max:15'],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'username.required' => 'Username wajib diisi.',
@@ -51,11 +52,14 @@ class CustomerAccountController extends Controller
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'phone.required' => 'Nomor telepon wajib diisi.',
+            'phone.max' => 'Nomor telepon maksimal 15 karakter.',
         ]);
 
         $user->name = $request->input('name');
         $user->username = Str::lower($request->input('username'));
         $user->email = $request->input('email');
+        $user->phone = $request->input('phone');
         $user->save();
 
         return redirect()->route('customer.profile')

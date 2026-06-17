@@ -131,7 +131,8 @@ class BackofficeController extends Controller
             $usersQuery->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('username', 'like', "%{$search}%");
+                  ->orWhere('username', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -185,8 +186,10 @@ class BackofficeController extends Controller
                     'role' => $user->role,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
                     'username' => $user->username ?? 'user'.$user->id,
-                    'contact' => $user->role === User::ROLE_ADMIN ? 'Admin system' : 'Customer rental',
+                    'contact' => $user->phone ?: ($user->role === User::ROLE_ADMIN ? 'Admin system' : 'Nomor belum diisi'),
+                    'role_label' => $user->role === User::ROLE_ADMIN ? 'Admin system' : 'Customer rental',
                     'total_transactions' => $totalTransactions,
                     'status' => $status,
                     'status_tone' => $statusTone,
@@ -612,7 +615,7 @@ class BackofficeController extends Controller
         );
 
         $query = Rental::query()
-            ->with(['user:id,name', 'car']);
+            ->with(['user:id,name,phone', 'car']);
 
         if ($filter === 'waiting_review') {
             $query->where('status', RentalStatus::PENDING_VERIFICATION)
@@ -784,6 +787,7 @@ class BackofficeController extends Controller
                     'next_impacted_booking' => $nextImpactedBooking,
 
                     'customer_name' => $rental->user?->name,
+                    'customer_phone' => $rental->user?->phone,
 
                     'car_model' => trim(
                         ($rental->car?->brand ?? '') .
@@ -863,6 +867,7 @@ class BackofficeController extends Controller
             ->map(fn (User $u) => [
                 'id' => $u->id,
                 'name' => $u->name,
+                'phone' => $u->phone,
             ])
             ->all();
 

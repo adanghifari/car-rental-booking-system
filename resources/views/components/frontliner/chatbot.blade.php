@@ -1,8 +1,8 @@
 <!-- Chatbot Floating Widget -->
-<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+<div class="relative flex flex-col items-end font-sans">
     
     <!-- Chat Window -->
-    <div id="chatbot-window" class="hidden w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[85vh] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 transform translate-y-4 opacity-0 scale-95">
+    <div id="chatbot-window" class="hidden mb-3 w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[85vh] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 transform translate-y-4 opacity-0 scale-95">
         
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white px-4 py-4 flex items-center justify-between shadow-md">
@@ -60,10 +60,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2M5 6h14a3 3 0 013 3v4a3 3 0 01-3 3H5a3 3 0 01-3-3V9a3 3 0 013-3zm4 5h.01M15 11h.01M9 16h6" />
                 </svg>
             </div>
-            <div class="bg-white border border-slate-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+            <div class="chatbot-typing-bubble bg-white border border-slate-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
+                <span class="chatbot-wave-dot" style="animation-delay: 0ms"></span>
+                <span class="chatbot-wave-dot" style="animation-delay: 150ms"></span>
+                <span class="chatbot-wave-dot" style="animation-delay: 300ms"></span>
             </div>
         </div>
 
@@ -121,6 +121,8 @@
     <button id="chatbot-toggle-btn"
         onclick="toggleChatWindow()"
         class="bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-blue-500/35 hover:shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative group border border-white/20">
+
+        <span class="absolute inset-0 rounded-full bg-indigo-500 animate-ping opacity-20"></span>
 
         <!-- Notification Dot -->
         <span class="absolute -top-1 -right-1 w-4.5 h-4.5 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow">
@@ -183,6 +185,7 @@
         step: null
     };
     let chatHistory = [];
+    const CHATBOT_REPLY_DELAY_MS = 1200;
 
     // Toggle Chat Window visibility
     function toggleChatWindow() {
@@ -230,6 +233,10 @@
         sendMessage(text);
     }
 
+    function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     // Main send message logic
     function sendMessage(text) {
         // Render User Message
@@ -242,7 +249,8 @@
         scrollToBottom();
 
         // Call API
-        fetch('{{ route('chatbot.message') }}', {
+        Promise.all([
+            fetch('{{ route('chatbot.message') }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -257,8 +265,10 @@
         .then(res => {
             if (!res.ok) throw new Error('Network error');
             return res.json();
-        })
-        .then(data => {
+        }),
+            wait(CHATBOT_REPLY_DELAY_MS)
+        ])
+        .then(([data]) => {
             // Hide typing indicator
             loader.classList.add('hidden');
 
@@ -417,5 +427,29 @@
     .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
+    }
+
+    .chatbot-typing-bubble {
+        min-width: 52px;
+    }
+
+    .chatbot-wave-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background: #3b82f6;
+        display: inline-block;
+        animation: chatbot-wave 900ms ease-in-out infinite;
+    }
+
+    @keyframes chatbot-wave {
+        0%, 60%, 100% {
+            transform: translateY(0) scale(0.9);
+            opacity: 0.45;
+        }
+        30% {
+            transform: translateY(-4px) scale(1);
+            opacity: 1;
+        }
     }
 </style>
