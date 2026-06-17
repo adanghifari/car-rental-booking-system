@@ -552,7 +552,7 @@ class ChatbotController extends Controller
         // Company info - refined to avoid false positive matches on generic terms
         if (preg_match('/\b(alamat kantor|lokasi kantor|alamat md car|lokasi md car|kantor dimana|sejarah md car|profil md car|tentang perusahaan)\b/', $lowerMsg)) {
             return [
-                'reply' => "<strong>MD Car Rental</strong> adalah penyedia layanan sewa mobil terpercaya di Jakarta.<br><br><span class=\"inline-flex items-center align-middle mr-1.5 text-rose-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 10.5a3 3 0 11-6 0 3 3 0 016 0z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z\" /></svg></span><strong>Alamat Kantor:</strong> Jl. Jend. Sudirman Kav. 1, Jakarta Pusat, DKI Jakarta 10220.<br>Kami berkomitmen memberikan armada bersih, prima, dan layanan terbaik baik lepas kunci maupun dengan sopir.",
+                'reply' => "<strong>MD Car Rental</strong> adalah penyedia layanan sewa mobil terpercaya di Makassar.<br><br><span class=\"inline-flex items-center align-middle mr-1.5 text-rose-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 10.5a3 3 0 11-6 0 3 3 0 016 0z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z\" /></svg></span><strong>Alamat Kantor:</strong> Jl. Gatot Subroto No.5, Ujung Pandang Baru, Kec. Tallo, Kota Makassar, Sulawesi Selatan 90212.<br>Kami berkomitmen memberikan armada bersih, prima, dan layanan terbaik baik lepas kunci maupun dengan sopir.",
                 'bookingState' => $bookingState,
                 'suggestions' => ["Rekomendasi Mobil", "Cara Sewa", "Bantu Saya Booking"],
                 'cars' => [],
@@ -732,7 +732,7 @@ Tugas Anda:
 
 Informasi Perusahaan:
 - Nama: MD Car Rental
-- Alamat: Jl. Jend. Sudirman Kav. 1, Jakarta Pusat, DKI Jakarta 10220
+- Alamat: Jl. Gatot Subroto No.5, Ujung Pandang Baru, Kec. Tallo, Kota Makassar, Sulawesi Selatan 90212
 - Cara Sewa:
   1. Cari mobil yang Anda inginkan melalui asisten ini atau halaman Armada.
   2. Tentukan tanggal mulai dan selesai sewa.
