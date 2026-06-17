@@ -105,6 +105,11 @@
             box-shadow: 24px 0 60px rgba(15, 29, 51, 0.16);
         }
 
+        .sidebar.dashboard-animated {
+            transform: translateX(-100%);
+            animation: backofficeSidebarIn 1400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
         .brand {
             margin-bottom: 30px;
         }
@@ -137,12 +142,22 @@
             color: #afbdd7;
             text-decoration: none;
             font-size: 14px;
+            transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease, color 220ms ease, box-shadow 220ms ease;
+        }
+
+        .nav-item.dashboard-animated {
+            animation: backofficeNavItemIn 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: var(--nav-delay, 0ms);
         }
 
         .nav-item.active {
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
             box-shadow: inset 3px 0 0 #4f74ff;
+        }
+
+        .nav-item:hover {
+            transform: translateX(4px);
         }
 
         .nav-icon {
@@ -168,6 +183,11 @@
             padding: 12px 14px;
             border-radius: 14px;
             transition: background 0.2s;
+        }
+
+        .sidebar-profile .profile.dashboard-animated {
+            animation: backofficeNavItemIn 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: 420ms;
         }
 
         .sidebar-profile .profile:hover {
@@ -220,8 +240,34 @@
             color: #ef4444;
         }
 
+        .logout-form .nav-item.dashboard-animated {
+            animation-delay: 520ms;
+        }
+
         .main {
             padding: 20px 28px 28px;
+        }
+
+        @keyframes backofficeSidebarIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes backofficeNavItemIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-14px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .topbar {
@@ -2094,20 +2140,20 @@
     $initial = strtoupper(substr($admin->name ?? 'A', 0, 1));
 @endphp
 <div class="backoffice-shell">
-    <aside class="sidebar">
+    <aside class="sidebar {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
         <div class="brand">
             <h1 class="brand-title">MD CAR RENTAL</h1>
             <div class="brand-subtitle">Fleet Management</div>
         </div>
 
         <nav class="nav-list">
-            <a href="{{ route('dashboard') }}" class="nav-item {{ $active === 'dashboard' ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="nav-item {{ $active === 'dashboard' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 90ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7Zm0-16v5h7V4h-7ZM4 20h7v-5H4v5Z"/>
                 </svg>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ route('backoffice.users') }}" class="nav-item {{ $active === 'users' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.users') }}" class="nav-item {{ $active === 'users' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 150ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
@@ -2116,28 +2162,28 @@
                 </svg>
                 <span>Manajemen User</span>
             </a>
-            <a href="{{ route('backoffice.cars') }}" class="nav-item {{ $active === 'cars' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.cars') }}" class="nav-item {{ $active === 'cars' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 210ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M14 16H9m10 0h2m-7 0h1m-9 0h1m0 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0m8 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0M3 12l2-5h13l3 5"/>
                     <path d="M5 12v4m14-4v4M7 7V5h10v2"/>
                 </svg>
                 <span>Manajemen Mobil</span>
             </a>
-            <a href="{{ route('backoffice.reservations') }}" class="nav-item {{ $active === 'reservations' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.reservations') }}" class="nav-item {{ $active === 'reservations' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 270ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M8 2v4m8-4v4M3 10h18"/>
                     <rect x="3" y="4" width="18" height="18" rx="2"/>
                 </svg>
                 <span>Reservasi</span>
             </a>
-            <a href="{{ route('backoffice.reports') }}" class="nav-item {{ $active === 'reports' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.reports') }}" class="nav-item {{ $active === 'reports' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 330ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M3 3v18h18"/>
                     <path d="M7 14l4-4 3 3 5-7"/>
                 </svg>
                 <span>Laporan</span>
             </a>
-            <a href="{{ route('backoffice.settings') }}" class="nav-item {{ $active === 'settings' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.settings') }}" class="nav-item {{ $active === 'settings' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 390ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8.91 4.6H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.28 1 1.51.16.06.33.09.5.09H21a2 2 0 1 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z"/>
@@ -2147,7 +2193,7 @@
         </nav>
 
         <div class="sidebar-profile">
-            <div class="profile">
+            <div class="profile {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
                 <div>
                     <div class="profile-name">{{ $admin->name }}</div>
                     <div class="profile-role">{{ strtoupper($admin->role) }}</div>
@@ -2160,7 +2206,7 @@
             <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
                 <button type="submit">
-                    <span class="nav-item">
+                    <span class="nav-item {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <path d="m16 17 5-5-5-5"/>
