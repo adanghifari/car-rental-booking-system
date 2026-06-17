@@ -1123,6 +1123,10 @@ Route::put('/dashboard/settings/profile', [BackofficeController::class, 'updateP
     ->middleware(['auth', 'admin'])
     ->name('backoffice.profile.update');
 
+Route::put('/dashboard/settings/company', [BackofficeController::class, 'updateCompanySettings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.company-settings.update');
+
 Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rental, string $type) {
     $user = auth()->user();
     if (!$user || $user->role !== User::ROLE_ADMIN) {
@@ -1233,6 +1237,12 @@ Route::get('/search-result', function (Request $request) {
     $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
     $startDate = $request->input('start_date');
     $endDate = $request->input('end_date');
+    $hasActiveFilters = $request->filled('start_date')
+        || $request->filled('end_date')
+        || $request->filled('max_price')
+        || $request->filled('types')
+        || $request->filled('capacity')
+        || $request->filled('service_types');
 
     if ($request->filled('start_date') || $request->filled('end_date')) {
         $validator = Validator::make($request->all(), [
@@ -1291,8 +1301,24 @@ Route::get('/search-result', function (Request $request) {
         ))
         ->values();
 
+    $recommendedCars = $hasActiveFilters
+        ? $cars->take(2)->values()
+        : Car::query()
+            ->withReviewMetrics()
+            ->withCount('rentals')
+            ->where('status', CarStatus::AVAILABLE)
+            ->orderByDesc('rentals_count')
+            ->orderByDesc('reviews_avg_rating')
+            ->orderByDesc('rating')
+            ->orderByDesc('created_at')
+            ->take(2)
+            ->get()
+            ->values();
+
     return view('frontliner.pages.search-result', [
         'cars' => $cars,
+        'recommendedCars' => $recommendedCars,
+        'hasActiveFilters' => $hasActiveFilters,
     ]);
 })->middleware('token.cookie')->name('search-result');
 Route::get('/armada', function (Request $request) {
@@ -1314,7 +1340,7 @@ Route::get('/armada', function (Request $request) {
             });
         })
         ->orderByDesc('created_at')
-        ->paginate(8)
+        ->paginate(6)
         ->withQueryString();
 
     return view('frontliner.pages.armada', [

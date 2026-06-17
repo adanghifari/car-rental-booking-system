@@ -1,5 +1,5 @@
 <!-- Floating Contact WhatsApp -->
-<div class="fixed bottom-25 right-6 z-50 group">
+<div class="relative group">
 
     <!-- Tooltip -->
     <div
@@ -26,11 +26,6 @@
             transition-all duration-300
             hover:scale-105 active:scale-95
             border border-white/20">
-
-        <!-- Pulse Animation -->
-        <span
-            class="absolute inset-0 rounded-full bg-indigo-500 animate-ping opacity-20">
-        </span>
 
         <!-- WhatsApp Icon -->
         <svg xmlns="http://www.w3.org/2000/svg"

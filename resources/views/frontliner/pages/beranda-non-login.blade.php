@@ -244,13 +244,13 @@
             <div class="p-10 md:p-16 z-10 text-white">
                 <h2 class="text-3xl font-bold mb-4">Siap Untuk Perjalanan Berikutnya?</h2>
                 <p class="text-gray-300 text-sm mb-8 max-w-md font-light leading-relaxed">
-                    Dapatkan penawaran khusus untuk penyewaan jangka panjang atau reservasi event spesial Anda hari ini.
+                    Dapatkan pengalaman yang menyenangkan dengan layanan sewa mobil kami yang cepat, mudah, dan terpercaya. Hubungi kami untuk konsultasi atau unduh katalog PDF armada lengkap kami untuk menemukan kendaraan yang sempurna untuk kebutuhan Anda.
                 </p>
                 <div class="flex flex-wrap gap-4">
-                    <a href="#" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="https://wa.me/6282155402629" target="_blank" rel="noopener noreferrer" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Hubungi Konsultan Kami
                     </a>
-                    <a href="#" class="border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="{{ route('armada.export') }}" class="border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Lihat Katalog PDF
                     </a>
                 </div>

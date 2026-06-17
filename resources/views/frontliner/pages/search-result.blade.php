@@ -129,7 +129,7 @@
                             @if(request('max_price'))
                                 <span>Budget Maksimal: Rp {{ number_format(request('max_price'), 0, ',', '.') }}</span>
                             @endif
-                            @if(!request('start_date') && !request('end_date') && !request('max_price'))
+                        @if(!($hasActiveFilters ?? false))
                                 <span>Menampilkan semua armada tersedia</span>
                             @endif
                         </p>
@@ -198,8 +198,8 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        @if(isset($cars) && $cars->count() > 0)
-                            @php $firstCar = $cars->first(); @endphp
+                        @if(isset($recommendedCars) && $recommendedCars->count() > 0)
+                            @php $firstCar = $recommendedCars->first(); @endphp
                             <div class="lg:col-span-2 bg-slate-900 rounded-2xl overflow-hidden relative group min-h-[300px] flex flex-col justify-end p-6 shadow-sm">
                                 <img src="{{ $firstCar->image ? asset('storage/' . $firstCar->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80' }}" alt="{{ $firstCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition duration-500">
                                 <div class="absolute top-6 right-6 bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl p-3 text-right text-white">
@@ -211,7 +211,7 @@
                                     <h3 class="text-2xl font-bold mb-2">{{ $firstCar->name }}</h3>
                                     <div class="flex items-center space-x-4 text-xs text-gray-300 font-medium">
                                         <span>🚗 {{ $firstCar->brand }} - {{ $firstCar->vehicle_type->label() }}</span>
-                                        <span class="text-yellow-400">★ <span class="text-white">{{ $firstCar->rating ?? '4.8' }}</span></span>
+                                        <span class="text-yellow-400">★ <span class="text-white">{{ number_format($firstCar->average_rating, 1) }}</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -227,8 +227,8 @@
                             </div>
                         @endif
 
-                        @if(isset($cars) && $cars->count() > 1)
-                            @php $secondCar = $cars->skip(1)->first(); @endphp
+                        @if(isset($recommendedCars) && $recommendedCars->count() > 1)
+                            @php $secondCar = $recommendedCars->skip(1)->first(); @endphp
                             <div class="bg-slate-900 rounded-2xl overflow-hidden relative group min-h-[300px] flex flex-col justify-end p-6 shadow-sm">
                                 <img src="{{ $secondCar->image ? asset('storage/' . $secondCar->image) : 'https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $secondCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-500">
                                 <div class="relative z-10 text-white">

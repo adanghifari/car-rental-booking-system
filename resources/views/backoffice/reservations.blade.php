@@ -272,7 +272,12 @@
                         $highlightRentalId===(int) ($rental['id'] ?? 0)) style="background: rgba(245, 158, 11, 0.08);"
                         @endif>
                         <td>{{ $rental['booking_id'] ?? $rental['id'] }}</td>
-                        <td>{{ $rental['customer_name'] ?? $rental['customer'] ?? '-' }}</td>
+                        <td>
+                            <div style="display: grid; gap: 4px;">
+                                <span>{{ $rental['customer_name'] ?? $rental['customer'] ?? '-' }}</span>
+                                <span style="font-size: 12px; color: var(--muted);">{{ $rental['customer_phone'] ?? 'Nomor belum diisi' }}</span>
+                            </div>
+                        </td>
                         <td>{{ $rental['car_model'] ?? $rental['car'] ?? '-' }}</td>
                         <td>{{ $rental['start_date'] ?? '-' }} — {{ $rental['end_date'] ?? '-' }}</td>
                         <td>Rp {{ number_format($rental['total_price'] ?? ($rental['total'] ?? 0), 0, ',', '.') }}</td>
@@ -373,7 +378,7 @@
                                 <option value="">Pilih pelanggan</option>
                                 @foreach ($customers as $customer)
                                 <option value="{{ $customer['id'] }}" @selected(old('user_id')==$customer['id'])>
-                                    {{ $customer['name'] }}</option>
+                                    {{ $customer['name'] }}{{ $customer['phone'] ? ' - '.$customer['phone'] : '' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -480,6 +485,8 @@
                     <dd data-detail-booking>-</dd>
                     <dt>Pelanggan</dt>
                     <dd data-detail-customer>-</dd>
+                    <dt>Nomor Telepon</dt>
+                    <dd data-detail-phone>-</dd>
                     <dt>Mobil</dt>
                     <dd data-detail-car>-</dd>
                     <dt>Tanggal Sewa</dt>
@@ -767,6 +774,8 @@
                         .booking_id || data.id || '-';
                     (document.querySelector('[data-detail-customer]') || {}).textContent = data
                         .customer_name || data.customer || '-';
+                    (document.querySelector('[data-detail-phone]') || {}).textContent = data
+                        .customer_phone || '-';
                     (document.querySelector('[data-detail-car]') || {}).textContent = data
                         .car_model || data.car || '-';
                     (document.querySelector('[data-detail-period]') || {}).textContent = (data

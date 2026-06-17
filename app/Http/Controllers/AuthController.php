@@ -33,6 +33,7 @@ class AuthController extends Controller
                 },
             ],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:15'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
@@ -46,6 +47,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'username' => Str::lower($validated['username']),
             'email' => $validated['email'],
+            'phone' => $validated['phone'],
             'password' => $validated['password'],
             'role' => User::ROLE_CUSTOMER,
         ]);

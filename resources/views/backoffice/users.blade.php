@@ -138,7 +138,7 @@
                         <td>
                             <div class="muted-stack">
                                 <div>{{ '@'.$userItem['username'] }}</div>
-                                <div>{{ $userItem['contact'] }}</div>
+                                <div>{{ $userItem['phone'] ?: 'Nomor belum diisi' }}</div>
                             </div>
                         </td>
                         <td style="padding-right: 200px;">
@@ -365,8 +365,12 @@
                             <div class="detail-value" id="detail-username" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
                         </div>
                         <div class="detail-item">
-                            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Kontak / Peran</div>
+                            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Nomor Telepon</div>
                             <div class="detail-value" id="detail-contact" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; color: #7b869b; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.08em;">Peran</div>
+                            <div class="detail-value" id="detail-role" style="font-size: 14px; font-weight: 600; color: #202636;">-</div>
                         </div>
 
                         <div class="detail-item">
@@ -477,6 +481,7 @@
                     const detailEmail = document.getElementById('detail-email');
                     const detailUsername = document.getElementById('detail-username');
                     const detailContact = document.getElementById('detail-contact');
+                    const detailRole = document.getElementById('detail-role');
                     const detailTransactions = document.getElementById('detail-transactions');
                     const detailStatus = document.getElementById('detail-status');
                     const detailRegistered = document.getElementById('detail-registered');
@@ -493,7 +498,8 @@
                             if (detailName) detailName.textContent = user.name;
                             if (detailEmail) detailEmail.textContent = user.email;
                             if (detailUsername) detailUsername.textContent = '@' + user.username;
-                            if (detailContact) detailContact.textContent = user.contact;
+                            if (detailContact) detailContact.textContent = user.phone || 'Nomor belum diisi';
+                            if (detailRole) detailRole.textContent = user.role_label;
                             
 
                             if (detailTransactions) {

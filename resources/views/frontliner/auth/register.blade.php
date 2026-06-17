@@ -271,6 +271,11 @@
                     </div>
 
                     <div class="field">
+                        <label for="phone">Nomor Telepon</label>
+                        <input id="phone" name="phone" type="text" placeholder="Masukkan nomor telepon" autocomplete="tel" required maxlength="15">
+                    </div>
+
+                    <div class="field">
                         <label for="password">Kata Sandi</label>
                         <input id="password" name="password" type="password" placeholder="Buat kata sandi" autocomplete="new-password" required minlength="8">
                     </div>
@@ -314,6 +319,7 @@
             const name = document.getElementById('name').value.trim();
             const username = document.getElementById('username').value.trim();
             const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
             const password = document.getElementById('password').value;
             const passwordConfirmation = document.getElementById('password_confirmation').value;
             const redirect = document.getElementById('redirect').value.trim();
@@ -329,6 +335,7 @@
                         name,
                         username,
                         email,
+                        phone,
                         password,
                         password_confirmation: passwordConfirmation,
                         redirect,
