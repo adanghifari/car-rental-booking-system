@@ -33,7 +33,7 @@
         filter: blur(24px);
         opacity: 0.55;
         z-index: 1;
-        animation: heroAuraFloat 15s ease-in-out infinite;
+        animation: heroAuraFloat 20s ease-in-out infinite;
     }
 
     .hero-shell::before {
@@ -55,21 +55,21 @@
 
     .page-enter-nav {
         transform: translateY(-16px);
-        transition: opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
-            transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+        transition: opacity 880ms cubic-bezier(0.22, 1, 0.36, 1),
+            transform 880ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .hero-bg-animate {
         transform: scale(1.1) translate3d(18px, 0, 0);
         transform-origin: center center;
-        transition: transform 1450ms cubic-bezier(0.2, 1, 0.22, 1), opacity 1000ms ease;
+        transition: transform 2100ms cubic-bezier(0.2, 1, 0.22, 1), opacity 1400ms ease;
     }
 
     .animate-on-load,
     .reveal {
         transform: translate3d(0, 28px, 0) scale(0.985);
-        transition: opacity 820ms cubic-bezier(0.2, 1, 0.22, 1),
-            transform 820ms cubic-bezier(0.2, 1, 0.22, 1);
+        transition: opacity 1120ms cubic-bezier(0.2, 1, 0.22, 1),
+            transform 1120ms cubic-bezier(0.2, 1, 0.22, 1);
     }
 
     .search-panel-animate {
@@ -86,7 +86,7 @@
         opacity: 0;
         filter: blur(10px);
         z-index: 1;
-        transition: opacity 1200ms ease, transform 1600ms cubic-bezier(0.2, 1, 0.22, 1);
+        transition: opacity 1700ms ease, transform 2200ms cubic-bezier(0.2, 1, 0.22, 1);
     }
 
     .page-ready .hero-sheen {
@@ -109,11 +109,11 @@
     }
 
     .hover-lift {
-        transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-            box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
-            border-color 240ms ease,
-            background-color 240ms ease,
-            color 240ms ease;
+        transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 360ms ease,
+            background-color 360ms ease,
+            color 360ms ease;
         will-change: transform;
     }
 
@@ -127,7 +127,7 @@
     }
 
     .card-image-zoom img {
-        transition: transform 700ms cubic-bezier(0.2, 1, 0.22, 1), filter 300ms ease;
+        transition: transform 1000ms cubic-bezier(0.2, 1, 0.22, 1), filter 420ms ease;
         transform: scale(1.01);
     }
 
@@ -146,12 +146,57 @@
         inset: 0;
         background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.24) 50%, transparent 75%);
         transform: translateX(-135%);
-        transition: transform 700ms cubic-bezier(0.2, 1, 0.22, 1);
+        transition: transform 980ms cubic-bezier(0.2, 1, 0.22, 1);
         pointer-events: none;
     }
 
     .button-glow-hover:hover::after {
         transform: translateX(135%);
+    }
+
+    .floating-fab {
+        animation: floatingFabEntrance 1100ms cubic-bezier(0.2, 1, 0.22, 1) both,
+            floatingFabIdle 6s ease-in-out infinite;
+        will-change: transform, box-shadow, opacity;
+    }
+
+    .floating-fab:nth-child(2) {
+        animation-delay: 120ms, 1100ms;
+    }
+
+    .floating-fab:hover {
+        animation-play-state: paused, paused;
+        transform: translateY(-6px) scale(1.05);
+        box-shadow: 0 24px 44px -24px rgba(37, 99, 235, 0.42);
+    }
+
+    .floating-fab-icon {
+        transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .floating-fab:hover .floating-fab-icon {
+        transform: scale(1.08);
+    }
+
+    @keyframes floatingFabEntrance {
+        0% {
+            opacity: 0;
+            transform: translate3d(0, 18px, 0) scale(0.88);
+        }
+        100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+    }
+
+    @keyframes floatingFabIdle {
+        0%,
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+        50% {
+            transform: translate3d(0, -5px, 0);
+        }
     }
 
     .cta-gradient-animate {
@@ -166,7 +211,7 @@
         pointer-events: none;
         filter: blur(16px);
         opacity: 0.42;
-        animation: ctaBlobFloat 16s ease-in-out infinite;
+        animation: ctaBlobFloat 22s ease-in-out infinite;
     }
 
     .cta-gradient-animate::before {
@@ -213,6 +258,7 @@
     .hero-bg-animate,
     .reveal,
     .hover-lift,
+    .floating-fab,
     .cta-gradient-animate::before,
     .cta-gradient-animate::after {
         animation: none !important;

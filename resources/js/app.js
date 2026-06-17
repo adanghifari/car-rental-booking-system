@@ -1,7 +1,8 @@
 import './bootstrap';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const landingPage = document.body.classList.contains('landing-non-login');
+    const landingPage = document.body.classList.contains('landing-non-login')
+        || document.body.classList.contains('landing-login');
 
     if (!landingPage) {
         return;

@@ -16,8 +16,10 @@
     </style>
 </head>
 
-<body class="bg-white text-gray-900">
-    <x-frontliner.navbar />
+<body class="landing-login bg-white text-gray-900 overflow-x-hidden">
+    <div class="page-enter-nav">
+        <x-frontliner.navbar />
+    </div>
 
     @if(session('success'))
     <div class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
@@ -49,33 +51,36 @@
     <!-- Welcome Banner (Hero Section) -->
     <section class="max-w-7xl mx-auto px-4 lg:px-8 mt-6">
         <div
-            class="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 text-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative border border-slate-800 p-8 md:p-12">
+            class="hero-shell bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 text-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden relative border border-slate-800 p-8 md:p-12">
             <!-- Glowing light effects -->
             <div class="absolute -right-20 -top-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
             <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div class="hero-sheen hidden md:block"></div>
 
             <div class="relative z-10 max-w-2xl">
                 <span
-                    class="inline-flex items-center gap-1.5 bg-blue-500/25 border border-blue-400/30 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold mb-6 tracking-wide backdrop-blur-sm">
+                    class="animate-on-load inline-flex items-center gap-1.5 bg-blue-500/25 border border-blue-400/30 text-blue-200 px-3 py-1 rounded-full text-xs font-semibold mb-6 tracking-wide backdrop-blur-sm"
+                    style="--delay: 120ms">
                     <svg class="w-3.5 h-3.5 text-blue-300 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                     </svg>
                     <span>Partner Perjalanan Terbaik Anda</span>
                 </span>
-                <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                <h1 class="animate-on-load text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight" style="--delay: 220ms">
                     Selamat datang kembali, <br class="hidden sm:inline"><span
                         class="bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">{{ $user->name ?? 'User' }}</span>!
                     <svg class="w-8 h-8 md:w-10 md:h-10 text-yellow-400 inline-block animate-bounce align-middle ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5a1.5 1.5 0 013 0v1" />
                     </svg>
                 </h1>
-                <p class="text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed">
+                <p class="animate-on-load text-blue-100/80 text-base md:text-lg mb-8 font-light leading-relaxed" style="--delay: 320ms">
                     Lanjutkan perjalanan Anda dengan MD CAR RENTAL. Nikmati berkendara aman dan nyaman dengan armada
                     pilihan terbaik yang terawat.
                 </p>
                 <div class="flex flex-wrap gap-4">
                     <a href="#cari-mobil"
-                        class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 shadow-lg shadow-blue-600/35 text-sm cursor-pointer">
+                        class="animate-on-load hover-lift button-glow-hover inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/35 text-sm cursor-pointer"
+                        style="--delay: 420ms">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -83,7 +88,8 @@
                         Cari Kendaraan
                     </a>
                     <a href="{{ route('armada') }}"
-                        class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 backdrop-blur-sm text-sm cursor-pointer">
+                        class="animate-on-load hover-lift button-glow-hover inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/10 font-semibold px-6 py-3.5 rounded-xl transition-all backdrop-blur-sm text-sm cursor-pointer"
+                        style="--delay: 520ms">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -108,7 +114,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- Total Rentals -->
             <div
-                class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300 flex items-center justify-between group">
+                class="animate-on-load hover-lift bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all duration-300 flex items-center justify-between group" style="--delay: 620ms">
                 <div>
                     <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Penyewaan</p>
                     <p class="text-3xl font-extrabold text-slate-800 mt-2">{{ $rentals->count() }}</p>
@@ -125,7 +131,7 @@
 
             <!-- Active Rentals -->
             <div
-                class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-100 transition-all duration-300 flex items-center justify-between group">
+                class="animate-on-load hover-lift bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-100 transition-all duration-300 flex items-center justify-between group" style="--delay: 700ms">
                 <div>
                     <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Penyewaan Aktif</p>
                     <p class="text-3xl font-extrabold text-emerald-600 mt-2">{{ $activeCount }}</p>
@@ -142,7 +148,7 @@
 
             <!-- Total Spent -->
             <div
-                class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 flex items-center justify-between group">
+                class="animate-on-load hover-lift bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-300 flex items-center justify-between group" style="--delay: 780ms">
                 <div>
                     <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Pengeluaran</p>
                     <p class="text-2xl font-extrabold text-slate-800 mt-2">Rp
@@ -160,7 +166,7 @@
 
             <!-- Pending Payments (Fourth card instead of status member!) -->
             <div
-                class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-amber-100 transition-all duration-300 flex items-center justify-between group">
+                class="animate-on-load hover-lift bg-white border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-amber-100 transition-all duration-300 flex items-center justify-between group" style="--delay: 860ms">
                 <div>
                     <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Menunggu Pembayaran</p>
                     <p
@@ -186,13 +192,14 @@
     <!-- Active Rental Section -->
     <section class="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-slate-100">
         <div class="flex justify-between items-center mb-6">
-            <div>
+            <div class="reveal">
                 <h2 class="text-2xl font-bold text-slate-900">Pesanan Aktif Anda</h2>
                 <p class="text-sm text-slate-500 mt-1">Daftar transaksi rental Anda yang sedang aktif atau menunggu
                     penyelesaian pembayaran.</p>
             </div>
             <a href="{{ route('pesanan-saya') }}"
-                class="group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm border border-blue-100"
+                class="reveal hover-lift group flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm border border-blue-100"
+                style="--delay: 120ms"
                 title="Lihat Semua Riwayat Pemesanan">
                 <svg class="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" fill="none"
                     stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -204,7 +211,7 @@
         <div class="space-y-6">
             @forelse($activeRentals as $rental)
             <div
-                class="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative @if($rental->status === \App\Enums\RentalStatus::ONGOING) border-l-4 border-l-blue-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) border-l-4 border-l-amber-500 @else border-l-4 border-l-slate-400 @endif">
+                class="reveal stagger-item hover-lift bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative @if($rental->status === \App\Enums\RentalStatus::ONGOING) border-l-4 border-l-blue-600 @elseif($rental->status === \App\Enums\RentalStatus::PREPAID) border-l-4 border-l-amber-500 @else border-l-4 border-l-slate-400 @endif" style="--delay: {{ 100 * $loop->index }}ms">
 
                 <!-- Card Top Header -->
                 <div
@@ -307,7 +314,7 @@
                     <!-- Actions Buttons -->
                     <div class="flex flex-col sm:flex-row gap-3 pt-3 border-t border-slate-50">
                         <a href="{{ route('booking.detail', ['rental' => $rental->id]) }}"
-                            class="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all text-sm border border-slate-200/60 cursor-pointer flex items-center justify-center gap-2">
+                            class="hover-lift flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold py-3 px-4 rounded-xl transition-all text-sm border border-slate-200/60 cursor-pointer flex items-center justify-center gap-2">
                             <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
@@ -320,7 +327,7 @@
                         $rental->id]);
                         @endphp
                         <a href="{{ $payUrl }}"
-                            class="flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm cursor-pointer hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            class="hover-lift button-glow-hover flex-1 text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm cursor-pointer flex items-center justify-center gap-2">
                             <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                             </svg>
@@ -344,7 +351,7 @@
                 <p class="text-sm text-slate-500 mb-6 max-w-sm mx-auto">Semua transaksi sewa yang sedang aktif atau
                     menunggu penyelesaian pembayaran akan ditampilkan di halaman ini.</p>
                 <a href="#cari-mobil"
-                    class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-3 rounded-xl transition text-sm shadow-md shadow-blue-500/10 cursor-pointer">
+                    class="hover-lift button-glow-hover inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-3 rounded-xl transition text-sm shadow-md shadow-blue-500/10 cursor-pointer">
                     Cari & Sewa Mobil Sekarang
                 </a>
             </div>
@@ -355,14 +362,14 @@
     <!-- Search & Filter Section -->
     <section id="cari-mobil" class="bg-slate-50/70 py-10 border-t border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
-            <div class="max-w-3xl mb-8">
+            <div class="reveal max-w-3xl mb-8">
                 <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">Pesan Mobil</span>
                 <h2 class="text-2xl font-bold text-slate-900 mt-1">Pesan Kendaraan Baru</h2>
                 <p class="text-slate-500 text-sm mt-1">Tentukan periode sewa dan budget harian Anda untuk menemukan
                     mobil terbaik yang siap disewa.</p>
             </div>
 
-            <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 md:p-8">
+            <div class="reveal search-panel-animate bg-white border border-slate-100 rounded-2xl shadow-sm p-6 md:p-8" style="--delay: 120ms">
                 @php
                     $today = now()->toDateString();
                 @endphp
@@ -411,7 +418,7 @@
                     <!-- Search Button -->
                     <div class="flex items-end">
                         <button type="submit"
-                            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-blue-500/20 text-sm cursor-pointer flex items-center justify-center gap-2">
+                            class="hover-lift button-glow-hover w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-blue-500/20 text-sm cursor-pointer flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -427,7 +434,7 @@
     <!-- Featured Vehicles Section -->
     <section id="armada" class="max-w-7xl mx-auto px-4 lg:px-8 py-12">
         <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-8">
-            <div>
+            <div class="reveal">
                 <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider">
                     Katalog
                 </span>
@@ -440,7 +447,8 @@
             </div>
 
             <a href="{{ route('armada') }}"
-                class="text-[#0B3C9B] hover:text-[#082D76] font-semibold text-sm flex items-center gap-1 transition">
+                class="reveal hover-lift text-[#0B3C9B] hover:text-[#082D76] font-semibold text-sm flex items-center gap-1 transition"
+                style="--delay: 120ms">
                 Lihat Semua →
             </a>
         </div>
@@ -449,12 +457,12 @@
             @forelse($cars as $car)
 
             <div
-                class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition">
+                class="reveal stagger-item hover-lift bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition" style="--delay: {{ 100 * $loop->index }}ms">
 
                 <div>
 
                     {{-- IMAGE --}}
-                    <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
+                    <div class="card-image-zoom relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
                         <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
                             alt="{{ $car->name }}" class="w-full h-full object-cover">
                     </div>
@@ -549,7 +557,7 @@
                     <div class="grid grid-cols-2 gap-2">
 
                         <a href="{{ route('car-detail', ['car' => $car->id]) }}"
-                            class="border border-[#0B3C9B] text-[#0B3C9B] hover:bg-blue-50 text-center py-2 rounded-xl text-xs font-bold transition">
+                            class="hover-lift border border-[#0B3C9B] text-[#0B3C9B] hover:bg-blue-50 text-center py-2 rounded-xl text-xs font-bold transition">
                             Detail
                         </a>
 
@@ -564,7 +572,7 @@
                                     selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }},
                                     driverAvailable: {{ $car->driver_available ? 'true' : 'false' }}
                                 })"
-                            class="bg-[#0B3C9B] hover:bg-[#082D76] text-white text-center py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+                            class="hover-lift button-glow-hover bg-[#0B3C9B] hover:bg-[#082D76] text-white text-center py-2 rounded-xl text-xs font-bold transition cursor-pointer">
 
                             Pesan
 
@@ -613,7 +621,7 @@
 
         <div class="mt-8 text-center">
             <a href="{{ route('armada') }}"
-                class="inline-flex items-center gap-2 bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-semibold text-sm transition">
+                class="reveal hover-lift button-glow-hover inline-flex items-center gap-2 bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-semibold text-sm transition">
 
                 Lihat Semua Armada
 
