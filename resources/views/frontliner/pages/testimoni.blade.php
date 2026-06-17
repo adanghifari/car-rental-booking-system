@@ -74,12 +74,12 @@
 
                             <select id="min_rating" name="min_rating"
                                 class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300">
-                                <option value="0" {{ $selectedMinimumRating === 0 ? 'selected' : '' }}>Semua rating</option>
-                                <option value="5" {{ $selectedMinimumRating === 5 ? 'selected' : '' }}>5 bintang</option>
-                                <option value="4" {{ $selectedMinimumRating === 4 ? 'selected' : '' }}>4 bintang ke atas</option>
-                                <option value="3" {{ $selectedMinimumRating === 3 ? 'selected' : '' }}>3 bintang ke atas</option>
-                                <option value="2" {{ $selectedMinimumRating === 2 ? 'selected' : '' }}>2 bintang ke atas</option>
-                                <option value="1" {{ $selectedMinimumRating === 1 ? 'selected' : '' }}>1 bintang ke atas</option>
+                                <option value="0" {{ ($selectedRating ?? 0) === 0 ? 'selected' : '' }}>Semua rating</option>
+                                <option value="5" {{ ($selectedRating ?? 0) === 5 ? 'selected' : '' }}>5 bintang</option>
+                                <option value="4" {{ ($selectedRating ?? 0) === 4 ? 'selected' : '' }}>4 bintang</option>
+                                <option value="3" {{ ($selectedRating ?? 0) === 3 ? 'selected' : '' }}>3 bintang</option>
+                                <option value="2" {{ ($selectedRating ?? 0) === 2 ? 'selected' : '' }}>2 bintang</option>
+                                <option value="1" {{ ($selectedRating ?? 0) === 1 ? 'selected' : '' }}>1 bintang</option>
                             </select>
 
                             <select id="sort" name="sort"
@@ -104,16 +104,16 @@
                     </div>
                 </div>
 
-                @if($selectedVehicleType !== '' || $selectedMinimumRating > 0 || $selectedSort !== 'latest')
+                @if($selectedVehicleType !== '' || ($selectedRating ?? 0) > 0 || $selectedSort !== 'latest')
                     <div class="flex flex-wrap items-center gap-2 pt-1">
                         @if($selectedVehicleType !== '')
                             <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
                                 {{ collect($vehicleTypes)->firstWhere('value', $selectedVehicleType)?->label() }}
                             </span>
                         @endif
-                        @if($selectedMinimumRating > 0)
+                        @if(($selectedRating ?? 0) > 0)
                             <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-100">
-                                Min {{ $selectedMinimumRating }} bintang
+                                {{ $selectedRating }} bintang
                             </span>
                         @endif
                         @if($selectedSort !== 'latest')

@@ -55,7 +55,7 @@
                                     </div>
                                     <div class="flex flex-col items-end gap-1 shrink-0">
                                         <span class="bg-blue-50 text-[#0B3C9B] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center">
-                                            ★ {{ number_format($car->average_rating, 1) }}
+                                            {{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }}
                                         </span>
                                         <button type="button" 
                                             onclick="toggleFavorite({{ $car->id }}, event)"

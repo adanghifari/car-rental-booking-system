@@ -27,12 +27,14 @@
             font-family: 'Outfit', sans-serif;
             background: var(--bg);
             color: var(--text);
+            overflow: hidden;
         }
 
         .page {
             min-height: 100vh;
             display: grid;
             grid-template-columns: 1.05fr 1fr;
+            overflow: hidden;
         }
 
         .hero {
@@ -238,6 +240,45 @@
             font-weight: 600;
         }
 
+        .hero,
+        .form-area {
+            transition: transform 980ms cubic-bezier(0.2, 1, 0.22, 1);
+            will-change: transform;
+        }
+
+        .hero-copy,
+        .card,
+        .back-link {
+            transition: opacity 520ms ease, transform 760ms cubic-bezier(0.2, 1, 0.22, 1);
+        }
+
+        body.auth-stage-enter .hero { transform: translateX(-100%); }
+        body.auth-stage-enter .form-area { transform: translateX(100%); }
+        body.auth-stage-enter .hero-copy,
+        body.auth-stage-enter .card,
+        body.auth-stage-enter .back-link {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        body.auth-panels-open .hero,
+        body.auth-panels-open .form-area { transform: translateX(0); }
+        body.auth-panels-open .hero-copy,
+        body.auth-panels-open .card,
+        body.auth-panels-open .back-link {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.auth-panels-closing .hero { transform: translateX(-100%); }
+        body.auth-panels-closing .form-area { transform: translateX(100%); }
+        body.auth-panels-closing .hero-copy,
+        body.auth-panels-closing .card,
+        body.auth-panels-closing .back-link {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
         @media (max-width: 980px) {
             .page { grid-template-columns: 1fr; }
             .hero { min-height: 300px; }
@@ -249,7 +290,7 @@
         }
     </style>
 </head>
-<body>
+<body class="auth-stage-enter">
     <div class="page">
         <aside class="hero">
             <div class="brand">Rental Mobil</div>
@@ -270,12 +311,12 @@
         </aside>
 
         <main class="form-area">
-            <a href="{{ route('login') }}" class="back-link" aria-label="Kembali ke halaman masuk">
+            <a href="{{ route('login') }}" class="back-link auth-panel-link" aria-label="Kembali ke halaman masuk">
                 <span class="back-link-icon" aria-hidden="true">←</span>
                 <span>Kembali ke Halaman Masuk</span>
             </a>
             <section class="card">
-                <a href="{{ route('home') }}" class="form-brand" aria-label="MD CAR RENTAL">
+                <a href="{{ route('home') }}" class="form-brand auth-panel-link" aria-label="MD CAR RENTAL">
                     <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL">
                 </a>
                 <h2>Lupa Kata Sandi?</h2>
@@ -294,7 +335,7 @@
                     <button id="submitBtn" type="submit" class="submit-btn">Kirim Tautan Reset</button>
                 </form>
 
-                <p class="back-to-login">Ingat kata sandi Anda? <a href="{{ route('login') }}">Masuk</a></p>
+                <p class="back-to-login">Ingat kata sandi Anda? <a href="{{ route('login') }}" class="auth-panel-link">Masuk</a></p>
             </section>
         </main>
     </div>
@@ -303,11 +344,40 @@
         const form = document.getElementById('forgotForm');
         const feedback = document.getElementById('feedback');
         const submitBtn = document.getElementById('submitBtn');
+        let authPanelNavigating = false;
+
+        function openAuthPanels() {
+            requestAnimationFrame(() => {
+                document.body.classList.add('auth-panels-open');
+                document.body.classList.remove('auth-stage-enter');
+            });
+        }
+
+        function navigateWithPanels(url, delay = 760) {
+            if (authPanelNavigating) return;
+            authPanelNavigating = true;
+            document.body.classList.remove('auth-panels-open');
+            document.body.classList.add('auth-panels-closing');
+            setTimeout(() => {
+                window.location.href = url;
+            }, delay);
+        }
 
         function setFeedback(type, message) {
             feedback.className = `feedback ${type}`;
             feedback.textContent = message;
         }
+
+        document.querySelectorAll('.auth-panel-link').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#')) return;
+                event.preventDefault();
+                navigateWithPanels(href);
+            });
+        });
+
+        openAuthPanels();
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();

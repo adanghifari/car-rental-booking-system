@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rental Mobil - Presisi dalam Setiap Perjalanan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -14,12 +14,14 @@
     </style>
 </head>
 
-<body class="bg-[#F8F9FC] text-[#1E293B] antialiased">
-    <x-frontliner.navbar />
+<body class="landing-non-login bg-[#F8F9FC] text-[#1E293B] antialiased overflow-x-hidden">
+    <div class="page-enter-nav">
+        <x-frontliner.navbar />
+    </div>
 
-    <header class="relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
+    <header class="hero-shell relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
         <!-- Hero Background Slider -->
-        <div class="absolute right-0 bottom-0 top-0 w-full md:w-2/3 h-full z-0 opacity-80 md:opacity-100" id="hero-slider">
+        <div class="hero-bg-animate absolute right-0 bottom-0 top-0 w-full md:w-2/3 h-full z-0 opacity-80 md:opacity-100" id="hero-slider">
             @if(isset($cars) && $cars->count() > 0)
                 @foreach($cars as $index => $car)
                     <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out {{ $index === 0 ? 'opacity-100' : 'opacity-0' }}" data-slide-index="{{ $index }}">
@@ -35,19 +37,20 @@
             @endif
             <div class="absolute inset-0 bg-gradient-to-r from-[#0B1528] via-transparent to-transparent z-10"></div>
         </div>
+        <div class="hero-sheen hidden md:block"></div>
 
         <div class="max-w-7xl mx-auto px-6 relative z-10 py-20 w-full">
             <div class="max-w-xl">
-                <span class="inline-block bg-[#10B981] text-[#042F2E] text-xs font-bold tracking-wider uppercase px-3 py-1 rounded-full mb-6">
+                <span class="animate-on-load inline-block bg-[#10B981] text-[#042F2E] text-xs font-bold tracking-wider uppercase px-3 py-1 rounded-full mb-6" style="--delay: 120ms">
                     THE PRECISION CONCIERGE
                 </span>
-                <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">
+                <h1 class="animate-on-load text-4xl md:text-6xl font-bold leading-tight mb-6" style="--delay: 220ms">
                     Rental Mobil Terpercaya untuk Segala Kebutuhan
                 </h1>
-                <p class="text-gray-300 text-base md:text-lg mb-8 leading-relaxed font-light">
+                <p class="animate-on-load text-gray-300 text-base md:text-lg mb-8 leading-relaxed font-light" style="--delay: 320ms">
                     Mulai dari perjalanan keluarga hingga perjalanan bisnis, temukan kendaraan terbaik dengan pemesanan yang cepat dan praktis.
                 </p>
-                <a href="#armada" class="inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-8 py-3.5 rounded-xl font-medium transition shadow-lg shadow-blue-900/40">
+                <a href="#armada" class="animate-on-load hover-lift button-glow-hover inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-8 py-3.5 rounded-xl font-medium transition shadow-lg shadow-blue-900/40" style="--delay: 420ms">
                     Jelajahi Armada
                 </a>
             </div>
@@ -58,7 +61,7 @@
         @php
             $today = now()->toDateString();
         @endphp
-        <form method="GET" action="{{ route('search-result') }}" class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+        <form method="GET" action="{{ route('search-result') }}" class="animate-on-load search-panel-animate bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center" style="--delay: 560ms">
             <div>
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
@@ -91,11 +94,11 @@
 
     <section id="armada" class="max-w-7xl mx-auto px-6 py-24">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12">
-            <div>
+            <div class="reveal">
                 <h2 class="text-3xl font-bold text-gray-900 tracking-tight mb-3">Armada Unggulan</h2>
                 <p class="text-gray-500 max-w-xl">Kurasi eksklusif kendaraan performa tinggi dan SUV mewah untuk pengalaman berkendara terbaik.</p>
             </div>
-            <a href="{{ route('armada') }}" class="text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0">
+            <a href="{{ route('armada') }}" class="reveal hover-lift text-[#0B3C9B] font-semibold text-sm flex items-center hover:underline mt-4 sm:mt-0" style="--delay: 120ms">
                 Lihat Semua 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 ml-1">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -104,10 +107,10 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            @forelse(($featuredCars ?? collect()) as $car)
-                <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            @forelse(($featuredCars ?? collect()) as $index => $car)
+                <div class="reveal stagger-item hover-lift bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between" style="--delay: {{ 100 * $index }}ms">
                     <div>
-                        <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
+                        <div class="card-image-zoom relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex justify-between items-start mb-4">
@@ -115,8 +118,7 @@
                                 <h3 class="text-lg font-bold text-gray-900">{{ $car->name }}</h3>
                                 <p class="text-xs text-gray-400">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
                                 <div class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600 border border-amber-100">
-                                    <span>★</span>
-                                    <span>{{ number_format($car->average_rating, 1) }}</span>
+                                    <span>{{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }}</span>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -151,7 +153,7 @@
                         $isRented = !$isAvailable && ($car->active_rentals_count ?? 0) > 0;
                     @endphp
                     @if($isAvailable)
-                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
+                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="hover-lift button-glow-hover w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang
                         </button>
                     @else
@@ -169,13 +171,13 @@
     </section>
 
     <section class="bg-gradient-to-b from-[#F8F9FC] to-[#EEF2F6] py-24">
-        <div class="max-w-7xl mx-auto px-6 text-center mb-16">
+        <div class="reveal max-w-7xl mx-auto px-6 text-center mb-16">
             <h2 class="text-3xl font-bold text-gray-900 tracking-tight mb-3">Kesan Eksklusif</h2>
             <p class="text-gray-500 max-w-xl mx-auto text-sm">Apa yang dikatakan oleh para pelanggan setia kami tentang standar pelayanan Azure Velocity.</p>
         </div>
 
         <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            @forelse($reviews as $review)
+            @forelse($reviews as $index => $review)
                 @php
                     $initials = '';
                     $names = explode(' ', $review->user->name);
@@ -184,7 +186,7 @@
                     }
                 @endphp
 
-                <article class="group bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between min-h-[280px] transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70">
+                <article class="reveal stagger-item hover-lift group bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between min-h-[280px] transition hover:shadow-xl hover:shadow-slate-200/70" style="--delay: {{ 100 * $index }}ms">
                     <div>
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-center gap-3 min-w-0">
@@ -241,17 +243,17 @@
     </section>
 
     <section class="max-w-7xl mx-auto px-6 py-16">
-        <div class="bg-[#1E2640] rounded-3xl overflow-hidden relative shadow-xl grid grid-cols-1 md:grid-cols-2 items-center min-h-[300px]">
+        <div class="reveal cta-gradient-animate bg-[#1E2640] rounded-3xl overflow-hidden relative shadow-xl grid grid-cols-1 md:grid-cols-2 items-center min-h-[300px]">
             <div class="p-10 md:p-16 z-10 text-white">
                 <h2 class="text-3xl font-bold mb-4">Siap Untuk Perjalanan Berikutnya?</h2>
                 <p class="text-gray-300 text-sm mb-8 max-w-md font-light leading-relaxed">
                     Dapatkan pengalaman yang menyenangkan dengan layanan sewa mobil kami yang cepat, mudah, dan terpercaya. Hubungi kami untuk konsultasi atau unduh katalog PDF armada lengkap kami untuk menemukan kendaraan yang sempurna untuk kebutuhan Anda.
                 </p>
                 <div class="flex flex-wrap gap-4">
-                    <a href="https://wa.me/6282155402629" target="_blank" rel="noopener noreferrer" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="https://wa.me/6282155402629" target="_blank" rel="noopener noreferrer" class="hover-lift button-glow-hover bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Hubungi Konsultan Kami
                     </a>
-                    <a href="{{ route('armada.export') }}" class="border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="{{ route('armada.export') }}" class="hover-lift button-glow-hover border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Lihat Katalog PDF
                     </a>
                 </div>

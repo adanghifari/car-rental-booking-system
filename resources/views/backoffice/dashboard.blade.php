@@ -193,15 +193,52 @@
             line-height: 1.45;
             max-width: 760px;
         }
+
+        .dashboard-welcome {
+            animation: dashboardWelcomeIn 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .dashboard-welcome-sub {
+            animation: dashboardWelcomeIn 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: 90ms;
+        }
+
+        .summary-grid .summary-card,
+        .dashboard-grid .card {
+            animation: dashboardPanelIn 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: var(--panel-delay, 0ms);
+        }
+
+        @keyframes dashboardWelcomeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes dashboardPanelIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.985);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
     </style>
 
     <section class="dashboard-hero">
-        <h1 class="dashboard-hero-title">Pantau Operasional</h1>
-        <p class="dashboard-hero-subtitle">Kelola dan pantau kondisi armada, verifikasi, serta aktivitas operasional rental secara ringkas dalam satu layar.</p>
+        <h1 class="dashboard-hero-title dashboard-welcome">Pantau Operasional</h1>
+        <p class="dashboard-hero-subtitle dashboard-welcome-sub">Kelola dan pantau kondisi armada, verifikasi, serta aktivitas operasional rental secara ringkas dalam satu layar.</p>
     </section>
 
     <section class="summary-grid">
-        <article class="card summary-card">
+        <article class="card summary-card" style="--panel-delay: 120ms">
             <div class="summary-icon" style="background: rgba(99, 102, 241, 0.12); color: #4f46e5;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 7h16v10H4z" />
@@ -215,7 +252,7 @@
             </div>
         </article>
 
-        <article class="card summary-card">
+        <article class="card summary-card" style="--panel-delay: 190ms">
             <div class="summary-icon" style="background: rgba(251, 191, 36, 0.16); color: #d97706;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 8v4l3 2" />
@@ -228,7 +265,7 @@
             </div>
         </article>
 
-        <article class="card summary-card">
+        <article class="card summary-card" style="--panel-delay: 260ms">
             <div class="summary-icon" style="background: rgba(147, 197, 253, 0.16); color: #2563eb;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 6v6l4 2" />
@@ -241,7 +278,7 @@
             </div>
         </article>
 
-        <article class="card summary-card">
+        <article class="card summary-card" style="--panel-delay: 330ms">
             <div class="summary-icon" style="background: rgba(110, 231, 183, 0.18); color: #059669;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 17h16M6 17a2 2 0 1 0 4 0m4 0a2 2 0 1 0 4 0M3 17v-4l2-4h14l2 4v4" />
@@ -253,7 +290,7 @@
             </div>
         </article>
 
-        <article class="card summary-card">
+        <article class="card summary-card" style="--panel-delay: 400ms">
             <div class="summary-icon" style="background: rgba(248, 180, 130, 0.20); color: #c2410c;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M10 14h4" />
@@ -270,7 +307,7 @@
 
     <section class="dashboard-grid">
         <div class="dashboard-column">
-            <section class="card">
+            <section class="card" style="--panel-delay: 220ms">
                 <div class="section-head" style="margin-bottom: 16px;">
                     <h2 class="section-title">Pengembalian Terlambat</h2>
                     @if ($overdueRentalsCount > 0)
@@ -305,7 +342,7 @@
                 @endif
             </section>
 
-            <section class="card">
+            <section class="card" style="--panel-delay: 320ms">
                 <div class="section-head" style="margin-bottom: 16px;">
                     <h2 class="section-title">Menunggu Verifikasi</h2>
                     <span class="pill amber" style="background: rgba(245, 158, 11, 0.14); color: #b96e00; font-weight: 700;">Butuh Review</span>
@@ -333,7 +370,7 @@
                 @endif
             </section>
 
-            <section class="card">
+            <section class="card" style="--panel-delay: 420ms">
                 <div class="section-head" style="margin-bottom: 16px;">
                     <h2 class="section-title">Pengembalian Hari Ini</h2>
                     <span class="pill blue" style="background: rgba(63, 94, 215, 0.12); color: var(--blue); font-weight: 700;">Hari Ini</span>
@@ -363,7 +400,7 @@
         </div>
 
         <div class="dashboard-column">
-            <section class="card">
+            <section class="card" style="--panel-delay: 280ms">
                 <div class="section-head" style="margin-bottom: 16px;">
                     <h2 class="section-title">Status Armada</h2>
                 </div>
@@ -401,7 +438,7 @@
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card" style="--panel-delay: 380ms">
                 <div class="section-head" style="margin-bottom: 12px;">
                     <h2 class="section-title">Aktivitas Terbaru</h2>
                     <a href="{{ route('backoffice.reservations') }}" style="color: var(--blue); font-size: 13px; font-weight: 700; text-decoration: none;">Semua</a>

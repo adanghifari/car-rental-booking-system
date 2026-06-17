@@ -187,7 +187,7 @@
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-gray-900">Ulasan Pengguna</h2>
                 @if($car->total_reviews > 0)
-                    <span class="text-xs font-bold text-amber-500">★ {{ $car->average_rating }} <span class="text-gray-400 font-normal">({{ $car->total_reviews }} Ulasan)</span></span>
+                    <span class="text-xs font-bold text-amber-500">{{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }} <span class="text-gray-400 font-normal">({{ $car->total_reviews }} Ulasan)</span></span>
                 @else
                     <span class="text-xs text-gray-400">Belum ada ulasan</span>
                 @endif

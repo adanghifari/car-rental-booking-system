@@ -120,7 +120,7 @@
     <!-- Floating Chat Button -->
     <button id="chatbot-toggle-btn"
         onclick="toggleChatWindow()"
-        class="bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-blue-500/35 hover:shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative group border border-white/20">
+        class="floating-fab bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-700 text-white w-14 h-14 rounded-full shadow-lg hover:shadow-blue-500/35 hover:shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer relative group border border-white/20">
 
         <span class="absolute inset-0 rounded-full bg-indigo-500 animate-ping opacity-20"></span>
 
@@ -135,7 +135,7 @@
         viewBox="0 0 24 24"
         stroke-width="1.8"
         stroke="currentColor"
-        class="w-7 h-7 transition-transform duration-300 group-hover:rotate-6">
+        class="floating-fab-icon w-7 h-7 transition-transform duration-300 group-hover:rotate-6">
 
         <!-- Antenna -->
         <path stroke-linecap="round" stroke-linejoin="round"
