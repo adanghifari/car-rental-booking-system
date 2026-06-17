@@ -1113,6 +1113,13 @@ class BackofficeController extends Controller
 
     public function reports(Request $request)
     {
+        // Validate export parameter if present
+        if ($request->has('export')) {
+            $request->validate([
+                'export' => 'in:csv,pdf',
+            ]);
+        }
+        
         $tab = $request->query('tab', 'overview');
         $reportPeriod = $this->resolveReportFilterPeriod($request);
         $filterMode = $reportPeriod['filterMode'];
@@ -1579,6 +1586,11 @@ class BackofficeController extends Controller
         );
 
         if ($request->query('export') === 'csv') {
+            // Validate that there is data to export
+            if ($exportRows->isEmpty()) {
+                return back()->with('warning', 'Tidak ada data untuk di-export pada periode ini.');
+            }
+            
             $filename = 'laporan_' . str($reportTitle)->slug('_') . '_' . $periodStart->format('Ymd') . '_' . $periodEnd->format('Ymd') . '.csv';
             $headers = [
                 'Content-Type' => 'text/csv; charset=UTF-8',
@@ -1656,31 +1668,31 @@ class BackofficeController extends Controller
                     fputcsv($handle, ['Tanggal Pembayaran', 'Customer', 'Mobil', 'Plat Nomor', 'Tipe Rental', 'Provider Pembayaran', 'Status Pembayaran', 'Amount']);
                     foreach ($exportRows as $history) {
                         fputcsv($handle, [
-                            $history->created_at->toDateTimeString(),
+                            $history->created_at->toDateString(),
                             $history->rental?->user?->name ?? '-',
                             trim(($history->rental?->car?->brand ?? '') . ' ' . ($history->rental?->car?->name ?? '')),
                             $history->rental?->car?->license_plate ?? '-',
                             $history->rental?->type === RentalType::SELF_DRIVE ? 'Self Drive' : 'With Driver',
                             strtoupper((string) ($history->provider ?? '-')),
                             $history->status->value,
-                            $history->amount,
+                            number_format((float) $history->amount, 0, ',', ''),
                         ]);
                     }
                 } elseif ($tab === 'reservation') {
                     fputcsv($handle, ['Tanggal Booking', 'Customer', 'Mobil', 'Plat Nomor', 'Start Date', 'End Date', 'Returned At', 'Type', 'Verification Status', 'Status Rental', 'Total Price']);
                     foreach ($exportRows as $rental) {
                         fputcsv($handle, [
-                            $rental->created_at->toDateTimeString(),
+                            $rental->created_at->toDateString(),
                             $rental->user?->name ?? '-',
                             trim(($rental->car?->brand ?? '') . ' ' . ($rental->car?->name ?? '')),
                             $rental->car?->license_plate ?? '-',
                             $rental->start_date?->toDateString() ?? '-',
                             $rental->end_date?->toDateString() ?? '-',
-                            $rental->returned_at?->toDateTimeString() ?? '-',
+                            $rental->returned_at?->toDateString() ?? '-',
                             $rental->type?->value ?? '-',
                             $rental->verification_status?->value ?? '-',
                             $rental->status?->value ?? '-',
-                            $rental->total_price,
+                            number_format((float) $rental->total_price, 0, ',', ''),
                         ]);
                     }
                 } elseif ($tab === 'fleet') {

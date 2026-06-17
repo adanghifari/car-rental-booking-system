@@ -68,6 +68,7 @@
                         'VERIFICATION' => ['label' => 'Verifikasi', 'tone' => 'blue', 'icon' => 'M9 12l2 2 4-4m6-2.25A11.96 11.96 0 0112 3.75a11.96 11.96 0 01-9 3.75v4.5c0 4.98 3.44 9.36 9 10.5 5.56-1.14 9-5.52 9-10.5v-4.5z'],
                         'PAYMENT' => ['label' => 'Pembayaran', 'tone' => 'amber', 'icon' => 'M21 12.75V19.5A2.25 2.25 0 0118.75 21h-13.5A2.25 2.25 0 013 18.75v-13.5A2.25 2.25 0 015.25 3H12M16.5 3l4.5 4.5M21 3l-7.5 7.5'],
                         'RENTAL' => ['label' => 'Rental', 'tone' => 'emerald', 'icon' => 'M3 10.5h18M6 6.75h12M6 14.25h12M6 18h8.25'],
+                        'REVIEW_REQUEST' => ['label' => 'Permintaan Review', 'tone' => 'purple', 'icon' => 'M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345h5.561a.563.563 0 01.330 1.004l-4.508 3.286a.563.563 0 00-.183.607l2.125 5.111a.562.562 0 01-.856.666l-4.508-3.286a.562.562 0 00-.663 0l-4.508 3.286a.562.562 0 01-.856-.666l2.125-5.111a.563.563 0 00-.183-.607l-4.508-3.286a.563.563 0 01.330-1.004h5.561a.563.563 0 00.475-.345L11.48 3.5z'],
                         'CANCELLATION' => ['label' => 'Pembatalan', 'tone' => 'rose', 'icon' => 'M6.75 6.75l10.5 10.5M17.25 6.75l-10.5 10.5'],
                         default => ['label' => 'Sistem', 'tone' => 'slate', 'icon' => 'M12 9v4.5m0 3.75h.008M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
                     };
@@ -81,6 +82,7 @@
                         'amber' => ['bg-amber-50 text-amber-600 border-amber-100', 'bg-amber-600/10 text-amber-700'],
                         'emerald' => ['bg-emerald-50 text-emerald-600 border-emerald-100', 'bg-emerald-600/10 text-emerald-700'],
                         'rose' => ['bg-rose-50 text-rose-600 border-rose-100', 'bg-rose-600/10 text-rose-700'],
+                        'purple' => ['bg-purple-50 text-purple-600 border-purple-100', 'bg-purple-600/10 text-purple-700'],
                         default => ['bg-slate-50 text-slate-500 border-slate-100', 'bg-slate-600/10 text-slate-700'],
                     };
                 @endphp

@@ -118,7 +118,7 @@ class CustomerNotificationController extends Controller
             'payment-cancelled' => route('pembayaran.index', ['status' => 'cancelled']),
             'payment-expired' => route('pembayaran.index', ['status' => 'expired']),
             'verification-rejected', 'booking-cancelled' => route('pesanan-saya', ['status' => 'dibatalkan']),
-            'rental-returned' => $rental->review
+            'rental-returned', 'review-request' => $rental->review
                 ? route('booking.detail', ['rental' => $rental->id])
                 : route('booking.review', ['rental' => $rental->id]),
             default => $data['url'] ?? route('booking.detail', ['rental' => $rental->id]),
