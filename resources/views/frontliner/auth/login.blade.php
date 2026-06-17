@@ -26,12 +26,14 @@
             font-family: 'Outfit', sans-serif;
             background: var(--bg);
             color: var(--text);
+            overflow: hidden;
         }
 
         .page {
             min-height: 100vh;
             display: grid;
             grid-template-columns: 1.05fr 1fr;
+            overflow: hidden;
         }
 
         .hero {
@@ -301,6 +303,60 @@
             gap: 16px;
         }
 
+        .hero,
+        .form-area {
+            transition: transform 980ms cubic-bezier(0.2, 1, 0.22, 1);
+            will-change: transform;
+        }
+
+        .hero-copy,
+        .card,
+        .back-link {
+            transition: opacity 520ms ease, transform 760ms cubic-bezier(0.2, 1, 0.22, 1);
+        }
+
+        body.auth-stage-enter .hero {
+            transform: translateX(-100%);
+        }
+
+        body.auth-stage-enter .form-area {
+            transform: translateX(100%);
+        }
+
+        body.auth-stage-enter .hero-copy,
+        body.auth-stage-enter .card,
+        body.auth-stage-enter .back-link {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        body.auth-panels-open .hero,
+        body.auth-panels-open .form-area {
+            transform: translateX(0);
+        }
+
+        body.auth-panels-open .hero-copy,
+        body.auth-panels-open .card,
+        body.auth-panels-open .back-link {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        body.auth-panels-closing .hero {
+            transform: translateX(-100%);
+        }
+
+        body.auth-panels-closing .form-area {
+            transform: translateX(100%);
+        }
+
+        body.auth-panels-closing .hero-copy,
+        body.auth-panels-closing .card,
+        body.auth-panels-closing .back-link {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
         @media (max-width: 980px) {
             .page { grid-template-columns: 1fr; }
             .hero { min-height: 390px; }
@@ -313,7 +369,7 @@
         }
     </style>
 </head>
-<body>
+<body class="auth-stage-enter">
     <div class="page">
         <aside class="hero">
             <div class="brand"></div>
@@ -334,12 +390,12 @@
         </aside>
 
         <main class="form-area">
-            <a href="{{ route('home') }}" class="back-link" aria-label="Kembali ke beranda">
+            <a href="{{ route('home') }}" class="back-link auth-panel-link" aria-label="Kembali ke beranda">
                 <span class="back-link-icon" aria-hidden="true">←</span>
                 <span>Kembali ke Beranda</span>
             </a>
             <section class="card">
-                <a href="{{ route('home') }}" class="form-brand" aria-label="MD CAR RENTAL">
+                <a href="{{ route('home') }}" class="form-brand auth-panel-link" aria-label="MD CAR RENTAL">
                     <img src="{{ asset('images/logo.png') }}" alt="MD CAR RENTAL">
                 </a>
                 <h2>Masuk ke Akun</h2>
@@ -361,7 +417,7 @@
                     <div class="field">
                         <div class="field-row">
                             <label for="password">Kata Sandi</label>
-                            <a href="{{ route('password.request') }}">Lupa Kata Sandi?</a>
+                            <a href="{{ route('password.request') }}" class="auth-panel-link">Lupa Kata Sandi?</a>
                         </div>
                         <input id="password" name="account_password" type="password" placeholder="Masukkan kata sandi" autocomplete="off" required>
                     </div>
@@ -369,7 +425,7 @@
                     <button id="submitBtn" type="submit" class="submit-btn">Masuk</button>
                 </form>
 
-                <p class="register-link">Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a></p>
+                <p class="register-link">Belum punya akun? <a href="{{ route('register') }}" class="auth-panel-link">Daftar Sekarang</a></p>
             </section>
         </main>
     </div>
@@ -378,11 +434,40 @@
         const form = document.getElementById('loginForm');
         const feedback = document.getElementById('feedback');
         const submitBtn = document.getElementById('submitBtn');
+        let authPanelNavigating = false;
+
+        function openAuthPanels() {
+            requestAnimationFrame(() => {
+                document.body.classList.add('auth-panels-open');
+                document.body.classList.remove('auth-stage-enter');
+            });
+        }
+
+        function navigateWithPanels(url, delay = 760) {
+            if (authPanelNavigating) return;
+            authPanelNavigating = true;
+            document.body.classList.remove('auth-panels-open');
+            document.body.classList.add('auth-panels-closing');
+            setTimeout(() => {
+                window.location.href = url;
+            }, delay);
+        }
 
         function setFeedback(type, message) {
             feedback.className = `feedback ${type}`;
             feedback.textContent = message;
         }
+
+        document.querySelectorAll('.auth-panel-link').forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#')) return;
+                event.preventDefault();
+                navigateWithPanels(href);
+            });
+        });
+
+        openAuthPanels();
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -436,8 +521,8 @@
                 const nextUrl = result?.data?.redirect_to || (result?.data?.user?.role === 'admin' ? '/dashboard' : '/frontliner');
 
                 setTimeout(() => {
-                    window.location.replace(nextUrl);
-                }, 700);
+                    navigateWithPanels(nextUrl, 760);
+                }, 320);
             } catch (error) {
                 setFeedback('error', 'Tidak bisa menghubungi server. Coba lagi.');
             } finally {
