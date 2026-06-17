@@ -88,6 +88,18 @@ class Car extends Model
         return round($this->reviews()->avg('rating') ?? 0.0, 1);
     }
 
+    public function getHasRatingAttribute(): bool
+    {
+        return $this->average_rating > 0;
+    }
+
+    public function getRatingDisplayAttribute(): string
+    {
+        return $this->has_rating
+            ? number_format($this->average_rating, 1)
+            : 'Belum ada Rating';
+    }
+
     public function getTotalReviewsAttribute(): int
     {
         $loadedCount = $this->getAttribute('reviews_count');

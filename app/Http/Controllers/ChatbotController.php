@@ -157,7 +157,8 @@ class ChatbotController extends Controller
                 $count = $matchedCar->total_reviews;
 
                 $reply = "<span class=\"inline-flex items-center align-middle mr-1.5 text-blue-600\"><svg class=\"w-4.5 h-4.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.324-5.184a3.375 3.375 0 00-3.37-3.166h-4.83a.75.75 0 01-.52-.22L12.44 4.5h-2.88l-1.24 3.16a.75.75 0 01-.52.22H2.97a3.375 3.375 0 00-3.37 3.166l-.324 5.184c-.04.62.469 1.124 1.09 1.124h1.125m17.25 0h-1.5\" /></svg></span><strong>MD Review Info - {$matchedCar->brand} {$matchedCar->name}</strong><br>";
-                $reply .= "<span class=\"inline-flex items-center align-middle mr-1 text-amber-500\"><svg class=\"w-3.5 h-3.5\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\" /></svg></span> Rating: <strong>{$avg} / 5</strong> ({$count} Ulasan)<br><br>";
+                $ratingLabel = $matchedCar->has_rating ? "{$avg} / 5" : "Belum ada Rating";
+                $reply .= "<span class=\"inline-flex items-center align-middle mr-1 text-amber-500\"><svg class=\"w-3.5 h-3.5\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path d=\"M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z\" /></svg></span> Rating: <strong>{$ratingLabel}</strong> ({$count} Ulasan)<br><br>";
 
                 if ($reviews->isEmpty()) {
                     $reply .= "Belum ada ulasan tertulis untuk mobil ini. Namun, mobil ini siap disewa dalam kondisi prima!";
@@ -716,7 +717,7 @@ class ChatbotController extends Controller
                 'daily_rate' => $car->daily_rate,
                 'self_drive_available' => $car->self_drive_available,
                 'driver_available' => $car->driver_available,
-                'rating' => $car->average_rating,
+                'rating' => $car->rating_display,
                 'reviews_count' => $car->total_reviews,
                 'description' => $car->description,
             ];
@@ -1270,7 +1271,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
                         'transmission' => $car->transmission?->label(),
                         'seat_count' => $car->seat_count,
                         'daily_rate' => number_format($car->daily_rate, 0, ',', '.'),
-                        'rating' => $car->average_rating,
+                        'rating' => $car->rating_display,
                         'reviews_count' => $car->total_reviews,
                         'image' => $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80',
                     ];

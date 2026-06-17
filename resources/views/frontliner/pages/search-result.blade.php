@@ -211,7 +211,7 @@
                                     <h3 class="text-2xl font-bold mb-2">{{ $firstCar->name }}</h3>
                                     <div class="flex items-center space-x-4 text-xs text-gray-300 font-medium">
                                         <span>🚗 {{ $firstCar->brand }} - {{ $firstCar->vehicle_type->label() }}</span>
-                                        <span class="text-yellow-400">★ <span class="text-white">{{ number_format($firstCar->average_rating, 1) }}</span></span>
+                                        <span class="text-yellow-400">{{ $firstCar->has_rating ? '★ ' : '' }}<span class="text-white">{{ $firstCar->rating_display }}</span></span>
                                     </div>
                                 </div>
                             </div>
@@ -275,7 +275,7 @@
                                         </div>
                                         <div class="flex flex-col items-end gap-1 shrink-0">
                                             <span class="bg-blue-50 text-[#0B3C9B] text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center">
-                                                ★ {{ number_format($car->average_rating, 1) }}
+                                                {{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }}
                                             </span>
                                             <button type="button" 
                                                 onclick="toggleFavorite({{ $car->id }}, event)"

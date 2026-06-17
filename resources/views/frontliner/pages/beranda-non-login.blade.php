@@ -117,8 +117,7 @@
                                 <h3 class="text-lg font-bold text-gray-900">{{ $car->name }}</h3>
                                 <p class="text-xs text-gray-400">{{ $car->brand }} - {{ $car->vehicle_type->label() }}</p>
                                 <div class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600 border border-amber-100">
-                                    <span>★</span>
-                                    <span>{{ number_format($car->average_rating, 1) }}</span>
+                                    <span>{{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }}</span>
                                 </div>
                             </div>
                             <div class="text-right">

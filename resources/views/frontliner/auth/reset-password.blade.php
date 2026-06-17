@@ -206,6 +206,33 @@
 
         .field input:focus { border-color: #85a3ec; }
 
+        .password-field {
+            position: relative;
+        }
+
+        .password-field input {
+            padding-right: 48px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: #6f7687;
+            cursor: pointer;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            color: #1a51d6;
+        }
+
         .submit-btn {
             margin-top: 10px;
             width: 100%;
@@ -279,14 +306,30 @@
                         <div class="field-row">
                             <label for="password">Kata Sandi Baru</label>
                         </div>
-                        <input id="password" name="password" type="password" placeholder="Minimal 8 karakter" autocomplete="off" required>
+                        <div class="password-field">
+                            <input id="password" name="password" type="password" placeholder="Minimal 8 karakter" autocomplete="off" required>
+                            <button type="button" class="password-toggle" data-password-target="password" aria-label="Tampilkan kata sandi baru">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="field">
                         <div class="field-row">
                             <label for="password_confirmation">Konfirmasi Kata Sandi Baru</label>
                         </div>
-                        <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Ulangi kata sandi baru" autocomplete="off" required>
+                        <div class="password-field">
+                            <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Ulangi kata sandi baru" autocomplete="off" required>
+                            <button type="button" class="password-toggle" data-password-target="password_confirmation" aria-label="Tampilkan konfirmasi kata sandi baru">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0Z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <button id="submitBtn" type="submit" class="submit-btn">Simpan Kata Sandi</button>
@@ -304,6 +347,16 @@
             feedback.className = `feedback ${type}`;
             feedback.textContent = message;
         }
+
+        document.querySelectorAll('.password-toggle').forEach((button) => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.passwordTarget);
+                if (!input) return;
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                button.setAttribute('aria-label', isHidden ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+            });
+        });
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();

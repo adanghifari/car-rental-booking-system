@@ -91,7 +91,14 @@ Route::get('/', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
     $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
@@ -114,6 +121,9 @@ Route::get('/', function (Request $request) {
             'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
                 ->whereIn('status', booking_active_rental_statuses()),
         ])
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
         ->orderByDesc('rentals_count')
         ->latest()
         ->limit(3)
@@ -142,7 +152,14 @@ Route::get('/beranda', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
     $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
@@ -165,6 +182,9 @@ Route::get('/beranda', function (Request $request) {
             'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
                 ->whereIn('status', booking_active_rental_statuses()),
         ])
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
         ->orderByDesc('rentals_count')
         ->latest()
         ->limit(3)
@@ -189,7 +209,14 @@ Route::get('/frontliner', function (Request $request) {
         return redirect()->route('dashboard');
     }
 
-    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
     $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
@@ -1307,9 +1334,9 @@ Route::get('/search-result', function (Request $request) {
             ->withReviewMetrics()
             ->withCount('rentals')
             ->where('status', CarStatus::AVAILABLE)
-            ->orderByDesc('rentals_count')
-            ->orderByDesc('reviews_avg_rating')
+            ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
             ->orderByDesc('rating')
+            ->orderByDesc('rentals_count')
             ->orderByDesc('created_at')
             ->take(2)
             ->get()
