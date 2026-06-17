@@ -18,7 +18,7 @@
         <x-frontliner.navbar />
     </div>
 
-    <header class="relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
+    <header class="hero-shell relative bg-gradient-to-r from-[#0B1528] via-[#111C31] to-[#0A1120] text-white overflow-hidden min-h-[600px] flex items-center">
         <!-- Hero Background Slider -->
         <div class="hero-bg-animate absolute right-0 bottom-0 top-0 w-full md:w-2/3 h-full z-0 opacity-80 md:opacity-100" id="hero-slider">
             @if(isset($cars) && $cars->count() > 0)
@@ -36,6 +36,7 @@
             @endif
             <div class="absolute inset-0 bg-gradient-to-r from-[#0B1528] via-transparent to-transparent z-10"></div>
         </div>
+        <div class="hero-sheen hidden md:block"></div>
 
         <div class="max-w-7xl mx-auto px-6 relative z-10 py-20 w-full">
             <div class="max-w-xl">
@@ -48,7 +49,7 @@
                 <p class="animate-on-load text-gray-300 text-base md:text-lg mb-8 leading-relaxed font-light" style="--delay: 320ms">
                     Mulai dari perjalanan keluarga hingga perjalanan bisnis, temukan kendaraan terbaik dengan pemesanan yang cepat dan praktis.
                 </p>
-                <a href="#armada" class="animate-on-load hover-lift inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-8 py-3.5 rounded-xl font-medium transition shadow-lg shadow-blue-900/40" style="--delay: 420ms">
+                <a href="#armada" class="animate-on-load hover-lift button-glow-hover inline-flex items-center justify-center bg-[#0B3C9B] hover:bg-[#082D76] text-white px-8 py-3.5 rounded-xl font-medium transition shadow-lg shadow-blue-900/40" style="--delay: 420ms">
                     Jelajahi Armada
                 </a>
             </div>
@@ -59,7 +60,7 @@
         @php
             $today = now()->toDateString();
         @endphp
-        <form method="GET" action="{{ route('search-result') }}" class="animate-on-load bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center" style="--delay: 560ms">
+        <form method="GET" action="{{ route('search-result') }}" class="animate-on-load search-panel-animate bg-white p-6 rounded-2xl shadow-xl border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-center" style="--delay: 560ms">
             <div>
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Tanggal Mulai</label>
                 <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-3">
@@ -106,9 +107,9 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             @forelse(($featuredCars ?? collect()) as $index => $car)
-                <div class="reveal stagger-item hover-lift bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between" style="--delay: {{ 90 * $index }}ms">
+                <div class="reveal stagger-item hover-lift bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between" style="--delay: {{ 100 * $index }}ms">
                     <div>
-                        <div class="relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
+                        <div class="card-image-zoom relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
                             <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex justify-between items-start mb-4">
@@ -152,7 +153,7 @@
                         $isRented = !$isAvailable && ($car->active_rentals_count ?? 0) > 0;
                     @endphp
                     @if($isAvailable)
-                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="hover-lift w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
+                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="hover-lift button-glow-hover w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang
                         </button>
                     @else
@@ -185,7 +186,7 @@
                     }
                 @endphp
 
-                <article class="reveal stagger-item hover-lift group bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between min-h-[280px] transition hover:shadow-xl hover:shadow-slate-200/70" style="--delay: {{ 90 * $index }}ms">
+                <article class="reveal stagger-item hover-lift group bg-white rounded-[1.75rem] border border-slate-200 p-6 shadow-sm shadow-slate-200/50 flex flex-col justify-between min-h-[280px] transition hover:shadow-xl hover:shadow-slate-200/70" style="--delay: {{ 100 * $index }}ms">
                     <div>
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-center gap-3 min-w-0">
@@ -249,10 +250,10 @@
                     Dapatkan pengalaman yang menyenangkan dengan layanan sewa mobil kami yang cepat, mudah, dan terpercaya. Hubungi kami untuk konsultasi atau unduh katalog PDF armada lengkap kami untuk menemukan kendaraan yang sempurna untuk kebutuhan Anda.
                 </p>
                 <div class="flex flex-wrap gap-4">
-                    <a href="https://wa.me/6282155402629" target="_blank" rel="noopener noreferrer" class="hover-lift bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="https://wa.me/6282155402629" target="_blank" rel="noopener noreferrer" class="hover-lift button-glow-hover bg-[#0B3C9B] hover:bg-[#082D76] text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Hubungi Konsultan Kami
                     </a>
-                    <a href="{{ route('armada.export') }}" class="hover-lift border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
+                    <a href="{{ route('armada.export') }}" class="hover-lift button-glow-hover border border-gray-500 hover:border-white text-white px-6 py-3 rounded-xl font-medium text-sm transition">
                         Lihat Katalog PDF
                     </a>
                 </div>
