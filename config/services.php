@@ -43,7 +43,7 @@ return [
 
     'face_verify' => [
         'base_url' => env('FACE_VERIFY_BASE_URL', 'http://127.0.0.1:3000'),
-        'timeout' => env('FACE_VERIFY_TIMEOUT', 60),
+        'timeout' => env('FACE_VERIFY_TIMEOUT', 120),  // Increased from 60s to 120s for large images
         'mock' => env('FACE_VERIFY_MOCK', false),
     ],
 

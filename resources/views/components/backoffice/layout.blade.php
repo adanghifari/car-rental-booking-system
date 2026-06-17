@@ -151,9 +151,57 @@
             opacity: 0.9;
         }
 
-        .logout {
+        .sidebar-profile {
             margin-top: auto;
             padding-top: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-profile .profile {
+            border-left: none;
+            padding-left: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            transition: background 0.2s;
+        }
+
+        .sidebar-profile .profile:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-profile .profile > div:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-profile .profile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f6f8fc;
+        }
+
+        .sidebar-profile .profile-role {
+            font-size: 11px;
+            color: rgba(240, 244, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-profile .avatar {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+
+        .logout {
+            margin-top: 0;
+            padding-top: 0;
         }
 
         .logout-form {
@@ -2098,6 +2146,16 @@
             </a>
         </nav>
 
+        <div class="sidebar-profile">
+            <div class="profile">
+                <div>
+                    <div class="profile-name">{{ $admin->name }}</div>
+                    <div class="profile-role">{{ strtoupper($admin->role) }}</div>
+                </div>
+                <div class="avatar">{{ $initial }}</div>
+            </div>
+        </div>
+
         <div class="logout">
             <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
@@ -2231,13 +2289,6 @@
                             @endforelse
                         </div>
                     </div>
-                </div>
-                <div class="profile">
-                    <div>
-                        <div class="profile-name">{{ $admin->name }}</div>
-                        <div class="profile-role">{{ strtoupper($admin->role) }}</div>
-                    </div>
-                    <div class="avatar">{{ $initial }}</div>
                 </div>
             </div>
         </div>

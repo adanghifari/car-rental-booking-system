@@ -150,6 +150,18 @@ class CustomerNotificationService
         );
     }
 
+    public function notifyReviewRequest(Rental $rental): void
+    {
+        $this->send(
+            $rental,
+            'Berikan Review Rental Anda',
+            'Bagikan pengalaman Anda dengan menyediakan review untuk '.$rental->car?->name.'. Bantuan Anda sangat berharga bagi kami.',
+            'REVIEW_REQUEST',
+            'review-request',
+            route('booking.review', ['rental' => $rental->id])
+        );
+    }
+
     private function send(Rental $rental, string $title, string $message, string $type, string $dedupeKey, ?string $url = null): void
     {
         $user = $rental->user;
