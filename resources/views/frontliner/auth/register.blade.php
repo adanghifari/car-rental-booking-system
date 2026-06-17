@@ -100,13 +100,13 @@
         .footer { grid-column: 1 / -1; border-top: 1px solid var(--line); padding: 14px 24px; text-align: right; font-size: 10px; color: #687086; letter-spacing: 1px; text-transform: uppercase; }
         .hero,
         .form-area {
-            transition: transform 980ms cubic-bezier(0.2, 1, 0.22, 1);
+            transition: transform 680ms cubic-bezier(0.2, 1, 0.22, 1);
             will-change: transform;
         }
         .hero-copy,
         .card,
         .back-link {
-            transition: opacity 520ms ease, transform 760ms cubic-bezier(0.2, 1, 0.22, 1);
+            transition: opacity 360ms ease, transform 520ms cubic-bezier(0.2, 1, 0.22, 1);
         }
         body.auth-stage-enter .hero { transform: translateX(-100%); }
         body.auth-stage-enter .form-area { transform: translateX(100%); }
@@ -345,7 +345,7 @@
             });
         }
 
-        function navigateWithPanels(url, delay = 760) {
+        function navigateWithPanels(url, delay = 540) {
             if (authPanelNavigating) return;
             authPanelNavigating = true;
             document.body.classList.remove('auth-panels-open');
@@ -433,7 +433,7 @@
                 const nextUrl = result?.data?.redirect_to || '/login';
 
                 setFeedback('success', 'Registrasi berhasil. Mengarahkan ke halaman login...');
-                setTimeout(() => { navigateWithPanels(nextUrl, 760); }, 320);
+                setTimeout(() => { navigateWithPanels(nextUrl, 540); }, 220);
             } catch (error) {
                 setFeedback('error', 'Tidak bisa menghubungi server. Coba lagi.');
             } finally {
