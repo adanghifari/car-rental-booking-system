@@ -1,3 +1,7 @@
+@php
+    $companySetting = \App\Models\CompanySetting::current();
+@endphp
+
 <footer class="bg-[#11161B] text-gray-400 text-sm pt-16 pb-8 border-t border-gray-800">
     <div class="max-w-7xl mx-auto px-4 md:px-6">
         
@@ -6,11 +10,17 @@
             <!-- KOLOM KIRI: Identitas Perusahaan -->
             <div class="space-y-4">
                 <div class="flex items-center space-x-3">
-                    <img src="{{ asset('images/logo-footer.png') }}" alt="MD Car Rental" class="h-auto" style="height: 120px;">
-                    <h3 class="text-white font-bold text-lg tracking-tight">MD Car Rental</h3>
+                    <img src="{{ asset('images/logo-footer.png') }}" alt="{{ $companySetting->company_name }}" class="h-auto" style="height: 120px;">
+                    <h3 class="text-white font-bold text-lg tracking-tight">{{ $companySetting->company_name }}</h3>
                 </div>
                 <p class="text-xs text-gray-400 leading-relaxed max-w-sm">
-                    MD Car Rental adalah penyedia layanan sewa mobil terpercaya, aman, dan nyaman untuk berbagai kebutuhan perjalanan.
+                    {{ $companySetting->company_description }}
+                </p>
+                <p class="text-xs text-gray-400 leading-relaxed max-w-sm">
+                    Email:
+                    <a href="mailto:{{ $companySetting->company_email }}" class="font-medium text-gray-300 hover:text-white transition">
+                        {{ $companySetting->company_email }}
+                    </a>
                 </p>
             </div>
 
@@ -30,10 +40,10 @@
             <div class="space-y-4">
                 <h4 class="text-white font-bold tracking-wider uppercase text-xs">Lokasi Utama</h4>
                 
-                <a href="https://www.google.com/maps/dir/?api=1&destination=Jl.+Gatot+Subroto+No.5,+Ujung+Pandang+Baru,+Kec.+Tallo,+Kota+Makassar,+Sulawesi+Selatan+90212" target="_blank" rel="noopener noreferrer" class="relative block w-full max-w-sm overflow-hidden bg-[#1E2329] border border-gray-700/60 rounded-xl p-0 hover:border-gray-500 transition group">
+                <a href="{{ $companySetting->effective_directions_url }}" target="_blank" rel="noopener noreferrer" class="relative block w-full max-w-sm overflow-hidden bg-[#1E2329] border border-gray-700/60 rounded-xl p-0 hover:border-gray-500 transition group">
                     <div class="relative h-[112px] overflow-hidden">
                         <iframe
-                            src="https://maps.google.com/maps?q=Jl.%20Gatot%20Subroto%20No.5%2C%20Ujung%20Pandang%20Baru%2C%20Kec.%20Tallo%2C%20Kota%20Makassar%2C%20Sulawesi%20Selatan%2090212&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                            src="{{ $companySetting->effective_embed_url }}"
                             class="absolute inset-0 w-full h-full pointer-events-none grayscale-[0.15] contrast-110"
                             loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade"
@@ -57,7 +67,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                     </svg>
                     <p class="leading-relaxed font-medium">
-                        Jl. Gatot Subroto No.5,<br>Ujung Pandang Baru, Kec. Tallo,<br>Kota Makassar, Sulawesi Selatan 90212
+                        {!! nl2br(e(str_replace(', ', ",\n", $companySetting->address))) !!}
                     </p>
                 </div>
             </div>

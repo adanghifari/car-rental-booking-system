@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CarStatus;
 use App\Models\Car;
+use App\Models\CompanySetting;
 use App\Support\BookingAvailability;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ class ChatbotController extends Controller
      */
     public function handle(Request $request)
     {
+        $companySetting = CompanySetting::current();
+
         // Check if user is authenticated. If not, return greeting requesting login.
         if (!auth()->check()) {
             return response()->json([
@@ -69,7 +72,7 @@ class ChatbotController extends Controller
         }
 
         // 2. Rule-based check FIRST (similar flow to foodOrder ChatbotService)
-        $ruleResponse = $this->checkRuleBasedIntents($lowerMsg, $cleanMessage, $bookingState, $availableCars);
+        $ruleResponse = $this->checkRuleBasedIntents($lowerMsg, $cleanMessage, $bookingState, $availableCars, $companySetting);
         if ($ruleResponse) {
             return $this->formatCarsListInResponse($ruleResponse);
         }
@@ -78,7 +81,7 @@ class ChatbotController extends Controller
         $geminiApiKey = trim((string) config('services.gemini.api_key', ''));
         if ($geminiApiKey !== '') {
             try {
-                $data = $this->handleWithGemini($cleanMessage, $history, $bookingState, $availableCars, $geminiApiKey);
+                $data = $this->handleWithGemini($cleanMessage, $history, $bookingState, $availableCars, $geminiApiKey, $companySetting);
                 if ($data) {
                     return $this->formatCarsListInResponse($data);
                 }
@@ -125,7 +128,7 @@ class ChatbotController extends Controller
     /**
      * Check rule-based intents locally before calling Gemini.
      */
-    private function checkRuleBasedIntents($lowerMsg, $originalMsg, $bookingState, $availableCars)
+    private function checkRuleBasedIntents($lowerMsg, $originalMsg, $bookingState, $availableCars, CompanySetting $companySetting)
     {
         $recommendedCarIds = [];
 
@@ -550,9 +553,9 @@ class ChatbotController extends Controller
         }
 
         // Company info - refined to avoid false positive matches on generic terms
-        if (preg_match('/\b(alamat kantor|lokasi kantor|alamat md car|lokasi md car|kantor dimana|sejarah md car|profil md car|tentang perusahaan)\b/', $lowerMsg)) {
+        if ($this->isCompanyProfileInquiry($lowerMsg)) {
             return [
-                'reply' => "<strong>MD Car Rental</strong> adalah penyedia layanan sewa mobil terpercaya di Makassar.<br><br><span class=\"inline-flex items-center align-middle mr-1.5 text-rose-500\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 10.5a3 3 0 11-6 0 3 3 0 016 0z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z\" /></svg></span><strong>Alamat Kantor:</strong> Jl. Gatot Subroto No.5, Ujung Pandang Baru, Kec. Tallo, Kota Makassar, Sulawesi Selatan 90212.<br>Kami berkomitmen memberikan armada bersih, prima, dan layanan terbaik baik lepas kunci maupun dengan sopir.",
+                'reply' => $this->buildCompanyProfileReply($companySetting, $lowerMsg),
                 'bookingState' => $bookingState,
                 'suggestions' => ["Rekomendasi Mobil", "Cara Sewa", "Bantu Saya Booking"],
                 'cars' => [],
@@ -693,9 +696,10 @@ class ChatbotController extends Controller
     /**
      * Handle chatbot message using Google Gemini API with fallback models.
      */
-    private function handleWithGemini($message, $history, $bookingState, $availableCars, $apiKey)
+    private function handleWithGemini($message, $history, $bookingState, $availableCars, $apiKey, CompanySetting $companySetting)
     {
         $todayStr = Carbon::now('Asia/Jakarta')->toDateString();
+        $companyProfileReply = $this->buildCompanyProfileReply($companySetting, 'profil perusahaan');
         
         // Prepare list of cars for Gemini context
         $carsData = $availableCars->map(function ($car) {
@@ -731,14 +735,24 @@ Tugas Anda:
 2. Membantu proses booking mobil secara interaktif dan menyaring/menyimpan parameter: carId, startDate, endDate, serviceType ke dalam bookingState.
 
 Informasi Perusahaan:
-- Nama: MD Car Rental
-- Alamat: Jl. Gatot Subroto No.5, Ujung Pandang Baru, Kec. Tallo, Kota Makassar, Sulawesi Selatan 90212
+- Nama: {$companySetting->company_name}
+- Email: {$companySetting->company_email}
+- Deskripsi: {$companySetting->company_description}
+- Alamat: {$companySetting->address}
+- Link Google Maps / Rute: {$companySetting->effective_directions_url}
 - Cara Sewa:
   1. Cari mobil yang Anda inginkan melalui asisten ini atau halaman Armada.
   2. Tentukan tanggal mulai dan selesai sewa.
   3. Konfirmasi pilihan Anda, asisten akan memberikan link khusus.
   4. Unggah foto KTP dan Selfie untuk verifikasi identitas (keamanan).
   5. Selesaikan pembayaran menggunakan Midtrans.
+
+Aturan wajib terkait profil perusahaan:
+- Anda harus selalu memakai data perusahaan dari informasi di atas saat menjawab pertanyaan apa pun yang menyinggung perusahaan.
+- Jika user bertanya spesifik, misalnya hanya tentang alamat, lokasi, maps, email, atau kontak, balas hanya informasi yang relevan dengan pertanyaan itu.
+- Jika user bertanya umum tentang perusahaan, profil perusahaan, atau identitas bisnis, berikan ringkasan profil perusahaan yang relevan dan tetap ringkas.
+- Untuk pertanyaan profil perusahaan umum, gunakan format jawaban HTML yang konsisten seperti berikut:
+{$companyProfileReply}
 
 Daftar Mobil Tersedia (Gunakan ID dari daftar ini untuk merekomendasikan/booking):
 " . json_encode($carsData, JSON_PRETTY_PRINT) . "
@@ -813,6 +827,52 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
         }
 
         throw new \Exception('Failed to get structured response from Gemini models: ' . $lastError);
+    }
+
+    private function buildCompanyProfileReply(CompanySetting $companySetting, string $lowerMsg): string
+    {
+        $companyName = e((string) $companySetting->company_name);
+        $companyEmail = e((string) $companySetting->company_email);
+        $companyDescription = e((string) $companySetting->company_description);
+        $companyAddress = nl2br(e((string) $companySetting->address));
+        $mapsUrl = e((string) $companySetting->effective_directions_url);
+
+        if (preg_match('/\b(email|gmail|mail)\b/', $lowerMsg)) {
+            return "<strong>Email Perusahaan:</strong> {$companyEmail}";
+        }
+
+        if (preg_match('/\b(alamat|lokasi|kantor|dimana|di mana)\b/', $lowerMsg)) {
+            return "<strong>Alamat Perusahaan:</strong><br>{$companyAddress}";
+        }
+
+        if (preg_match('/\b(map|maps|google maps|rute)\b/', $lowerMsg)) {
+            return "<strong>Google Maps:</strong><br>"
+                . "<a href=\"{$mapsUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"inline-flex items-center mt-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700\">Lihat lokasi dan rute</a>";
+        }
+
+        if (preg_match('/\b(kontak|hubungi|contact)\b/', $lowerMsg)) {
+            return "<strong>Kontak Perusahaan:</strong><br>"
+                . "Email: {$companyEmail}<br>"
+                . "Alamat: {$companyAddress}";
+        }
+
+        return "<strong>Profil Perusahaan</strong><br><br>"
+            . "<strong>{$companyName}</strong> adalah {$companyDescription}<br><br>"
+            . "<strong>Email:</strong> {$companyEmail}<br>"
+            . "<strong>Alamat:</strong> {$companyAddress}<br>"
+            . "<strong>Google Maps:</strong><br>"
+            . "<a href=\"{$mapsUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"inline-flex items-center mt-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700\">Lihat lokasi dan rute</a>";
+    }
+
+    private function isCompanyProfileInquiry(string $lowerMsg): bool
+    {
+        return preg_match('/\b(tentang perusahaan|profil perusahaan|profil md car|info perusahaan|sejarah md car|alamat kantor|lokasi kantor|alamat perusahaan|email perusahaan|kontak perusahaan|google maps|maps)\b/', $lowerMsg)
+            || (
+                preg_match('/\b(alamat|lokasi|kantor|email|kontak|map|maps|rute)\b/', $lowerMsg)
+                && preg_match('/\b(dimana|di mana|apa|yang mana|berapa|gimana|bagaimana)\b/', $lowerMsg)
+            )
+            || preg_match('/\b(alamatnya|lokasinya|emailnya|kontaknya|kantornya|mapsnya|rutenya)\b/', $lowerMsg)
+            || preg_match('/\b(link maps|link map|ada maps|ada map|minta maps|minta map|share maps|share map)\b/', $lowerMsg);
     }
 
     /**

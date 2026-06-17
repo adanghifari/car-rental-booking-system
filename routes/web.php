@@ -1123,6 +1123,10 @@ Route::put('/dashboard/settings/profile', [BackofficeController::class, 'updateP
     ->middleware(['auth', 'admin'])
     ->name('backoffice.profile.update');
 
+Route::put('/dashboard/settings/company', [BackofficeController::class, 'updateCompanySettings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.company-settings.update');
+
 Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rental, string $type) {
     $user = auth()->user();
     if (!$user || $user->role !== User::ROLE_ADMIN) {

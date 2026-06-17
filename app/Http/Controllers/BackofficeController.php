@@ -10,6 +10,7 @@ use App\Enums\RentalType;
 use Illuminate\Support\Facades\DB;
 use App\Enums\TransmissionType;
 use App\Models\Car;
+use App\Models\CompanySetting;
 use App\Models\PaymentHistory;
 use App\Models\Rental;
 use App\Models\User;
@@ -2142,10 +2143,12 @@ class BackofficeController extends Controller
 
     public function settings()
     {
-        $admin = Auth::user(); 
+        $admin = Auth::user();
+        $companySetting = CompanySetting::current();
 
         return view('backoffice.settings', [
             'admin' => $admin,
+            'companySetting' => $companySetting,
             'active' => 'settings'
         ]);
     }
@@ -2186,5 +2189,36 @@ class BackofficeController extends Controller
 
         return redirect()->route('backoffice.settings')
             ->with('success', 'Profil admin berhasil diperbarui.');
+    }
+
+    public function updateCompanySettings(Request $request)
+    {
+        $companySetting = CompanySetting::current();
+
+        $validated = $request->validate([
+            'company_name' => ['required', 'string', 'max:255'],
+            'company_email' => ['required', 'string', 'lowercase', 'email', 'max:255'],
+            'company_description' => ['required', 'string'],
+            'address' => ['required', 'string'],
+            'maps_directions_url' => ['required', 'url'],
+        ], [
+            'company_name.required' => 'Nama perusahaan wajib diisi.',
+            'company_email.required' => 'Email perusahaan wajib diisi.',
+            'company_email.email' => 'Email perusahaan harus berupa alamat email yang valid.',
+            'company_description.required' => 'Deskripsi perusahaan wajib diisi.',
+            'address.required' => 'Alamat perusahaan wajib diisi.',
+            'maps_directions_url.required' => 'Link Google Maps wajib diisi.',
+            'maps_directions_url.url' => 'Link Google Maps harus berupa URL yang valid.',
+        ]);
+
+        $validated['maps_embed_url'] = 'https://maps.google.com/maps?q='
+            . rawurlencode($validated['address'])
+            . '&t=&z=16&ie=UTF8&iwloc=&output=embed';
+
+        $companySetting->fill($validated);
+        $companySetting->save();
+
+        return redirect()->route('backoffice.settings')
+            ->with('success', 'Pengaturan perusahaan berhasil diperbarui.');
     }
 }
