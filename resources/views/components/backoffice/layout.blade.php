@@ -168,10 +168,10 @@
 
         .sidebar-profile {
             margin-top: auto;
-            padding-top: 28px;
+            padding-top: 40px;
             padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 16px;
+            margin-bottom: 0;
+            position: relative;
         }
 
         .sidebar-profile .profile {
@@ -192,6 +192,79 @@
 
         .sidebar-profile .profile:hover {
             background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-profile .profile.logout-trigger {
+            width: 100%;
+            border: 0;
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            text-align: left;
+            justify-content: space-between;
+            box-shadow: 0 14px 30px rgba(15, 29, 51, 0.12);
+        }
+
+        .sidebar-profile .profile.logout-trigger:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-profile .profile.logout-trigger .profile-role {
+            color: rgba(240, 244, 255, 0.68);
+        }
+
+        .logout-icon {
+            width: 18px;
+            height: 18px;
+            color: rgba(240, 244, 255, 0.8);
+            flex-shrink: 0;
+            transition: transform 220ms ease;
+        }
+
+        .sidebar-profile .profile.logout-trigger[aria-expanded="true"] .logout-icon {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-logout-popover {
+            margin-bottom: 12px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid rgba(219, 227, 239, 0.95);
+            box-shadow: 0 16px 36px rgba(15, 29, 51, 0.16);
+            padding: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: opacity 220ms ease, transform 220ms ease;
+        }
+
+        .sidebar-logout-popover.is-open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .sidebar-logout-action {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .sidebar-logout-action:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .sidebar-logout-action .nav-icon {
+            color: #ef4444;
         }
 
         .sidebar-profile .profile > div:first-child {
@@ -2193,29 +2266,31 @@
         </nav>
 
         <div class="sidebar-profile">
-            <div class="profile {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
-                <div>
-                    <div class="profile-name">{{ $admin->name }}</div>
-                    <div class="profile-role">{{ strtoupper($admin->role) }}</div>
-                </div>
-                <div class="avatar">{{ $initial }}</div>
-            </div>
-        </div>
-
-        <div class="logout">
-            <form method="POST" action="{{ route('logout') }}" class="logout-form">
-                @csrf
-                <button type="submit">
-                    <span class="nav-item {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
+            <div class="sidebar-logout-popover" id="sidebar-logout-popover">
+                <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                    @csrf
+                    <button type="submit" class="sidebar-logout-action">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <path d="m16 17 5-5-5-5"/>
                             <path d="M21 12H9"/>
                         </svg>
                         <span>Logout</span>
-                    </span>
-                </button>
-            </form>
+                    </button>
+                </form>
+            </div>
+            <button type="button" id="sidebar-profile-toggle" class="profile logout-trigger {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" aria-expanded="false" aria-controls="sidebar-logout-popover">
+                <div>
+                    <div class="profile-name">{{ $admin->name }}</div>
+                    <div class="profile-role">{{ strtoupper($admin->role) }}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar">{{ $initial }}</div>
+                    <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </div>
+            </button>
         </div>
     </aside>
 
@@ -2346,6 +2421,8 @@
     (function () {
         const notificationButton = document.getElementById('backoffice-notification-button');
         const notificationMenu = document.getElementById('backoffice-notification-menu');
+        const sidebarProfileToggle = document.getElementById('sidebar-profile-toggle');
+        const sidebarLogoutPopover = document.getElementById('sidebar-logout-popover');
 
         if (!notificationButton || !notificationMenu) {
             return;
@@ -2381,6 +2458,39 @@
                 closeNotificationMenu();
             }
         });
+
+        if (sidebarProfileToggle && sidebarLogoutPopover) {
+            function closeSidebarLogoutPopover() {
+                sidebarLogoutPopover.classList.remove('is-open');
+                sidebarProfileToggle.setAttribute('aria-expanded', 'false');
+            }
+
+            sidebarProfileToggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const isOpen = sidebarLogoutPopover.classList.contains('is-open');
+                if (isOpen) {
+                    closeSidebarLogoutPopover();
+                    return;
+                }
+
+                sidebarLogoutPopover.classList.add('is-open');
+                sidebarProfileToggle.setAttribute('aria-expanded', 'true');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!sidebarProfileToggle.contains(event.target) && !sidebarLogoutPopover.contains(event.target)) {
+                    closeSidebarLogoutPopover();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeSidebarLogoutPopover();
+                }
+            });
+        }
     })();
 </script>
 @stack('scripts')
