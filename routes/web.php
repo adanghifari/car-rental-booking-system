@@ -1492,7 +1492,7 @@ Route::get('/favorite', function (Request $request) {
 Route::get('/testimoni', function (Request $request) {
     $sort = $request->string('sort', 'latest')->toString();
     $selectedVehicleType = $request->string('vehicle_type')->toString();
-    $selectedMinimumRating = (int) $request->integer('min_rating', 0);
+    $selectedRating = (int) $request->integer('min_rating', 0);
 
     $reviews = \App\Models\Review::with(['user', 'car'])
         ->when($selectedVehicleType !== '', function ($query) use ($selectedVehicleType) {
@@ -1500,8 +1500,9 @@ Route::get('/testimoni', function (Request $request) {
                 $carQuery->where('vehicle_type', $selectedVehicleType);
             });
         })
-        ->when($selectedMinimumRating > 0, function ($query) use ($selectedMinimumRating) {
-            $query->where('rating', '>=', $selectedMinimumRating);
+        ->when($selectedRating > 0, function ($query) use ($selectedRating) {
+            $query->where('rating', '>=', $selectedRating)
+                ->where('rating', '<', $selectedRating + 1);
         })
         ->when($sort === 'oldest', fn ($query) => $query->oldest())
         ->when($sort === 'highest_rating', fn ($query) => $query->orderByDesc('rating')->latest())
@@ -1514,7 +1515,7 @@ Route::get('/testimoni', function (Request $request) {
         'reviews' => $reviews,
         'vehicleTypes' => VehicleType::cases(),
         'selectedVehicleType' => $selectedVehicleType,
-        'selectedMinimumRating' => $selectedMinimumRating,
+        'selectedRating' => $selectedRating,
         'selectedSort' => $sort,
     ]);
 })->middleware('token.cookie')->name('testimoni');
