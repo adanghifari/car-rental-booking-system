@@ -172,7 +172,7 @@
                 <div class="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-5">
                     <div class="flex items-center gap-4 min-w-0 xl:w-[30%]">
                         <div class="relative w-28 h-20 md:w-32 md:h-24 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
+                            <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
                                 alt="{{ $car->name }}" class="w-full h-full object-cover">
                         </div>
                         <div class="min-w-0">

@@ -33,7 +33,7 @@
             <!-- Car Card Mini -->
             <div class="flex items-center gap-5 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <div class="w-24 h-16 rounded-xl overflow-hidden bg-gray-200 flex-shrink-0">
-                    <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=300&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                    <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=300&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">{{ $car->brand }}</span>

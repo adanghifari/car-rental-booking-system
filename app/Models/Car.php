@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Enums\CarStatus;
 use App\Enums\VehicleType;
 use App\Enums\TransmissionType;
+use App\Services\CloudinaryMediaService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Car extends Model
 {
@@ -109,5 +111,41 @@ class Car extends Model
         }
 
         return $this->reviews()->count();
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->resolveMediaUrl($this->image);
+    }
+
+    public function getGalleryImageUrlsAttribute(): array
+    {
+        return collect($this->gallery_images ?? [])
+            ->map(fn ($path) => is_string($path) ? $this->resolveMediaUrl($path) : null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function resolveMediaUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        $cloudinaryUrl = app(CloudinaryMediaService::class)->url($path);
+        if ($cloudinaryUrl) {
+            return $cloudinaryUrl;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+            return $path;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::url($path);
+        }
+
+        return asset($path);
     }
 }

@@ -202,7 +202,7 @@
                         @if(isset($recommendedCars) && $recommendedCars->count() > 0)
                             @php $firstCar = $recommendedCars->first(); @endphp
                             <div class="lg:col-span-2 bg-slate-900 rounded-2xl overflow-hidden relative group min-h-[300px] flex flex-col justify-end p-6 shadow-sm">
-                                <img src="{{ $firstCar->image ? asset('storage/' . $firstCar->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80' }}" alt="{{ $firstCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition duration-500">
+                                <img src="{{ $firstCar->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80' }}" alt="{{ $firstCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 transition duration-500">
                                 <div class="absolute top-6 right-6 bg-black/40 backdrop-blur-sm border border-white/10 rounded-xl p-3 text-right text-white">
                                     <p class="text-[10px] text-gray-300 uppercase tracking-wider">Mulai Dari</p>
                                     <p class="text-lg font-bold">Rp {{ number_format($firstCar->daily_rate, 0, ',', '.') }}<span class="text-xs font-light text-gray-300">/hari</span></p>
@@ -231,7 +231,7 @@
                         @if(isset($recommendedCars) && $recommendedCars->count() > 1)
                             @php $secondCar = $recommendedCars->skip(1)->first(); @endphp
                             <div class="bg-slate-900 rounded-2xl overflow-hidden relative group min-h-[300px] flex flex-col justify-end p-6 shadow-sm">
-                                <img src="{{ $secondCar->image ? asset('storage/' . $secondCar->image) : 'https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $secondCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-500">
+                                <img src="{{ $secondCar->image_url ?: 'https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $secondCar->name }}" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-500">
                                 <div class="relative z-10 text-white">
                                     <h3 class="text-lg font-bold mb-0.5">{{ $secondCar->name }}</h3>
                                     <p class="text-[11px] text-gray-300 mb-3">{{ $secondCar->brand }} - {{ $secondCar->vehicle_type->label() }}</p>
@@ -264,7 +264,7 @@
                             <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition">
                                 <div>
                                     <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
-                                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                                         <span class="absolute top-3 left-3 bg-[#10B981] text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase">
                                             {{ $car->status->value ?? $car->status }}
                                         </span>
@@ -323,7 +323,7 @@
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <a href="{{ route('car-detail', ['car' => $car->id]) }}" class="border border-[#0B3C9B] text-[#0B3C9B] hover:bg-blue-50 text-center py-2 rounded-xl text-xs font-bold transition inline-block">Detail</a>
-                                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white text-center py-2 rounded-xl text-xs font-bold transition cursor-pointer">Pesan</button>
+                                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="bg-[#0B3C9B] hover:bg-[#082D76] text-white text-center py-2 rounded-xl text-xs font-bold transition cursor-pointer">Pesan</button>
                                     </div>
                                 </div>
                             </div>

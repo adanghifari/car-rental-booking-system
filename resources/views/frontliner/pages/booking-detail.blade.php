@@ -280,7 +280,7 @@
                     <h2 class="text-lg font-bold text-gray-900 border-l-4 border-blue-600 pl-3 mb-6">Detail Kendaraan</h2>
                     
                     <div class="relative rounded-2xl overflow-hidden bg-gray-950 h-[320px] mb-6 flex items-center justify-center">
-                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80' }}" 
+                        <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80' }}" 
                              alt="{{ $car->name }}" 
                              class="w-full h-full object-cover">
                         <span class="absolute top-4 right-4 bg-[#10B981] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wide">

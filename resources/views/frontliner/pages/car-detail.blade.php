@@ -23,17 +23,15 @@
             <div class="lg:col-span-3 space-y-6">
                 <!-- Main Car Photo -->
                 <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm aspect-[16/10]">
-                    <img id="main-car-photo" src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}" alt="{{ $car->name }} Side" class="w-full h-full object-cover">
+                    <img id="main-car-photo" src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}" alt="{{ $car->name }} Side" class="w-full h-full object-cover">
                 </div>
 
                 <!-- Gallery Thumbnails -->
                 @php
                     $thumbnails = [];
-                    $thumbnails[] = $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80';
-                    if (is_array($car->gallery_images)) {
-                        foreach ($car->gallery_images as $gImg) {
-                            $thumbnails[] = asset('storage/' . $gImg);
-                        }
+                    $thumbnails[] = $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80';
+                    foreach ($car->gallery_image_urls as $galleryImageUrl) {
+                        $thumbnails[] = $galleryImageUrl;
                     }
                     $thumbnails = array_slice($thumbnails, 0, 4);
                 @endphp
@@ -99,7 +97,7 @@
             <!-- Sticky Booking Sidebar -->
             <aside class="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-md lg:sticky lg:top-24">
                 <div class="rounded-xl overflow-hidden h-32 mb-4 bg-gray-100">
-                    <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=500&q=80' }}" alt="Car Side Mini" class="w-full h-full object-cover">
+                    <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=500&q=80' }}" alt="Car Side Mini" class="w-full h-full object-cover">
                 </div>
                 
                 <div class="flex justify-between items-center mb-6">
@@ -248,7 +246,7 @@
                     <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition">
                         <div>
                             <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
-                                <img src="{{ $similarCar->image ? asset('storage/' . $similarCar->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $similarCar->name }}" class="w-full h-full object-cover">
+                                <img src="{{ $similarCar->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $similarCar->name }}" class="w-full h-full object-cover">
                                 <a href="{{ route('car-detail', ['car' => $similarCar->id]) }}" class="absolute top-3 right-3 w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 hover:bg-white hover:text-red-500 transition">🤍</a>
                             </div>
                             <div class="flex justify-between items-start mb-2">

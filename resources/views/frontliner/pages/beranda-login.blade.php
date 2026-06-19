@@ -464,7 +464,7 @@
 
                     {{-- IMAGE --}}
                     <div class="card-image-zoom relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
-                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
+                        <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}"
                             alt="{{ $car->name }}" class="w-full h-full object-cover">
                     </div>
 
@@ -567,7 +567,7 @@
                         <button type="button" onclick="openBookingModal({
                                     id: {{ $car->id }},
                                     name: '{{ addslashes($car->name) }}',
-                                    image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}',
+                                    image: '{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}',
                                     dailyRate: {{ $car->daily_rate }},
                                     status: '{{ $car->status->value ?? $car->status }}',
                                     selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }},
