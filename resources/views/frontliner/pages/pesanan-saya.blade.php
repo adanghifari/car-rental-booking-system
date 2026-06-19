@@ -120,6 +120,9 @@
             $car = $rental->car;
             $latestPayment = $rental->paymentHistories()->latest()->first();
             $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
+            $receiptLabel = $latestPayment && $latestPayment->status === \App\Enums\PaymentStatus::PAID
+                ? ($rental->booking_code ?? ('Booking #'.$rental->id))
+                : '-';
 
             // Determine Status State and Label
             $state = 'dibatalkan';
@@ -174,7 +177,7 @@
                         </div>
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                                <span>Resi: {{ $car->license_plate ?? 'B 1234 XYZ' }}</span>
+                                <span>Resi: {{ $receiptLabel }}</span>
                             </div>
                             <h3 class="mt-1 text-base md:text-lg font-bold tracking-tight text-slate-900 truncate">
                                 {{ $car->brand }} {{ $car->name }}
@@ -206,7 +209,6 @@
                                 {{ $statusLabel }}
                             </span>
                         </div>
-                        <p class="mt-2 text-xs text-slate-500">Booking #{{ $rental->id }}</p>
                     </div>
 
                     <div class="xl:w-[16%]">

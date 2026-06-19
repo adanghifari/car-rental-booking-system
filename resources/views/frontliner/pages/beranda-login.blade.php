@@ -219,7 +219,7 @@
                     class="px-6 py-4 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/40">
                     <div>
                         <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Booking ID:
-                            BK-{{ str_pad($rental->id, 5, '0', STR_PAD_LEFT) }}</span>
+                            {{ $rental->booking_code ?? ('BOOK-'.($rental->created_at?->format('Ymd') ?? now()->format('Ymd')).'-'.str_pad($rental->id, 4, '0', STR_PAD_LEFT)) }}</span>
                         <h3 class="text-xl font-bold text-slate-800 mt-0.5">{{ $rental->car->brand ?? '' }}
                             {{ $rental->car->name ?? 'Mobil' }}</h3>
                     </div>

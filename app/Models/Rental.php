@@ -15,12 +15,26 @@ class Rental extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::created(function (self $rental): void {
+            if (! blank($rental->booking_code)) {
+                return;
+            }
+
+            $rental->forceFill([
+                'booking_code' => self::makeBookingCode($rental),
+            ])->saveQuietly();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
+        'booking_code',
         'user_id',
         'car_id',
         'start_date',
@@ -61,6 +75,13 @@ class Rental extends Model
         'type' => RentalType::class,
         'verification_status' => VerificationStatus::class,
     ];
+
+    public static function makeBookingCode(self $rental): string
+    {
+        $date = ($rental->created_at ?? now())->format('Ymd');
+
+        return sprintf('BOOK-%s-%04d', $date, $rental->id);
+    }
 
     public function user(): BelongsTo
     {

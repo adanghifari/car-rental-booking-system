@@ -779,7 +779,7 @@ class BackofficeController extends Controller
                 return [
                     'id' => $rental->id,
 
-                    'booking_id' => $rental->id,
+                    'booking_id' => $rental->booking_code ?? $rental->id,
 
                     'is_overdue' => $isOverdue,
                     'is_upcoming' => $isUpcoming,

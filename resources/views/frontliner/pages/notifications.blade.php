@@ -129,7 +129,7 @@
                                     <span>{{ $createdAt }}</span>
                                     @if(! empty($data['rental_id']))
                                         <span class="text-slate-300">•</span>
-                                        <span>Booking #{{ $data['rental_id'] }}</span>
+                                        <span>{{ $data['booking_code'] ?? ('Booking #'.$data['rental_id']) }}</span>
                                     @endif
                                 </div>
                             </div>
