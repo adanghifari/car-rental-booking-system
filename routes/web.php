@@ -1162,7 +1162,20 @@ Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rent
 
     $path = ($type === 'selfie') ? $rental->selfie_path : $rental->ktp_path;
 
-    if (!$path || !\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+    if (!$path) {
+        abort(404);
+    }
+
+    $cloudinary = app(\App\Services\CloudinaryMediaService::class);
+    if ($cloudinary->isCloudinaryPath($path)) {
+        $url = $cloudinary->url($path);
+        if ($url) {
+            return redirect()->away($url);
+        }
+        abort(404);
+    }
+
+    if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
         abort(404);
     }
 
@@ -1219,6 +1232,7 @@ Route::get('/login', function (Request $request) {
 Route::get('/register', function (Request $request) {
     $user = $request->user();
     $redirect = $request->query('redirect');
+    $cars = Car::count();
 
     if ($user?->role === User::ROLE_ADMIN) {
         return redirect()->route('dashboard');
@@ -1232,7 +1246,7 @@ Route::get('/register', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    return view('frontliner.auth.register');
+    return view('frontliner.auth.register', ['cars' => $cars]);
 })->name('register');
 
 Route::get('/forgot-password', function (Request $request) {

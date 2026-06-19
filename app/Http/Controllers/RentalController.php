@@ -8,6 +8,7 @@ use App\Enums\RentalType;
 use App\Http\Responses\ApiResponse;
 use App\Models\Car;
 use App\Models\Rental;
+use App\Services\CloudinaryMediaService;
 use App\Services\FaceVerificationService;
 use App\Support\BookingAvailability;
 use Carbon\Carbon;
@@ -73,8 +74,14 @@ class RentalController extends Controller
 
             $days = max(1, $startDate->diffInDays($endDate));
 
-            $ktpPath = Storage::disk('local')->putFile('ktp', $request->file('ktp'));
-            $selfiePath = Storage::disk('local')->putFile('selfie', $request->file('selfie'));
+            $cloudinary = app(CloudinaryMediaService::class);
+            if ($cloudinary->configured()) {
+                $ktpPath = $cloudinary->uploadPrivate($request->file('ktp'), 'rentals/ktp');
+                $selfiePath = $cloudinary->uploadPrivate($request->file('selfie'), 'rentals/selfie');
+            } else {
+                $ktpPath = Storage::disk('local')->putFile('ktp', $request->file('ktp'));
+                $selfiePath = Storage::disk('local')->putFile('selfie', $request->file('selfie'));
+            }
 
             $rental = Rental::create([
                 'user_id' => $user->id,

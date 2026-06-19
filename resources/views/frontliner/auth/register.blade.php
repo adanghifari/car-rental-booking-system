@@ -18,7 +18,7 @@
         }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-        .page { min-height: 100vh; display: grid; grid-template-columns: 1.05fr 1fr; overflow: hidden; }
+        .page { height: 100vh; height: 100dvh; display: grid; grid-template-columns: 1.05fr 1fr; overflow: hidden; }
         .hero {
             position: relative;
             overflow: hidden;
@@ -30,6 +30,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            height: 100%;
         }
         .brand { font-size: 28px; font-weight: 600; }
         .eyebrow { color: #6afad0; letter-spacing: 3px; text-transform: uppercase; font-size: 11px; }
@@ -38,8 +39,20 @@
         .stats { display: flex; gap: 34px; margin-top: 28px; }
         .stat strong { display: block; font-size: 34px; line-height: 1; }
         .stat span { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.78); }
-        .form-area { position: relative; display: flex; align-items: center; justify-content: center; padding: 38px 28px; }
-        .card { width: min(480px, 100%); }
+        .form-area {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 38px 28px;
+            height: 100%;
+            overflow-y: auto;
+        }
+        .card {
+            width: min(480px, 100%);
+            margin: auto 0;
+            padding: 24px 0;
+        }
         .back-link {
             position: absolute;
             top: 28px;
@@ -151,8 +164,10 @@
             transform: translateY(12px);
         }
         @media (max-width: 980px) {
-            .page { grid-template-columns: 1fr; }
-            .hero { min-height: 360px; }
+            body { overflow: auto; }
+            .page { height: auto; min-height: 100vh; min-height: 100dvh; grid-template-columns: 1fr; overflow: visible; }
+            .hero { min-height: 360px; height: auto; }
+            .form-area { height: auto; overflow: visible; }
             .card h2 { font-size: 34px; }
             .footer { text-align: center; }
             .back-link { top: 22px; left: 22px; }
@@ -286,8 +301,8 @@
                 <h1>Bergabunglah<br>dengan Eksklusivitas</h1>
                 <p>Akses armada kendaraan premium terbaik dunia dengan layanan concierge pribadi yang mengerti standar Anda.</p>
                 <div class="stats">
-                    <div class="stat"><strong>500+</strong><span>Luxury Fleet</span></div>
-                    <div class="stat"><strong>24/7</strong><span>Support</span></div>
+                    <div class="stat"><strong>{{ $cars }}</strong><span>Armada</span></div>
+                    <div class="stat"><strong>24/7</strong><span>Layanan Pelanggan</span></div>
                 </div>
             </div>
         </aside>

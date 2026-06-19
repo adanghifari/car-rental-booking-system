@@ -1430,7 +1430,6 @@
                 });
 
                 mainImageInput?.addEventListener('change', () => {
-                    removeImageFlag.value = '0';
                     mainImageLocked = false;
                     renderMainImagePreview();
                 });

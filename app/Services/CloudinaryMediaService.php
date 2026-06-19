@@ -9,13 +9,14 @@ use RuntimeException;
 class CloudinaryMediaService
 {
     private const STORAGE_PREFIX = 'cloudinary://';
+    private const PRIVATE_STORAGE_PREFIX = 'cloudinary-private://';
 
     public function configured(): bool
     {
         return filled($this->cloudName()) && filled($this->apiKey()) && filled($this->apiSecret());
     }
 
-    public function upload(UploadedFile $file, string $folder): string
+    public function upload(UploadedFile $file, string $folder, string $type = 'upload'): string
     {
         if (! $this->configured()) {
             throw new RuntimeException('Cloudinary credentials are not configured.');
@@ -27,6 +28,9 @@ class CloudinaryMediaService
             'unique_filename' => 'true',
             'use_filename' => 'true',
         ];
+        if ($type !== 'upload') {
+            $params['type'] = $type;
+        }
         $params['signature'] = $this->signature($params);
         $params['api_key'] = $this->apiKey();
 
@@ -52,7 +56,16 @@ class CloudinaryMediaService
             throw new RuntimeException('Cloudinary upload did not return a public_id.');
         }
 
-        return self::STORAGE_PREFIX.$publicId;
+        $prefix = ($type === 'authenticated' || $type === 'private')
+            ? self::PRIVATE_STORAGE_PREFIX
+            : self::STORAGE_PREFIX;
+
+        return $prefix.$publicId;
+    }
+
+    public function uploadPrivate(UploadedFile $file, string $folder): string
+    {
+        return $this->upload($file, $folder, 'authenticated');
     }
 
     public function delete(string $path): void
@@ -90,6 +103,20 @@ class CloudinaryMediaService
             return null;
         }
 
+        if ($this->isPrivateCloudinaryPath($path)) {
+            $payload = $publicId;
+            $hash = sha1($payload.$this->apiSecret(), true);
+            $signature = strtr(base64_encode($hash), '+/', '-_');
+            $signature = substr($signature, 0, 8);
+
+            return sprintf(
+                'https://res.cloudinary.com/%s/image/authenticated/s--%s--/%s',
+                rawurlencode($this->cloudName()),
+                $signature,
+                collect(explode('/', $publicId))->map(fn (string $segment) => rawurlencode($segment))->implode('/')
+            );
+        }
+
         return sprintf(
             'https://res.cloudinary.com/%s/image/upload/%s',
             rawurlencode($this->cloudName()),
@@ -99,16 +126,25 @@ class CloudinaryMediaService
 
     public function isCloudinaryPath(?string $path): bool
     {
-        return is_string($path) && str_starts_with($path, self::STORAGE_PREFIX);
+        return is_string($path) && (str_starts_with($path, self::STORAGE_PREFIX) || str_starts_with($path, self::PRIVATE_STORAGE_PREFIX));
+    }
+
+    public function isPrivateCloudinaryPath(?string $path): bool
+    {
+        return is_string($path) && str_starts_with($path, self::PRIVATE_STORAGE_PREFIX);
     }
 
     private function publicId(string $path): ?string
     {
-        if (! $this->isCloudinaryPath($path)) {
-            return null;
+        if (str_starts_with($path, self::PRIVATE_STORAGE_PREFIX)) {
+            return substr($path, strlen(self::PRIVATE_STORAGE_PREFIX)) ?: null;
         }
 
-        return substr($path, strlen(self::STORAGE_PREFIX)) ?: null;
+        if (str_starts_with($path, self::STORAGE_PREFIX)) {
+            return substr($path, strlen(self::STORAGE_PREFIX)) ?: null;
+        }
+
+        return null;
     }
 
     private function apiUrl(string $action): string
