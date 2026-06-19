@@ -47,6 +47,10 @@
             && $rental->prepaid_expires_at
             && $rental->prepaid_expires_at->isFuture()
             && $hasChosenPaymentMethod;
+        $showBookingCodeDetail = in_array($rental->status, [
+            \App\Enums\RentalStatus::ONGOING,
+            \App\Enums\RentalStatus::RETURNED,
+        ], true) || ($payment && $payment->status === \App\Enums\PaymentStatus::PAID);
     @endphp
 
     <!-- Main Content -->
@@ -417,10 +421,17 @@
                                 }
                             @endphp
 
-                            @if($paymentMethodLabel || $payment->status === \App\Enums\PaymentStatus::PAID)
+                            @if($paymentMethodLabel || $payment->status === \App\Enums\PaymentStatus::PAID || $showBookingCodeDetail)
                                 <div class="pt-4 border-t border-gray-100 space-y-3">
                                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Detail Pembayaran</span>
                                     <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                                        @if($showBookingCodeDetail)
+                                            <div class="flex justify-between items-center text-xs">
+                                                <span class="text-slate-500 font-semibold">Booking ID:</span>
+                                                <span class="font-bold text-slate-800">{{ $rental->booking_code ?? ('Booking #'.$rental->id) }}</span>
+                                            </div>
+                                        @endif
+
                                         @if($paymentMethodLabel)
                                             <div class="flex justify-between items-center text-xs">
                                                 <span class="text-slate-500 font-semibold">Metode:</span>

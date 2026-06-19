@@ -98,8 +98,9 @@ class AdminNotificationService
                 'title' => $title,
                 'message' => $message,
                 'rental_id' => $rental->id,
+                'booking_code' => $rental->booking_code,
                 'url' => $url,
-                'meta' => $meta ?: 'Booking #'.$rental->id,
+                'meta' => $meta ?: ($rental->booking_code ?: 'Booking #'.$rental->id),
                 'dedupe_key' => $dedupeKey,
             ]));
         }

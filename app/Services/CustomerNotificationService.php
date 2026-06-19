@@ -179,6 +179,7 @@ class CustomerNotificationService
             'message' => $message,
             'type' => $type,
             'rental_id' => $rental->id,
+            'booking_code' => $rental->booking_code,
             'url' => $url,
             'dedupe_key' => $dedupeKey,
         ]));

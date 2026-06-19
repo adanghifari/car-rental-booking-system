@@ -31,7 +31,7 @@
             <div class="bg-[#F8F9FC] border border-gray-100 rounded-2xl p-4 space-y-3">
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-400">Order ID:</span>
-                    <span class="font-bold text-gray-800">BK-{{ str_pad($rental->id, 5, '0', STR_PAD_LEFT) }}</span>
+                    <span class="font-bold text-gray-800">{{ $rental->booking_code ?? ('BOOK-'.($rental->created_at?->format('Ymd') ?? now()->format('Ymd')).'-'.str_pad($rental->id, 4, '0', STR_PAD_LEFT)) }}</span>
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-400">Mobil:</span>
