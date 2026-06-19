@@ -194,7 +194,7 @@
                         <div>
                             <!-- Header Area -->
                             <div class="relative bg-slate-100 h-44 overflow-hidden flex items-center justify-center">
-                                <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                                <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                                 <span class="absolute top-4 right-4 border text-[10px] font-bold px-3 py-1.5 rounded-xl uppercase tracking-wider {{ $badgeColor }}">{{ $statusLabel }}</span>
                             </div>
 

@@ -1273,7 +1273,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
                         'daily_rate' => number_format($car->daily_rate, 0, ',', '.'),
                         'rating' => $car->rating_display,
                         'reviews_count' => $car->total_reviews,
-                        'image' => $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80',
+                        'image' => $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80',
                     ];
                 }
             }

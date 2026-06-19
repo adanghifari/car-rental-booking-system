@@ -54,4 +54,11 @@ return [
         'nlu_cache_ttl_seconds' => env('GEMINI_NLU_CACHE_TTL_SECONDS', 21600),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+        'folder' => env('CLOUDINARY_FOLDER', 'car-rental-booking-system'),
+    ],
+
 ];

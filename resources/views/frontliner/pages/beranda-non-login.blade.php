@@ -25,7 +25,7 @@
             @if(isset($cars) && $cars->count() > 0)
                 @foreach($cars as $index => $car)
                     <div class="hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out {{ $index === 0 ? 'opacity-100' : 'opacity-0' }}" data-slide-index="{{ $index }}">
-                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80' }}" 
+                        <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1200&q=80' }}" 
                              alt="{{ $car->name }}" 
                              class="w-full h-full object-cover object-center scale-x-[-1]">
                     </div>
@@ -111,7 +111,7 @@
                 <div class="reveal stagger-item hover-lift bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between" style="--delay: {{ 100 * $index }}ms">
                     <div>
                         <div class="card-image-zoom relative bg-gray-900 rounded-xl overflow-hidden h-48 mb-5 flex items-center justify-center">
-                            <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                            <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex justify-between items-start mb-4">
                             <div>
@@ -153,7 +153,7 @@
                         $isRented = !$isAvailable && ($car->active_rentals_count ?? 0) > 0;
                     @endphp
                     @if($isAvailable)
-                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="hover-lift button-glow-hover w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
+                        <button type="button" onclick="openBookingModal({ id: {{ $car->id }}, name: '{{ addslashes($car->name) }}', image: '{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}', dailyRate: {{ $car->daily_rate }}, status: '{{ $car->status->value ?? $car->status }}', selfDriveAvailable: {{ $car->self_drive_available ? 'true' : 'false' }}, driverAvailable: {{ $car->driver_available ? 'true' : 'false' }} })" class="hover-lift button-glow-hover w-full text-center block border border-[#0B3C9B] text-[#0B3C9B] hover:bg-[#0B3C9B] hover:text-white transition py-3 rounded-xl font-semibold text-sm cursor-pointer">
                             Pesan Sekarang
                         </button>
                     @else

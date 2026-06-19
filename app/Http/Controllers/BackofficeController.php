@@ -14,6 +14,7 @@ use App\Models\CompanySetting;
 use App\Models\PaymentHistory;
 use App\Models\Rental;
 use App\Models\User;
+use App\Services\CloudinaryMediaService;
 use Illuminate\Support\Str;
 use App\Support\BookingAvailability;
 use Carbon\Carbon;
@@ -429,9 +430,9 @@ class BackofficeController extends Controller
 
         $validated = $validator->validated();
 
-        $validated['image'] = $request->file('image')->store('cars/main', 'public');
+        $validated['image'] = $this->storeCarMedia($request->file('image'), 'cars/main');
         $validated['gallery_images'] = collect($request->file('gallery_images', []))
-            ->map(fn ($file) => $file->store('cars/gallery', 'public'))
+            ->map(fn ($file) => $this->storeCarMedia($file, 'cars/gallery'))
             ->values()
             ->all();
 
@@ -493,7 +494,7 @@ class BackofficeController extends Controller
 
         if ($request->hasFile('image')) {
             $this->deleteStoredCarMedia($car, false);
-            $validated['image'] = $request->file('image')->store('cars/main', 'public');
+            $validated['image'] = $this->storeCarMedia($request->file('image'), 'cars/main');
         } elseif ($removeImage) {
             $this->deleteStoredCarMedia($car, false);
             $validated['image'] = null;
@@ -503,10 +504,12 @@ class BackofficeController extends Controller
 
         if ($request->hasFile('gallery_images')) {
             $this->deleteStoredGalleryMedia($car, false, $removedGalleryImages);
-            $validated['gallery_images'] = collect($request->file('gallery_images', []))
-                ->map(fn ($file) => $file->store('cars/gallery', 'public'))
+            $newGalleryImages = collect($request->file('gallery_images', []))
+                ->map(fn ($file) => $this->storeCarMedia($file, 'cars/gallery'))
                 ->values()
-                ->pipe(fn ($items) => array_values(array_merge($remainingGalleryImages, $items->all())));
+                ->all();
+
+            $validated['gallery_images'] = array_values(array_merge($remainingGalleryImages, $newGalleryImages));
         } else {
             if ($removedGalleryImages !== []) {
                 $this->deleteStoredGalleryMedia($car, false, $removedGalleryImages);
@@ -1065,6 +1068,11 @@ class BackofficeController extends Controller
             return null;
         }
 
+        $cloudinaryUrl = app(CloudinaryMediaService::class)->url($image);
+        if ($cloudinaryUrl) {
+            return $cloudinaryUrl;
+        }
+
         if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://') || str_starts_with($image, '/')) {
             return $image;
         }
@@ -1074,6 +1082,17 @@ class BackofficeController extends Controller
         }
 
         return asset($image);
+    }
+
+    private function storeCarMedia(\Illuminate\Http\UploadedFile $file, string $directory): string
+    {
+        $cloudinary = app(CloudinaryMediaService::class);
+
+        if ($cloudinary->configured()) {
+            return $cloudinary->upload($file, $directory);
+        }
+
+        return $file->store($directory, 'public');
     }
 
     private function deleteStoredCarMedia(Car $car, bool $includeGallery = true): void
@@ -1090,6 +1109,11 @@ class BackofficeController extends Controller
             }
 
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+                continue;
+            }
+
+            if (app(CloudinaryMediaService::class)->isCloudinaryPath($path)) {
+                app(CloudinaryMediaService::class)->delete($path);
                 continue;
             }
 
@@ -1110,6 +1134,11 @@ class BackofficeController extends Controller
             }
 
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
+                continue;
+            }
+
+            if (app(CloudinaryMediaService::class)->isCloudinaryPath($path)) {
+                app(CloudinaryMediaService::class)->delete($path);
                 continue;
             }
 
