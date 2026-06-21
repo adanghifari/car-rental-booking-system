@@ -113,41 +113,8 @@ def extract_nik(text):
 
 
 def is_valid_nik(nik):
-    """Validate Indonesian NIK format and structure"""
-    if not nik or len(nik) != 16:
-        return False
-    
-    try:
-        nik_int = int(nik)
-    except ValueError:
-        return False
-    
-    # NIK format: PPKKTTHHGGGKKKX
-    # PP = Province code (01-35)
-    # KK = District code (01-99)
-    # TT = Birth date in month
-    # HH = Birth date (01-31, or 40-71 for female)
-    # GGG = Birth place code
-    # KKK = Serial number
-    # X = Check digit
-    
-    province = int(nik[0:2])
-    district = int(nik[2:4])
-    month = int(nik[4:6])
-    day = int(nik[6:8])
-    
-    # Validate ranges (basic check)
-    if not (1 <= province <= 35):
-        return False
-    
-    if not (1 <= month <= 12):
-        return False
-    
-    day_check = day if day <= 31 else day - 40
-    if not (1 <= day_check <= 31):
-        return False
-    
-    return True
+    """Bypass check: Cukup pastikan panjangnya 16 digit angka"""
+    return nik is not None and len(nik) == 16 and nik.isdigit()
 
 
 # =========================
