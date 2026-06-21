@@ -9,8 +9,8 @@ import uuid
 import os
 import logging
 
-if sys.version_info < (3, 10) or sys.version_info >= (3, 12):
-    raise RuntimeError("This service requires Python 3.10 or 3.11.")
+# if sys.version_info < (3, 10) or sys.version_info >= (3, 12):
+#     raise RuntimeError("This service requires Python 3.10 or 3.11.")
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 # Configuration
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-CONFIDENCE_THRESHOLD = 0.4  # Face distance threshold
 
 # =========================
 # OCR MODEL
@@ -203,9 +202,20 @@ def verify():
                 detector_backend="retinaface",
                 enforce_detection=False
             )
+
+            print(f"Face verification result: {face_result}")
             
             # Check face match with confidence threshold
-            face_verified = face_result["verified"] and face_result["distance"] <= CONFIDENCE_THRESHOLD
+            face_verified = face_result["verified"]
+
+            print({
+                "nik": nik,
+                "raw_text": raw_text,
+                "clean_text": clean,
+                "face_match": face_result["verified"],
+                "distance": float(face_result["distance"]),
+                "verified": nik is not None and face_verified
+            })
             
             return jsonify({
                 "nik": nik,
@@ -213,7 +223,6 @@ def verify():
                 "clean_text": clean,
                 "face_match": face_result["verified"],
                 "distance": float(face_result["distance"]),
-                "confidence_threshold": CONFIDENCE_THRESHOLD,
                 "verified": nik is not None and face_verified
             }), 200
         
