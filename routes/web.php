@@ -539,7 +539,7 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $rental->verification_status = \App\Enums\VerificationStatus::VERIFIED;
             $rental->verification_passed = true;
             $rental->verified_at = now();
-            $rental->prepaid_expires_at = now()->addHours(4);
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
         });
 
@@ -596,8 +596,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
         return back()->with('error', 'Status reservasi tidak sesuai.');
     }
 
-    // Check if 4 hours has passed since verified_at
-    if ($rental->verified_at && $rental->verified_at->addHours(4)->isPast()) {
+    // Check if 3 hours has passed since verified_at
+    if ($rental->verified_at && $rental->verified_at->addHours(3)->isPast()) {
         DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::EXPIRED;
             $rental->prepaid_expires_at = null;
@@ -613,8 +613,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
 
         DB::transaction(function () use ($rental, $orderId, $midtransResponse) {
             $rental->status = RentalStatus::PREPAID;
-            // Limit countdown to exactly remaining of verified_at + 4 hours
-            $rental->prepaid_expires_at = $rental->verified_at->addHours(4);
+            // Limit countdown to 1 hour 20 minutes (80 minutes) from now
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
 
             \App\Models\PaymentHistory::create([
