@@ -26,6 +26,11 @@ RUN apk add --no-cache \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql zip bcmath gd opcache
 
+# Configure custom PHP upload limits
+RUN echo "upload_max_filesize=20M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=20M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_execution_time=180" >> /usr/local/etc/php/conf.d/uploads.ini
+
 # Copy Composer binary
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

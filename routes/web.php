@@ -469,26 +469,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
         ? \App\Enums\RentalType::WITH_DRIVER
         : \App\Enums\RentalType::SELF_DRIVE;
 
-    $renderIdentityPage = function (array $extraData = [], ?ViewErrorBag $errorBag = null) use ($car, $startDate, $endDate, $serviceType, $days, $rentCost, $driverCost, $serviceCost, $totalPrice) {
-        return response()->view('frontliner.pages.booking-identity', array_merge([
-            'car' => $car,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'service_type' => $serviceType,
-            'days' => $days,
-            'rentCost' => $rentCost,
-            'driverCost' => $driverCost,
-            'serviceCost' => $serviceCost,
-            'totalPrice' => $totalPrice,
-            'errors' => $errorBag ?? new ViewErrorBag(),
-        ], $extraData), 422);
-    };
-
     if ($validator->fails()) {
-        $errorBag = new ViewErrorBag();
-        $errorBag->put('default', $validator->errors());
-
-        return $renderIdentityPage([], $errorBag);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->withErrors($validator)
+            ->withInput();
     }
 
     $autoVerifyPassed = false;
@@ -542,9 +526,9 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             return $rental;
         });
     } catch (\Throwable $e) {
-        return $renderIdentityPage([
-            'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
-        ]);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->with('error', 'Gagal memproses verifikasi: ' . $e->getMessage())
+            ->withInput();
     }
 
     app(\App\Services\CustomerNotificationService::class)->notifyVerificationSubmitted($rental);
@@ -593,6 +577,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
 
     return redirect()->route('booking.detail', ['rental' => $rental->id]);
 })->middleware(['token.cookie', 'auth'])->name('booking.submit');
+
+Route::get('/booking/submit', function () {
+    return redirect()->route('frontliner');
+})->middleware(['token.cookie', 'auth']);
 
 Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Services\MidtransService $midtrans) {
     $user = auth()->user();

@@ -14,8 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements file first to utilize Docker build cache
 COPY requirements.txt .
 
-# Install python dependencies
+# Install python dependencies:
+# 1. Install CPU-only PyTorch first to avoid heavy CUDA wheels (saves ~5GB disk space)
+# 2. Install the rest of the requirements
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
