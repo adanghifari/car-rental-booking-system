@@ -87,12 +87,23 @@ class ChatbotController extends Controller
                 }
             } catch (\Exception $e) {
                 Log::error('Gemini Fallback failed: ' . $e->getMessage());
+                // Fallback to local rule-based matching with $forceMatch = true
+                $ruleResponse = $this->checkRuleBasedIntents($lowerMsg, $cleanMessage, $bookingState, $availableCars, $companySetting, true);
+                if ($ruleResponse) {
+                    return $this->formatCarsListInResponse($ruleResponse);
+                }
+            }
+        } else {
+            // Fallback to local rule-based matching with $forceMatch = true if key is missing
+            $ruleResponse = $this->checkRuleBasedIntents($lowerMsg, $cleanMessage, $bookingState, $availableCars, $companySetting, true);
+            if ($ruleResponse) {
+                return $this->formatCarsListInResponse($ruleResponse);
             }
         }
 
         // 4. Default fallback if Gemini is offline/not configured or both fail
         $defaultFallback = [
-            'reply' => "Maaf, saya kurang memahami pertanyaan Anda. Anda dapat bertanya mengenai cara sewa, rekomendasi mobil, atau mengeklik salah satu menu di bawah ini.",
+            'reply' => "<span class=\"inline-flex items-center align-middle mr-1.5 text-blue-600\"><svg class=\"w-4.5 h-4.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z\" /></svg></span><strong>Asisten Virtual MD Car Rental</strong><br><br>Maaf, saat ini layanan asisten pintar kami sedang sibuk atau pertanyaan Anda di luar jangkauan saya.<br><br>Namun, Anda dapat mencari rekomendasi unit mobil, melihat cara penyewaan, atau menanyakan profil perusahaan kami menggunakan menu di bawah ini.",
             'bookingState' => $bookingState,
             'suggestions' => ["Rekomendasi Mobil", "Cara Sewa", "Tentang Perusahaan", "Bantu Saya Booking"],
             'cars' => [],
@@ -128,14 +139,14 @@ class ChatbotController extends Controller
     /**
      * Check rule-based intents locally before calling Gemini.
      */
-    private function checkRuleBasedIntents($lowerMsg, $originalMsg, $bookingState, $availableCars, CompanySetting $companySetting)
+    private function checkRuleBasedIntents($lowerMsg, $originalMsg, $bookingState, $availableCars, CompanySetting $companySetting, $forceMatch = false)
     {
         $recommendedCarIds = [];
 
         // Greetings - only trigger on very short greeting-only messages
         if (preg_match('/^(halo|hi|hai|hello|pagi|siang|sore|malam|selamat|p|assalamualaikum)( ya)?$/i', $lowerMsg) || (str_word_count($lowerMsg) <= 2 && preg_match('/\b(halo|hi|hai|hello|pagi|siang|sore|malam|selamat)\b/', $lowerMsg))) {
             return [
-                'reply' => "Halo! Saya Asisten Virtual MD Car Rental. Ada yang bisa saya bantu hari ini?<br><br>Anda bisa mencari rekomendasi mobil, bertanya tentang cara sewa, atau langsung melakukan pemesanan kendaraan.",
+                'reply' => "<span class=\"inline-flex items-center align-middle mr-1.5 text-blue-600\"><svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M8.684 10.742h.01m5.624 0h.01m-2.822 4.096c-1.127 0-2.04-.9-2.04-2.01h4.08c0 1.11-.913 2.01-2.04 2.01zM21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z\" /></svg></span><strong>Selamat datang di MD Car Rental!</strong><br><br>Halo! Saya <strong>MD Virtual Assistant</strong>, siap membantu mempermudah kebutuhan perjalanan Anda.<br><br>Anda dapat bertanya mengenai:<br>• 🚗 <strong>Rekomendasi Mobil</strong> (sesuai jenis/transmisi)<br>• 📝 <strong>Panduan Cara Sewa</strong> & Syarat Ketentuan<br>• 🏢 <strong>Profil & Lokasi Perusahaan</strong><br>• ⚡ <strong>Bantuan Pemesanan Langsung</strong><br><br>Silakan ketik pertanyaan Anda atau klik menu pintasan di bawah ini.",
                 'bookingState' => $bookingState,
                 'suggestions' => ["Rekomendasi Mobil", "Cara Sewa", "Tentang Perusahaan", "Bantu Saya Booking"],
                 'cars' => [],
@@ -180,7 +191,6 @@ class ChatbotController extends Controller
                     'cars' => [$matchedCar->id],
                 ];
             } else {
-                // Return null to let Gemini NLU handle general/complex rating/review queries
                 return null;
             }
         }
@@ -190,9 +200,9 @@ class ChatbotController extends Controller
             !str_contains($lowerMsg, '?');
 
         // Recommendations
-        if (!$isBookingIntent && preg_match('/\b(rekomendasi|cari|mobil|daftar|armada|pilihan|jenis|tipe|ready|matic|manual|murah|mewah|keluarga|toyota|honda|daihatsu|mitsubishi|suzuki|nissan|warna|putih|hitam|silver|abu|merah|biru|tahun|cc|lepas|kunci|sopir|driver)\b/i', $lowerMsg)) {
-            // Opinion/comparative/semantic query override -> fallback to Gemini NLU
-            if (preg_match('/\b(terlaris|laris|populer|favorit|terbagus|bagus|paling|terbaik|cocok|nyaman|bagusan|bandingkan|mana yang)\b/i', $lowerMsg)) {
+        if (!$isBookingIntent && (preg_match('/\b(rekomendasi|cari|mobil|daftar|armada|pilihan|jenis|tipe|ready|matic|manual|murah|mewah|keluarga|toyota|honda|daihatsu|mitsubishi|suzuki|nissan|warna|putih|hitam|silver|abu|merah|biru|tahun|cc|lepas|kunci|sopir|driver|irit|hemat|ekonomis|efisien|terlaris|laris|populer|favorit|terbagus|bagus|paling|terbaik|cocok|nyaman|bagusan|bandingkan|mana yang)\b/i', $lowerMsg) || $forceMatch)) {
+            // Opinion/comparative/semantic query override -> fallback to Gemini NLU (unless forceMatch is true)
+            if (!$forceMatch && preg_match('/\b(terlaris|laris|populer|favorit|terbagus|bagus|paling|terbaik|cocok|nyaman|bagusan|bandingkan|mana yang)\b/i', $lowerMsg)) {
                 return null;
             }
             $type = null;
@@ -368,7 +378,7 @@ class ChatbotController extends Controller
 
             if ($criteriaString === '') {
                 // Generic recommendation
-                $reply = "Mau mobil yang bagaimana? Jika Anda masih bingung, berikut adalah beberapa armada unggulan kami:";
+                $reply = "🔍 <strong>Pilihan Armada MD Car Rental</strong><br><br>Bingung memilih mobil yang sesuai? Berikut adalah beberapa armada unggulan terlaris kami yang siap menemani perjalanan Anda:";
                 
                 // Fetch available cars, loaded with review metrics and rentals count
                 $cars = Car::where('status', CarStatus::AVAILABLE)
@@ -388,6 +398,14 @@ class ChatbotController extends Controller
             } else {
                 // Filtered recommendation
                 $query = Car::where('status', CarStatus::AVAILABLE);
+                
+                // Sort by daily_rate if "murah" or "mewah" is specified
+                if (preg_match('/\b(murah|hemat|terjangkau|ekonomis)\b/i', $lowerMsg)) {
+                    $query->orderBy('daily_rate', 'asc');
+                } elseif (preg_match('/\b(mewah|luxury|premium|vip|mahal)\b/i', $lowerMsg)) {
+                    $query->orderBy('daily_rate', 'desc');
+                }
+                
                 if ($type) {
                     $query->where('vehicle_type', $type);
                 }
@@ -535,9 +553,9 @@ class ChatbotController extends Controller
                 }
 
                 if ($fallbackUsed) {
-                    $reply = "Maaf, saat ini armada mobil dengan kriteria {$criteriaString} sedang tidak tersedia. Namun, berikut adalah beberapa mobil terbaik kami yang siap Anda sewa:";
+                    $reply = "🔍 <strong>Rekomendasi Armada Terpopuler</strong><br><br>Mohon maaf, saat ini mobil dengan kriteria {$criteriaString} sedang tidak tersedia atau dalam penyewaan. Namun, berikut adalah beberapa unit terbaik kami yang siap Anda gunakan:";
                 } else {
-                    $reply = "Berikut adalah beberapa mobil dengan kriteria {$criteriaString} yang kami rekomendasikan untuk Anda:";
+                    $reply = "🔍 <strong>Rekomendasi Mobil MD Car Rental</strong><br><br>Berdasarkan pencarian Anda ({$criteriaString}), berikut adalah unit armada terbaik kami yang siap Anda sewa:";
                 }
             }
 
@@ -566,12 +584,14 @@ class ChatbotController extends Controller
         // Rental guidelines - refined to avoid false positive matches on generic terms
         if (preg_match('/\b(cara sewa|syarat sewa|syarat rental|cara rental|alur rental|prosedur sewa|ketentuan rental|bagaimana menyewa)\b/', $lowerMsg)) {
             return [
-                'reply' => "<strong>Cara Sewa Mobil di MD Car Rental:</strong><br>" .
-                    "1. Pilih mobil yang Anda inginkan (misal lewat menu rekomendasi).<br>" .
-                    "2. Tentukan tanggal sewa (mulai dan selesai).<br>" .
-                    "3. Chatbot akan memberikan tombol konfirmasi untuk langsung ke halaman <strong>Upload Identitas</strong>.<br>" .
-                    "4. Unggah foto KTP dan Selfie Anda.<br>" .
-                    "5. Lakukan pembayaran via Midtrans. Sangat cepat dan mudah!",
+                'reply' => "<strong>📋 Prosedur Penyewaan MD Car Rental</strong><br><br>" .
+                    "Berikut 5 langkah mudah untuk melakukan penyewaan kendaraan:<br><br>" .
+                    "✔️ <strong>1. Pilih Armada:</strong> Tentukan mobil pilihan Anda dari daftar rekomendasi atau menu armada.<br>" .
+                    "✔️ <strong>2. Tentukan Jadwal:</strong> Masukkan tanggal mulai dan selesai sewa.<br>" .
+                    "✔️ <strong>3. Dapatkan Link Khusus:</strong> Asisten akan memberikan tombol langsung ke halaman unggah berkas.<br>" .
+                    "✔️ <strong>4. Upload Identitas:</strong> Unggah foto KTP dan Selfie Anda demi keamanan transaksi.<br>" .
+                    "✔️ <strong>5. Pembayaran Instan:</strong> Selesaikan transaksi dengan aman via Midtrans (E-Wallet, Transfer Bank, dll).<br><br>" .
+                    "Proses verifikasi cepat dan kendaraan siap digunakan sesuai jadwal Anda!",
                 'bookingState' => $bookingState,
                 'suggestions' => ["Rekomendasi Mobil", "Bantu Saya Booking", "Tentang Perusahaan"],
                 'cars' => [],
@@ -684,7 +704,7 @@ class ChatbotController extends Controller
             $cars = Car::where('status', CarStatus::AVAILABLE)->limit(4)->get();
 
             return [
-                'reply' => "Tentu! Saya akan membantu memproses sewa mobil Anda dengan cepat.<br><br><strong>Mobil apa yang ingin Anda sewa?</strong><br>Silakan ketik nama mobil pilihan Anda dengan format:<br><strong>[Nama Mobil]</strong> atau <strong>Pesan [Nama Mobil]</strong> (Contoh: <i>Avanza</i> atau <i>Pesan Innova</i>).",
+                'reply' => "⚡ <strong>Asisten Pemesanan Instan</strong><br><br>Tentu! Saya akan memandu Anda menyelesaikan proses pemesanan kendaraan secara langsung.<br><br><strong>Mobil apa yang ingin Anda sewa?</strong><br>Silakan ketik nama unit (Contoh: <i>Avanza</i> atau <i>Xenia</i>) atau klik salah satu pilihan cepat di bawah ini.",
                 'bookingState' => $bookingState,
                 'suggestions' => $cars->pluck('name')->all(),
                 'cars' => [],
@@ -1177,7 +1197,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
                     $suggestions = array_values(array_unique($suggestions));
                 }
             } else {
-                $reply = "Format tanggal tidak dikenali. Silakan masukkan tanggal mulai sewa dengan format YYYY-MM-DD (Contoh: " . Carbon::today('Asia/Jakarta')->toDateString() . ") atau ketik 'besok'.";
+                $reply = "⚠️ <strong>Format Tanggal Tidak Valid</strong><br><br>Format tanggal mulai sewa tidak dikenali. Silakan masukkan kembali tanggal dengan format <strong>YYYY-MM-DD</strong> (Contoh: <code>" . Carbon::today('Asia/Jakarta')->toDateString() . "</code>) atau ketik secara relatif seperti <i>'besok'</i> atau <i>'lusa'</i>.";
                 $suggestions = ["Hari Ini", "Besok", "Lusa"];
             }
         }
@@ -1210,7 +1230,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
                         $suggestions = ["Lepas Kunci", "Dengan Sopir"];
                     }
                 } else {
-                    $reply = "Tanggal selesai sewa tidak boleh sebelum tanggal mulai (" . Carbon::parse($startDate)->isoFormat('D MMMM YYYY') . "). Silakan ketik tanggal selesai yang valid:";
+                    $reply = "⚠️ <strong>Jadwal Tidak Sesuai</strong><br><br>Tanggal selesai sewa tidak boleh sebelum tanggal mulai sewa (" . Carbon::parse($startDate)->isoFormat('D MMMM YYYY') . "). Silakan ketik kembali tanggal selesai sewa yang valid:";
                     $suggestions = [
                         Carbon::parse($startDate)->addDay()->toDateString() . " (1 Hari)",
                         Carbon::parse($startDate)->addDays(2)->toDateString() . " (2 Hari)"
@@ -1238,7 +1258,7 @@ Wajib kembalikan format JSON persis seperti berikut (jangan sertakan markdown bl
                 $this->validateAndEnrichState($data, $bookingState);
                 return $data;
             } else {
-                $reply = "Pilihan tidak valid. Silakan pilih layanan: <strong>Lepas Kunci</strong> atau <strong>Dengan Sopir</strong>.";
+                $reply = "⚠️ <strong>Pilihan Tidak Valid</strong><br><br>Pilihan opsi layanan tidak dikenali. Silakan tentukan pilihan Anda:<br>• <strong>Lepas Kunci</strong> (Tanpa Sopir)<br>• <strong>Dengan Sopir</strong> (+ Rp 150.000/hari)";
                 $suggestions = ["Lepas Kunci", "Dengan Sopir"];
             }
         }
