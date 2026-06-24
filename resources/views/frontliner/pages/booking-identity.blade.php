@@ -9,6 +9,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @keyframes scanEffect {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        .scanner-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, 
+                rgba(59, 130, 246, 0) 0%, 
+                rgba(6, 182, 212, 0.8) 20%, 
+                rgba(6, 182, 212, 1) 50%, 
+                rgba(6, 182, 212, 0.8) 80%, 
+                rgba(59, 130, 246, 0) 100%
+            );
+            box-shadow: 
+                0 0 10px 3px rgba(6, 182, 212, 0.7),
+                0 0 20px 6px rgba(6, 182, 212, 0.4);
+            animation: scanEffect 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 8px 8px;
+            background-color: rgba(6, 182, 212, 0.03);
+            z-index: 10;
+            pointer-events: none;
+            backdrop-filter: saturate(1.3) contrast(1.1);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { border-color: rgba(226, 232, 240, 1); box-shadow: 0 0 0 rgba(6, 182, 212, 0); }
+            50% { border-color: rgba(6, 182, 212, 0.8); box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        }
+        .scanning-container-active {
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
@@ -147,7 +193,7 @@
 
                             <!-- Uploaded Preview -->
                             <div id="ktp-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white relative scanner-target">
                                     <img id="ktp-preview-image" src="" alt="Pratinjau KTP" class="w-full object-contain max-h-24">
                                 </div>
                                 <div>
@@ -203,7 +249,7 @@
 
                             <!-- Uploaded Preview -->
                             <div id="selfie-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white relative scanner-target">
                                     <img id="selfie-preview-image" src="" alt="Pratinjau Selfie" class="w-full object-contain max-h-24">
                                 </div>
                                 <div>
@@ -323,6 +369,27 @@
             clientValidationError.classList.add('hidden');
             submitButton.disabled = true;
             submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+            submitButton.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sedang Memproses Verifikasi...
+            `;
+
+            // Append scan line and active classes to image targets
+            document.querySelectorAll('.scanner-target').forEach(target => {
+                target.classList.add('scanning-container-active');
+                if (!target.querySelector('.scanner-line')) {
+                    const line = document.createElement('div');
+                    line.className = 'scanner-line';
+                    const overlay = document.createElement('div');
+                    overlay.className = 'scanning-overlay';
+                    target.appendChild(line);
+                    target.appendChild(overlay);
+                }
+            });
+
             bookingForm.submit();
         }
 

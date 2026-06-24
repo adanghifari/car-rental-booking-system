@@ -28,7 +28,7 @@
         if ($rental->status === \App\Enums\RentalStatus::PREPAID) {
             $targetTime = $rental->prepaid_expires_at;
         } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
-            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
+            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(3) : null;
         }
         $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
         $hasPaymentSession = $payment

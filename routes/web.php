@@ -469,26 +469,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
         ? \App\Enums\RentalType::WITH_DRIVER
         : \App\Enums\RentalType::SELF_DRIVE;
 
-    $renderIdentityPage = function (array $extraData = [], ?ViewErrorBag $errorBag = null) use ($car, $startDate, $endDate, $serviceType, $days, $rentCost, $driverCost, $serviceCost, $totalPrice) {
-        return response()->view('frontliner.pages.booking-identity', array_merge([
-            'car' => $car,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'service_type' => $serviceType,
-            'days' => $days,
-            'rentCost' => $rentCost,
-            'driverCost' => $driverCost,
-            'serviceCost' => $serviceCost,
-            'totalPrice' => $totalPrice,
-            'errors' => $errorBag ?? new ViewErrorBag(),
-        ], $extraData), 422);
-    };
-
     if ($validator->fails()) {
-        $errorBag = new ViewErrorBag();
-        $errorBag->put('default', $validator->errors());
-
-        return $renderIdentityPage([], $errorBag);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->withErrors($validator)
+            ->withInput();
     }
 
     $autoVerifyPassed = false;
@@ -542,9 +526,9 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             return $rental;
         });
     } catch (\Throwable $e) {
-        return $renderIdentityPage([
-            'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
-        ]);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->with('error', 'Gagal memproses verifikasi: ' . $e->getMessage())
+            ->withInput();
     }
 
     app(\App\Services\CustomerNotificationService::class)->notifyVerificationSubmitted($rental);
@@ -555,7 +539,7 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $rental->verification_status = \App\Enums\VerificationStatus::VERIFIED;
             $rental->verification_passed = true;
             $rental->verified_at = now();
-            $rental->prepaid_expires_at = now()->addHours(4);
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
         });
 
@@ -594,6 +578,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
     return redirect()->route('booking.detail', ['rental' => $rental->id]);
 })->middleware(['token.cookie', 'auth'])->name('booking.submit');
 
+Route::get('/booking/submit', function () {
+    return redirect()->route('frontliner');
+})->middleware(['token.cookie', 'auth']);
+
 Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Services\MidtransService $midtrans) {
     $user = auth()->user();
     if (!$user || $rental->user_id !== $user->id) {
@@ -608,8 +596,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
         return back()->with('error', 'Status reservasi tidak sesuai.');
     }
 
-    // Check if 4 hours has passed since verified_at
-    if ($rental->verified_at && $rental->verified_at->addHours(4)->isPast()) {
+    // Check if 3 hours has passed since verified_at
+    if ($rental->verified_at && $rental->verified_at->addHours(3)->isPast()) {
         DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::EXPIRED;
             $rental->prepaid_expires_at = null;
@@ -625,8 +613,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
 
         DB::transaction(function () use ($rental, $orderId, $midtransResponse) {
             $rental->status = RentalStatus::PREPAID;
-            // Limit countdown to exactly remaining of verified_at + 4 hours
-            $rental->prepaid_expires_at = $rental->verified_at->addHours(4);
+            // Limit countdown to 1 hour 20 minutes (80 minutes) from now
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
 
             \App\Models\PaymentHistory::create([
@@ -1195,16 +1183,19 @@ Route::get('/forgot-password', function (Request $request) {
     if ($request->user()) {
         return redirect()->route('frontliner');
     }
-    return view('frontliner.auth.forgot-password');
+    $cars = Car::count();
+    return view('frontliner.auth.forgot-password', ['cars' => $cars]);
 })->name('password.request');
 
 Route::get('/reset-password/{token}', function (Request $request, $token) {
     if ($request->user()) {
         return redirect()->route('frontliner');
     }
+    $cars = Car::count();
     return view('frontliner.auth.reset-password', [
         'token' => $token,
-        'email' => $request->query('email')
+        'email' => $request->query('email'),
+        'cars' => $cars
     ]);
 })->name('password.reset');
 

@@ -158,7 +158,7 @@ def verify():
                 "nik": None,
                 "error": "Could not extract valid NIK from KTP",
                 "raw_text": raw_text[:500]  # Return truncated text for debugging
-            }), 400
+            }), 200
         
         # Perform face verification
         try:
@@ -198,8 +198,8 @@ def verify():
             return jsonify({
                 "verified": False,
                 "nik": nik,
-                "error": "Face verification failed"
-            }), 500
+                "error": f"Face verification failed: {str(face_error)}"
+            }), 200
     
     except FileNotFoundError as e:
         logger.error(f"File not found: {str(e)}")
@@ -225,4 +225,4 @@ def verify():
 
 
 if __name__ == "__main__":
-    app.run(port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True)

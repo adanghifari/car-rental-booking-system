@@ -24,12 +24,12 @@ class ExpirePrepaidRentals extends Command
                       ->whereNotNull('prepaid_expires_at')
                       ->where('prepaid_expires_at', '<=', now());
                 })
-                // 2. Verified rentals that never paid/progressed and passed the 4-hour window from verified_at
+                // 2. Verified rentals that never paid/progressed and passed the 3-hour window from verified_at
                 ->orWhere(function ($q) {
                     $q->where('status', RentalStatus::PENDING_VERIFICATION)
                       ->where('verification_status', \App\Enums\VerificationStatus::VERIFIED)
                       ->whereNotNull('verified_at')
-                      ->where('verified_at', '<=', now()->subHours(4));
+                      ->where('verified_at', '<=', now()->subHours(3));
                 })
                 // 3. Stale booking holds that never received identity uploads
                 ->orWhere(function ($q) {

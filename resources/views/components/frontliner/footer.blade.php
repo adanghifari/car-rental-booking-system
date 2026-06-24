@@ -88,7 +88,9 @@
     </div>
 </footer>
 
-<div class="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-    <x-frontliner.contact />
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <div id="wa-floating-container" style="transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform;">
+        <x-frontliner.contact />
+    </div>
     <x-frontliner.chatbot />
 </div>
