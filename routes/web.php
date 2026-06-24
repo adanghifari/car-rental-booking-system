@@ -21,64 +21,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ViewErrorBag;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-if (! function_exists('booking_active_rental_statuses')) {
-    function booking_active_rental_statuses(): array
-    {
-        return BookingAvailability::activeRentalStatuses();
-    }
-}
-
-if (! function_exists('booking_rental_has_overlap')) {
-    function booking_rental_has_overlap(int $carId, string $startDate, string $endDate, ?int $ignoreRentalId = null): bool
-    {
-        $car = Car::query()->find($carId);
-
-        if (! $car) {
-            return false;
-        }
-
-        $result = BookingAvailability::checkCarAvailability($car, $startDate, $endDate, $ignoreRentalId);
-
-        return ! $result['available'] && in_array($result['reason'], ['overlap', 'post_buffer'], true);
-    }
-}
-
-if (! function_exists('booking_car_availability_result')) {
-    function booking_car_availability_result(Car $car, string $startDate, string $endDate, ?int $ignoreRentalId = null): array
-    {
-        return BookingAvailability::checkCarAvailability($car, $startDate, $endDate, $ignoreRentalId);
-    }
-}
-
-if (! function_exists('booking_car_is_listable_for_date')) {
-    function booking_car_is_listable_for_date(Car $car, string $date): bool
-    {
-        return BookingAvailability::checkCarAvailability($car, $date, $date)['available'];
-    }
-}
-
-if (! function_exists('booking_unavailability_message')) {
-    function booking_unavailability_message(string $reason): string
-    {
-        return BookingAvailability::unavailabilityMessage($reason);
-    }
-}
-
-if (! function_exists('booking_release_identity_files')) {
-    function booking_release_identity_files(Rental $rental): void
-    {
-        if ($rental->ktp_path) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->ktp_path);
-        }
-
-        if ($rental->selfie_path) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->selfie_path);
-        }
-
-        $rental->ktp_path = '';
-        $rental->selfie_path = '';
-    }
-}
 
 Route::get('/', function (Request $request) {
     $user = $request->user();
@@ -1162,7 +1104,20 @@ Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rent
 
     $path = ($type === 'selfie') ? $rental->selfie_path : $rental->ktp_path;
 
-    if (!$path || !\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+    if (!$path) {
+        abort(404);
+    }
+
+    $cloudinary = app(\App\Services\CloudinaryMediaService::class);
+    if ($cloudinary->isCloudinaryPath($path)) {
+        $url = $cloudinary->url($path);
+        if ($url) {
+            return redirect()->away($url);
+        }
+        abort(404);
+    }
+
+    if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
         abort(404);
     }
 
@@ -1219,6 +1174,7 @@ Route::get('/login', function (Request $request) {
 Route::get('/register', function (Request $request) {
     $user = $request->user();
     $redirect = $request->query('redirect');
+    $cars = Car::count();
 
     if ($user?->role === User::ROLE_ADMIN) {
         return redirect()->route('dashboard');
@@ -1232,7 +1188,7 @@ Route::get('/register', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    return view('frontliner.auth.register');
+    return view('frontliner.auth.register', ['cars' => $cars]);
 })->name('register');
 
 Route::get('/forgot-password', function (Request $request) {

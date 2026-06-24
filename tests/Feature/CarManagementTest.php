@@ -361,6 +361,7 @@ class CarManagementTest extends TestCase
             'cc'                   => 1200,
             'color'                => 'Merah',
             'description'          => 'Mobil lama',
+            'image'                => 'cars/main/dummy.jpg',
         ]);
 
         $response = $this->put(route('backoffice.cars.update', $car), [
@@ -500,6 +501,7 @@ class CarManagementTest extends TestCase
             'cc'                   => 1500,
             'color'                => 'Hitam',
             'description'          => 'Toyota Rush SUV',
+            'image'                => 'cars/main/dummy.jpg',
         ]);
 
         // Update dengan plat yang sama (harus berhasil, bukan gagal karena "duplicate")
@@ -628,8 +630,8 @@ class CarManagementTest extends TestCase
 
         $response = $this->get(route('backoffice.cars'));
 
-        // Harus di-redirect atau mendapat forbidden
-        $response->assertStatus(302);
+        // Harus mendapat forbidden
+        $response->assertForbidden();
     }
 
     /** [AKSES] Customer tidak dapat membuat mobil */
@@ -639,7 +641,7 @@ class CarManagementTest extends TestCase
 
         $response = $this->post(route('backoffice.cars.store'), $this->validCarPayload());
 
-        $response->assertStatus(302);
+        $response->assertForbidden();
         $this->assertDatabaseMissing('cars', ['license_plate' => 'B 1234 TES']);
     }
 

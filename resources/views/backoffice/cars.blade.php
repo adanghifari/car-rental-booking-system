@@ -217,10 +217,10 @@
                             </button>
 
                             <div class="fleet-menu" data-car-menu hidden>
-                                <form method="POST" action="{{ route('backoffice.cars.destroy', ['car' => $car['id']]) }}" onsubmit="return confirm('Hapus mobil ini?');" style="margin: 0;">
+                                <form id="delete-car-form-{{ $car['id'] }}" method="POST" action="{{ route('backoffice.cars.destroy', ['car' => $car['id']]) }}" style="margin: 0;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="fleet-menu-item">Hapus</button>
+                                    <button type="button" class="fleet-menu-item" onclick="window.showCustomConfirm('Apakah Anda yakin ingin menghapus mobil ini?', () => document.getElementById('delete-car-form-{{ $car['id'] }}').submit())">Hapus</button>
                                 </form>
                             </div>
                         </div>
@@ -1430,7 +1430,6 @@
                 });
 
                 mainImageInput?.addEventListener('change', () => {
-                    removeImageFlag.value = '0';
                     mainImageLocked = false;
                     renderMainImagePreview();
                 });

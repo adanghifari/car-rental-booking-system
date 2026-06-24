@@ -31,7 +31,8 @@
         }
 
         .page {
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh;
             display: grid;
             grid-template-columns: 1.05fr 1fr;
             overflow: hidden;
@@ -48,6 +49,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            height: 100%;
         }
 
         .brand {
@@ -94,14 +96,18 @@
         .form-area {
             position: relative;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
             padding: 46px 28px;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .card {
             width: min(460px, 100%);
             background: transparent;
+            margin: auto 0;
+            padding: 24px 0;
         }
 
         .back-link {
@@ -386,8 +392,10 @@
         }
 
         @media (max-width: 980px) {
-            .page { grid-template-columns: 1fr; }
-            .hero { min-height: 390px; }
+            body { overflow: auto; }
+            .page { height: auto; min-height: 100vh; min-height: 100dvh; grid-template-columns: 1fr; overflow: visible; }
+            .hero { min-height: 390px; height: auto; }
+            .form-area { height: auto; overflow: visible; }
             .card h2 { font-size: 32px; }
             .footer { font-size: 10px; }
             .back-link {
@@ -406,7 +414,7 @@
                 <p>Rasakan kebebasan berkendara dengan armada eksklusif kami. Perjalanan premium Anda dimulai dari sini.</p>
                 <div class="stats">
                     <div class="stat">
-                        <strong>{{ $cars - 1 }}+</strong>
+                        <strong>{{ $cars }}</strong>
                         <span>Armada</span>
                     </div>
                     <div class="stat">

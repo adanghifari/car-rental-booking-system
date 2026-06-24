@@ -1,0 +1,65 @@
+services:
+  # Database Service
+  db:
+    image: postgres:16-alpine
+    container_name: carrent-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: car_rental_booking
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Face Verification Python AI Service
+  ai-service:
+    build:
+      context: ./ai/face
+      dockerfile: Dockerfile
+    container_name: carrent-ai-service
+    restart: unless-stopped
+    volumes:
+      - ai_uploads:/app/uploads
+    # Exposed internally, but can be mapped to host if needed:
+    # ports:
+    #   - "3000:3000"
+
+  # Laravel Application PHP-FPM Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carrent-app
+    restart: unless-stopped
+    depends_on:
+      - db
+      - ai-service
+    volumes:
+      - .:/var/www/html
+      - storage_data:/var/www/html/storage
+    environment:
+      - DB_HOST=db
+      - FACE_VERIFY_BASE_URL=http://ai-service:3000
+
+  # Nginx Web Server Service
+  web:
+    image: nginx:stable-alpine
+    container_name: carrent-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - .:/var/www/html:ro
+
+volumes:
+  postgres_data:
+    driver: local
+  storage_data:
+    driver: local
+  ai_uploads:
+    driver: local
