@@ -299,7 +299,7 @@
                 <p>Masukkan alamat email Anda untuk menerima tautan khusus penyetelan ulang kata sandi.</p>
                 <div class="stats">
                     <div class="stat">
-                        <strong>500+</strong>
+                        <strong>{{ $cars }}</strong>
                         <span>Armada Mewah</span>
                     </div>
                     <div class="stat">

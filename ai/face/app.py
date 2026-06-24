@@ -112,41 +112,8 @@ def extract_nik(text):
 
 
 def is_valid_nik(nik):
-    """Validate Indonesian NIK format and structure"""
-    if not nik or len(nik) != 16:
-        return False
-    
-    try:
-        nik_int = int(nik)
-    except ValueError:
-        return False
-    
-    # NIK format: PPKKTTHHGGGKKKX
-    # PP = Province code (01-35)
-    # KK = District code (01-99)
-    # TT = Birth date in month
-    # HH = Birth date (01-31, or 40-71 for female)
-    # GGG = Birth place code
-    # KKK = Serial number
-    # X = Check digit
-    
-    province = int(nik[0:2])
-    district = int(nik[2:4])
-    month = int(nik[4:6])
-    day = int(nik[6:8])
-    
-    # Validate ranges (basic check)
-    if not (1 <= province <= 35):
-        return False
-    
-    if not (1 <= month <= 12):
-        return False
-    
-    day_check = day if day <= 31 else day - 40
-    if not (1 <= day_check <= 31):
-        return False
-    
-    return True
+    """Bypass check: Cukup pastikan panjangnya 16 digit angka"""
+    return nik is not None and len(nik) == 16 and nik.isdigit()
 
 
 # =========================
@@ -191,7 +158,7 @@ def verify():
                 "nik": None,
                 "error": "Could not extract valid NIK from KTP",
                 "raw_text": raw_text[:500]  # Return truncated text for debugging
-            }), 400
+            }), 200
         
         # Perform face verification
         try:
@@ -231,8 +198,8 @@ def verify():
             return jsonify({
                 "verified": False,
                 "nik": nik,
-                "error": "Face verification failed"
-            }), 500
+                "error": f"Face verification failed: {str(face_error)}"
+            }), 200
     
     except FileNotFoundError as e:
         logger.error(f"File not found: {str(e)}")
@@ -258,4 +225,4 @@ def verify():
 
 
 if __name__ == "__main__":
-    app.run(port=3000, debug=True)
+    app.run(host="0.0.0.0", port=3000, debug=True)

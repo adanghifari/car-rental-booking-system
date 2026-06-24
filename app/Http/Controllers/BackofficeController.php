@@ -946,11 +946,16 @@ class BackofficeController extends Controller
 
                 $ktpPath = null;
                 $selfiePath = null;
+                $cloudinary = app(CloudinaryMediaService::class);
                 if ($request->hasFile('ktp')) {
-                    $ktpPath = Storage::disk('local')->putFile('ktp', $request->file('ktp'));
+                    $ktpPath = $cloudinary->configured()
+                        ? $cloudinary->uploadPrivate($request->file('ktp'), 'rentals/ktp')
+                        : Storage::disk('local')->putFile('ktp', $request->file('ktp'));
                 }
                 if ($request->hasFile('selfie')) {
-                    $selfiePath = Storage::disk('local')->putFile('selfie', $request->file('selfie'));
+                    $selfiePath = $cloudinary->configured()
+                        ? $cloudinary->uploadPrivate($request->file('selfie'), 'rentals/selfie')
+                        : Storage::disk('local')->putFile('selfie', $request->file('selfie'));
                 }
 
                 $start = Carbon::parse($data['start_date']);

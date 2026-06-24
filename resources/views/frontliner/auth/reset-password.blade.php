@@ -272,7 +272,7 @@
                 <p>Buat kata sandi baru yang aman dan mudah diingat untuk mengamankan akun Anda.</p>
                 <div class="stats">
                     <div class="stat">
-                        <strong>500+</strong>
+                        <strong>{{ $cars }}</strong>
                         <span>Armada Mewah</span>
                     </div>
                     <div class="stat">

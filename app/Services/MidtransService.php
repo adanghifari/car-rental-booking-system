@@ -27,7 +27,7 @@ class MidtransService
             ? 'https://app.midtrans.com/snap/v1/transactions'
             : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 
-        $expiryTime = $rental->prepaid_expires_at ?? ($rental->verified_at ? $rental->verified_at->addHours(4) : now()->addHours(4));
+        $expiryTime = $rental->prepaid_expires_at ?? ($rental->verified_at ? $rental->verified_at->addHours(3) : now()->addHours(3));
         $durationInMinutes = max(1, (int) now()->diffInMinutes($expiryTime));
 
         $payload = [

@@ -14,23 +14,26 @@
         --bg: #e9ebf1;
         --text: #1f2635;
         --muted: #6f7687;
+        --primary: #0d3fb8;
+        --primary-dark: #0b3499;
         --line: #d6dbe6;
         --input: #edf0f6;
+        --panel-blue: #0d2f8f;
     }
 
-    * {
-        box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
         margin: 0;
         font-family: 'Outfit', sans-serif;
         background: var(--bg);
         color: var(--text);
+        overflow-y: auto;
     }
 
     .page {
-        min-height: 100vh;
+        height: 100vh;
+        height: 100dvh;
         display: grid;
         grid-template-columns: 1.05fr 1fr;
         overflow: hidden;
@@ -42,68 +45,70 @@
         padding: 28px 26px;
         color: #fff;
         background:
-            linear-gradient(180deg, rgba(5, 16, 58, 0.9), rgba(8, 42, 123, 0.9)),
-            url('https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+            linear-gradient(180deg, rgba(8, 22, 64, 0.9), rgba(7, 31, 111, 0.92)),
+            url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        height: 100%;
     }
 
     .brand {
-        font-size: 28px;
-        font-weight: 600;
-    }
-
-    .eyebrow {
-        color: #6afad0;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        font-size: 11px;
+        font-size: 26px;
+        font-weight: 500;
+        letter-spacing: 0.4px;
     }
 
     .hero-copy h1 {
-        margin: 10px 0 0;
-        font-size: clamp(40px, 5vw, 68px);
-        line-height: 1.02;
+        margin: 0;
+        font-size: clamp(34px, 4vw, 56px);
+        line-height: 1.03;
+        font-weight: 500;
     }
 
     .hero-copy p {
-        margin-top: 16px;
-        max-width: 490px;
-        color: rgba(255, 255, 255, .84);
+        margin-top: 14px;
+        max-width: 460px;
+        color: rgba(255, 255, 255, 0.82);
         font-weight: 300;
         line-height: 1.5;
+        font-size: 15px;
     }
 
     .stats {
         display: flex;
-        gap: 34px;
-        margin-top: 28px;
+        gap: 38px;
+        margin-top: 36px;
     }
 
     .stat strong {
         display: block;
-        font-size: 34px;
-        line-height: 1;
+        font-size: 26px;
+        font-weight: 600;
     }
 
     .stat span {
-        font-size: 12px;
+        font-size: 11px;
+        letter-spacing: 1.2px;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: rgba(255, 255, 255, .78);
+        color: rgba(255, 255, 255, 0.78);
     }
 
     .form-area {
         position: relative;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 38px 28px;
+        padding: 46px 28px;
+        height: 100%;
+        overflow-y: auto;
     }
 
     .card {
-        width: min(480px, 100%);
+        width: min(460px, 100%);
+        background: transparent;
+        margin: auto 0;
+        padding: 24px 0;
     }
 
     .back-link {
@@ -112,12 +117,18 @@
         left: 28px;
         display: inline-flex;
         align-items: center;
+        gap: 8px;
         color: #5d6680;
         text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .back-link-icon {
         font-size: 24px;
         font-weight: 600;
         line-height: 1;
-        transition: color 0.2s ease, transform 0.2s ease;
     }
 
     .back-link:hover {
@@ -126,15 +137,14 @@
     }
 
     .form-brand {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 20px;
     }
 
     .form-brand img {
-        width: 182px;
+        width: 178px;
         max-width: 100%;
         height: auto;
         display: block;
@@ -142,48 +152,67 @@
 
     .card h2 {
         margin: 0;
-        font-size: 42px;
+        font-size: 38px;
         font-weight: 500;
+        letter-spacing: 0.2px;
     }
 
-    .subtitle {
+    .card .subtitle {
         margin-top: 8px;
-        font-size: 14px;
         color: var(--muted);
+        line-height: 1.5;
+        font-size: 14px;
     }
 
     .feedback {
-        margin-top: 14px;
-        padding: 11px 12px;
+        margin-top: 16px;
+        padding: 10px 12px;
         border-radius: 10px;
         font-size: 13px;
         display: none;
+        text-align: left;
     }
 
     .feedback.error {
         display: block;
         background: #ffe8ea;
         color: #8d1f2e;
+        border: 1px solid #fbcfe8;
     }
 
     .feedback.success {
         display: block;
         background: #e6f8eb;
         color: #1b6b3a;
+        border: 1px solid #d1fae5;
     }
 
-    form {
-        margin-top: 20px;
-    }
+    form { margin-top: 22px; width: 100%; }
 
     .field {
-        margin-bottom: 14px;
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .field-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
     }
 
     .field label {
-        display: block;
-        margin-bottom: 8px;
         font-size: 13px;
+        color: #2c3343;
+        font-weight: 500;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    .field a {
+        font-size: 12px;
+        color: #3059c0;
+        text-decoration: none;
         font-weight: 500;
     }
 
@@ -191,16 +220,16 @@
         width: 100%;
         border: 1px solid transparent;
         background: var(--input);
-        border-radius: 10px;
+        border-radius: 9px;
         padding: 12px 14px;
         outline: none;
         font-family: inherit;
         font-size: 14px;
+        color: #2e3342;
+        transition: border-color 0.2s ease;
     }
 
-    .field input:focus {
-        border-color: #86a5eb;
-    }
+    .field input:focus { border-color: #85a3ec; }
 
     .password-field {
         position: relative;
@@ -229,26 +258,8 @@
         color: #1a51d6;
     }
 
-    .tos {
-        display: flex;
-        align-items: start;
-        gap: 10px;
-        margin: 12px 0 2px;
-        font-size: 12px;
-        color: #5f6780;
-    }
-
-    .tos input {
-        margin-top: 2px;
-    }
-
-    .tos a {
-        color: #284fb8;
-        text-decoration: none;
-    }
-
     .submit-btn {
-        margin-top: 14px;
+        margin-top: 20px;
         width: 100%;
         border: 0;
         border-radius: 999px;
@@ -258,20 +269,22 @@
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
+        transition: transform 0.15s ease, filter 0.2s ease;
     }
 
-    .submit-btn:disabled {
-        opacity: .72;
-        cursor: not-allowed;
-    }
+    .submit-btn:hover { filter: brightness(0.98); }
+    .submit-btn:active { transform: translateY(1px); }
+    .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
     .divider {
-        margin: 22px 0 14px;
+        margin: 24px 0 16px;
         display: flex;
         align-items: center;
         gap: 12px;
         color: #7c8497;
         font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
     }
 
     .divider::before,
@@ -290,17 +303,14 @@
 
     .social {
         border: 0;
-        border-radius: 999px;
-        padding: 11px;
         background: #d8dff0;
         color: #1f2635;
-        opacity: .8;
+        border-radius: 999px;
+        padding: 11px;
+        font-family: inherit;
+        font-weight: 500;
         cursor: not-allowed;
-    }
-
-    .social.apple {
-        background: #17213d;
-        color: #fff;
+        opacity: 0.8;
     }
 
     .switch-link {
@@ -316,27 +326,62 @@
         font-weight: 600;
     }
 
+    .switch-link a:hover {
+        text-decoration: underline;
+    }
+
+    .tos {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13px;
+        color: #6f7687;
+        line-height: 1.4;
+        margin-top: 15px;
+        text-align: left;
+    }
+    .tos input {
+        margin-top: 3px;
+    }
+    .tos a {
+        color: #2f58c1;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .tos a:hover {
+        text-decoration: underline;
+    }
+
     .footer {
         grid-column: 1 / -1;
         border-top: 1px solid var(--line);
         padding: 14px 24px;
-        text-align: right;
-        font-size: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px 24px;
         color: #687086;
+        font-size: 11px;
         letter-spacing: 1px;
         text-transform: uppercase;
     }
 
+    .footer .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
     .hero,
     .form-area {
-        transition: transform 680ms cubic-bezier(0.2, 1, 0.22, 1);
+        transition: transform 980ms cubic-bezier(0.2, 1, 0.22, 1);
         will-change: transform;
     }
 
     .hero-copy,
     .card,
     .back-link {
-        transition: opacity 360ms ease, transform 520ms cubic-bezier(0.2, 1, 0.22, 1);
+        transition: opacity 520ms ease, transform 760ms cubic-bezier(0.2, 1, 0.22, 1);
     }
 
     body.auth-stage-enter .hero {
@@ -382,22 +427,12 @@
     }
 
     @media (max-width: 980px) {
-        .page {
-            grid-template-columns: 1fr;
-        }
-
-        .hero {
-            min-height: 360px;
-        }
-
-        .card h2 {
-            font-size: 34px;
-        }
-
-        .footer {
-            text-align: center;
-        }
-
+        body { overflow: auto; }
+        .page { height: auto; min-height: 100vh; min-height: 100dvh; grid-template-columns: 1fr; overflow: visible; }
+        .hero { min-height: 390px; height: auto; }
+        .form-area { height: auto; overflow: visible; }
+        .card h2 { font-size: 32px; }
+        .footer { font-size: 10px; }
         .back-link {
             top: 22px;
             left: 22px;
@@ -552,8 +587,8 @@
                 <p>Akses armada kendaraan premium terbaik dunia dengan layanan concierge pribadi yang mengerti standar
                     Anda.</p>
                 <div class="stats">
-                    <div class="stat"><strong>500+</strong><span>Luxury Fleet</span></div>
-                    <div class="stat"><strong>24/7</strong><span>Support</span></div>
+                    <div class="stat"><strong>{{ $cars }}</strong><span>Armada</span></div>
+                    <div class="stat"><strong>24/7</strong><span>Layanan Pelanggan</span></div>
                 </div>
             </div>
         </aside>

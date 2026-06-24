@@ -28,7 +28,7 @@
         if ($rental->status === \App\Enums\RentalStatus::PREPAID) {
             $targetTime = $rental->prepaid_expires_at;
         } elseif ($rental->status === \App\Enums\RentalStatus::PENDING_VERIFICATION && $rental->verification_status === \App\Enums\VerificationStatus::VERIFIED) {
-            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(4) : null;
+            $targetTime = $rental->verified_at ? $rental->verified_at->addHours(3) : null;
         }
         $hasIdentityDocs = filled($rental->ktp_path) && filled($rental->selfie_path);
         $hasPaymentSession = $payment
@@ -558,9 +558,10 @@
                     @endif
 
                     @if(in_array($rental->status, [\App\Enums\RentalStatus::PENDING_VERIFICATION, \App\Enums\RentalStatus::PREPAID]))
-                        <form action="{{ route('booking.cancel', $rental->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pemesanan ini? Data identitas KTP dan selfie Anda akan dihapus demi privasi.');">
+                        <form id="cancel-booking-form" action="{{ route('booking.cancel', $rental->id) }}" method="POST" style="margin: 0;">
                             @csrf
-                            <button type="submit" class="w-full text-center flex items-center justify-center gap-1.5 border border-red-500 hover:bg-red-50 text-red-500 font-bold py-2.5 px-6 rounded-xl transition text-xs">
+                            <button type="button" class="w-full text-center flex items-center justify-center gap-1.5 border border-red-500 hover:bg-red-50 text-red-500 font-bold py-2.5 px-6 rounded-xl transition text-xs cursor-pointer"
+                                onclick="window.showConfirmPopup('Apakah Anda yakin ingin membatalkan pemesanan ini? Data identitas KTP dan selfie Anda akan dihapus demi privasi.', () => document.getElementById('cancel-booking-form').submit())">
                                 <svg class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
@@ -645,5 +646,6 @@
             });
         </script>
     @endif
+    <x-frontliner.confirm-popup />
 </body>
 </html>
