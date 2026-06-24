@@ -1,8 +1,7 @@
-<!-- Chatbot Floating Widget -->
-<div class="relative flex flex-col items-end font-sans">
+<div class="relative flex flex-col items-end font-sans" style="position: relative !important;">
     
     <!-- Chat Window -->
-    <div id="chatbot-window" class="hidden mb-3 w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[85vh] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 transform translate-y-4 opacity-0 scale-95">
+    <div id="chatbot-window" class="hidden w-96 max-w-[calc(100vw-2rem)] h-[550px] max-h-[85vh] bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/60 flex flex-col overflow-hidden transition-all duration-300 transform translate-y-4 opacity-0 scale-95" style="position: absolute !important; bottom: 70px !important; right: 0 !important; z-index: 9999 !important;">
         
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white px-4 py-4 flex items-center justify-between shadow-md">
@@ -191,12 +190,19 @@
     function toggleChatWindow() {
         const win = document.getElementById('chatbot-window');
         const badge = document.querySelector('#chatbot-toggle-btn span');
+        const waContainer = document.getElementById('wa-floating-container');
         isChatOpen = !isChatOpen;
 
         if (isChatOpen) {
             win.classList.remove('hidden');
             // Remove notification dot
             if (badge) badge.classList.add('hidden');
+            
+            // Translate WhatsApp container upwards smoothly (550px window height + 12px gap)
+            if (waContainer) {
+                waContainer.style.transform = 'translateY(-562px)';
+            }
+            
             setTimeout(() => {
                 win.classList.remove('opacity-0', 'translate-y-4', 'scale-95');
                 win.classList.add('opacity-100', 'translate-y-0', 'scale-100');
@@ -205,6 +211,12 @@
         } else {
             win.classList.remove('opacity-100', 'translate-y-0', 'scale-100');
             win.classList.add('opacity-0', 'translate-y-4', 'scale-95');
+            
+            // Reset WhatsApp container translation
+            if (waContainer) {
+                waContainer.style.transform = 'translateY(0)';
+            }
+            
             setTimeout(() => {
                 win.classList.add('hidden');
             }, 300);

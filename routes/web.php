@@ -1183,16 +1183,19 @@ Route::get('/forgot-password', function (Request $request) {
     if ($request->user()) {
         return redirect()->route('frontliner');
     }
-    return view('frontliner.auth.forgot-password');
+    $cars = Car::count();
+    return view('frontliner.auth.forgot-password', ['cars' => $cars]);
 })->name('password.request');
 
 Route::get('/reset-password/{token}', function (Request $request, $token) {
     if ($request->user()) {
         return redirect()->route('frontliner');
     }
+    $cars = Car::count();
     return view('frontliner.auth.reset-password', [
         'token' => $token,
-        'email' => $request->query('email')
+        'email' => $request->query('email'),
+        'cars' => $cars
     ]);
 })->name('password.reset');
 
