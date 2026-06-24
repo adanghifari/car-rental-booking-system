@@ -399,6 +399,11 @@ class BackofficeController extends Controller
 
     public function storeCar(Request $request): RedirectResponse
     {
+        if ($request->has('license_plate')) {
+            $normalizedPlate = strtoupper(trim(preg_replace('/\s+/', ' ', $request->input('license_plate'))));
+            $request->merge(['license_plate' => $normalizedPlate]);
+        }
+
         $validator = Validator::make($request->all(), [
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
@@ -449,6 +454,11 @@ class BackofficeController extends Controller
 
     public function updateCar(Request $request, Car $car): RedirectResponse
     {
+        if ($request->has('license_plate')) {
+            $normalizedPlate = strtoupper(trim(preg_replace('/\s+/', ' ', $request->input('license_plate'))));
+            $request->merge(['license_plate' => $normalizedPlate]);
+        }
+
         $imageRules = ($request->boolean('remove_image') || blank($car->image))
             ? ['required', 'file', 'image', 'max:5120']
             : ['nullable', 'file', 'image', 'max:5120'];

@@ -33,6 +33,11 @@ class CarController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($request->has('license_plate')) {
+            $normalizedPlate = strtoupper(trim(preg_replace('/\s+/', ' ', $request->input('license_plate'))));
+            $request->merge(['license_plate' => $normalizedPlate]);
+        }
+
         $validator = Validator::make($request->all(), [
             'brand' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
@@ -65,6 +70,11 @@ class CarController extends Controller
 
     public function update(Request $request, Car $car): JsonResponse
     {
+        if ($request->has('license_plate')) {
+            $normalizedPlate = strtoupper(trim(preg_replace('/\s+/', ' ', $request->input('license_plate'))));
+            $request->merge(['license_plate' => $normalizedPlate]);
+        }
+
         $validator = Validator::make($request->all(), [
             'brand' => ['sometimes', 'required', 'string', 'max:100'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
