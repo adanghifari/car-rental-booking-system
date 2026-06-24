@@ -43,8 +43,22 @@ return [
 
     'face_verify' => [
         'base_url' => env('FACE_VERIFY_BASE_URL', 'http://127.0.0.1:3000'),
-        'timeout' => env('FACE_VERIFY_TIMEOUT', 60),
+        'timeout' => env('FACE_VERIFY_TIMEOUT', 120),  // Increased from 60s to 120s for large images
         'mock' => env('FACE_VERIFY_MOCK', false),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.1-flash-lite'),
+        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.5-flash'),
+        'nlu_cache_ttl_seconds' => env('GEMINI_NLU_CACHE_TTL_SECONDS', 21600),
+    ],
+
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'api_key' => env('CLOUDINARY_API_KEY'),
+        'api_secret' => env('CLOUDINARY_API_SECRET'),
+        'folder' => env('CLOUDINARY_FOLDER', 'car-rental-booking-system'),
     ],
 
 ];

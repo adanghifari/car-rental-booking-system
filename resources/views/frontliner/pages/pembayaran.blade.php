@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Pembayaran - MD CAR RENTAL</title>
@@ -51,13 +52,18 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block font-semibold">Menunggu Pembayaran</span>
                         <h2 class="text-3xl font-black text-slate-900 mt-2">{{ $pendingCount }}</h2>
                     </div>
-                    <span class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-xl">
-                        ⏱️
+                    <span class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </span>
                 </div>
                 @if($pendingCount > 0)
-                    <div class="text-[10px] text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 w-fit">
-                        ⚠️ Selesaikan pembayaran tertunda Anda
+                    <div class="text-[10px] text-amber-600 font-bold bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 w-fit flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>Selesaikan pembayaran tertunda Anda</span>
                     </div>
                 @else
                     <p class="text-[10px] text-slate-400 font-semibold">Semua pembayaran aman & beres</p>
@@ -71,8 +77,10 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block font-semibold">Total Transaksi</span>
                         <h2 class="text-3xl font-black text-slate-900 mt-2">{{ $totalCount }}</h2>
                     </div>
-                    <span class="w-10 h-10 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center font-bold text-xl">
-                        💳
+                    <span class="w-10 h-10 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
                     </span>
                 </div>
                 <p class="text-[10px] text-slate-400 font-semibold">Keseluruhan sesi tagihan Anda</p>
@@ -86,7 +94,9 @@
                 <div class="md:col-span-2">
                     <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pencarian</label>
                     <div class="relative flex items-center">
-                        <span class="absolute left-4 text-slate-400">🔍</span>
+                        <svg class="absolute left-4 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
                         <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari Kode Transaksi (Order ID) atau Nama Kendaraan..." class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200/60 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300">
                     </div>
                 </div>
@@ -184,7 +194,7 @@
                         <div>
                             <!-- Header Area -->
                             <div class="relative bg-slate-100 h-44 overflow-hidden flex items-center justify-center">
-                                <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
+                                <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $car->name }}" class="w-full h-full object-cover">
                                 <span class="absolute top-4 right-4 border text-[10px] font-bold px-3 py-1.5 rounded-xl uppercase tracking-wider {{ $badgeColor }}">{{ $statusLabel }}</span>
                             </div>
 
@@ -232,8 +242,10 @@
                     </div>
                 @endif
             @empty
-                <div class="col-span-full bg-white border border-slate-100 rounded-3xl p-16 text-center text-slate-500 shadow-sm">
-                    <span class="text-4xl block mb-4">💳</span>
+                <div class="col-span-full bg-white border border-slate-100 rounded-3xl p-16 text-center text-slate-500 shadow-sm flex flex-col items-center justify-center">
+                    <svg class="w-12 h-12 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
                     <p class="font-bold text-base text-slate-800">Belum ada riwayat pembayaran</p>
                     <p class="text-xs text-slate-400 mt-1">Transaksi Anda akan otomatis tercatat di sini setelah melakukan booking kendaraan.</p>
                 </div>

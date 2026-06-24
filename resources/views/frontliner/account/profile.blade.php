@@ -14,11 +14,8 @@
 
     <x-frontliner.navbar />
 
-    <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full">
-        
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Left Sidebar Navigation -->
             <aside class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-2 h-fit lg:sticky lg:top-24">
                 <a href="{{ route('customer.profile') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 bg-[#0B3C9B] text-white shadow-md shadow-blue-500/10">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -30,7 +27,7 @@
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                     </svg>
-                    <span>Pengaturan</span>
+                    <span>Ganti Password</span>
                 </a>
                 <a href="{{ route('customer.payments') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -40,9 +37,7 @@
                 </a>
             </aside>
 
-            <!-- Right Content Area -->
             <div class="lg:col-span-3 space-y-6">
-                <!-- Success Message -->
                 @if (session('success'))
                     <div class="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-r-2xl text-xs font-semibold shadow-sm flex items-center gap-2">
                         <span>✓</span>
@@ -61,7 +56,6 @@
                         @method('PUT')
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                            <!-- Name -->
                             <div class="space-y-1.5">
                                 <label for="name" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Nama Lengkap</label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
@@ -70,7 +64,6 @@
                                 @enderror
                             </div>
 
-                            <!-- Username -->
                             <div class="space-y-1.5">
                                 <label for="username" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Username</label>
                                 <input type="text" name="username" id="username" value="{{ old('username', $user->username) }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
@@ -80,7 +73,6 @@
                             </div>
                         </div>
 
-                        <!-- Email -->
                         <div class="space-y-1.5">
                             <label for="email" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Alamat Email</label>
                             <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
@@ -89,29 +81,23 @@
                             @enderror
                         </div>
 
-                        <!-- Phone (Read-only) -->
                         <div class="space-y-1.5">
-                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">No Telepon</label>
-                            <input type="text" disabled value="Diperbarui melalui Verifikasi KTP saat menyewa" class="w-full bg-gray-100 border border-gray-200 text-gray-400 rounded-xl px-4 py-3 text-xs font-medium cursor-not-allowed select-none">
+                            <label for="phone" class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Nomor Telepon</label>
+                            <input type="text" name="phone" id="phone" value="{{ old('phone', $user->phone) }}" maxlength="15" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition">
+                            @error('phone')
+                                <p class="text-red-500 text-xs font-semibold mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        <!-- Address (Read-only) -->
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider">Alamat</label>
-                            <textarea disabled rows="3" class="w-full bg-gray-100 border border-gray-200 text-gray-400 rounded-xl px-4 py-3 text-xs font-medium cursor-not-allowed select-none resize-none">Alamat Anda terverifikasi secara aman melalui KTP & Selfie saat pengajuan sewa armada.</textarea>
-                        </div>
-
-                        <!-- Submit Button -->
                         <div class="pt-2 flex justify-end">
                             <button type="submit" class="bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.98] text-white font-bold py-3.5 px-8 rounded-xl text-xs transition-all duration-200 shadow-md shadow-blue-200 uppercase tracking-wider">
-                                Simpan Perubahan
+                                Simpan Perubahan Profil
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-
     </main>
 
     <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800">

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detail {{ $car->name }} - MD CAR RENTAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
@@ -21,17 +23,15 @@
             <div class="lg:col-span-3 space-y-6">
                 <!-- Main Car Photo -->
                 <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm aspect-[16/10]">
-                    <img id="main-car-photo" src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}" alt="{{ $car->name }} Side" class="w-full h-full object-cover">
+                    <img id="main-car-photo" src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}" alt="{{ $car->name }} Side" class="w-full h-full object-cover">
                 </div>
 
                 <!-- Gallery Thumbnails -->
                 @php
                     $thumbnails = [];
-                    $thumbnails[] = $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80';
-                    if (is_array($car->gallery_images)) {
-                        foreach ($car->gallery_images as $gImg) {
-                            $thumbnails[] = asset('storage/' . $gImg);
-                        }
+                    $thumbnails[] = $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80';
+                    foreach ($car->gallery_image_urls as $galleryImageUrl) {
+                        $thumbnails[] = $galleryImageUrl;
                     }
                     $thumbnails = array_slice($thumbnails, 0, 4);
                 @endphp
@@ -53,30 +53,51 @@
                 </div>
 
                 <!-- Specifications Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">⚙️ Transmisi</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->transmission->label() }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">👥 Kapasitas</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->seat_count }} Kursi</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">⚡ Mesin</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->cc ? number_format($car->cc, 0, ',', '.') : '-' }} cc</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">📅 Tahun</p>
-                        <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->year }}</p>
-                    </div>
-                </div>
+                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transmisi</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->transmission->label() }}</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kapasitas</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->seat_count }} Kursi</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mesin</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->cc ? number_format($car->cc, 0, ',', '.') : '-' }} cc</p>
+                     </div>
+                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-center flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-1 mb-1 justify-center">
+                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                             </svg>
+                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tahun</span>
+                         </div>
+                         <p class="text-sm font-bold text-[#0B3C9B]">{{ $car->year }}</p>
+                     </div>
+                 </div>
             </div>
 
             <!-- Sticky Booking Sidebar -->
             <aside class="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-md lg:sticky lg:top-24">
                 <div class="rounded-xl overflow-hidden h-32 mb-4 bg-gray-100">
-                    <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=500&q=80' }}" alt="Car Side Mini" class="w-full h-full object-cover">
+                    <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=500&q=80' }}" alt="Car Side Mini" class="w-full h-full object-cover">
                 </div>
                 
                 <div class="flex justify-between items-center mb-6">
@@ -84,11 +105,6 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tarif Sewa</p>
                         <p class="text-xl font-bold text-[#0B3C9B]">Rp {{ number_format($car->daily_rate, 0, ',', '.') }} <span class="text-xs font-normal text-gray-400">/hari</span></p>
                     </div>
-                    @if($car->status->value === 'available')
-                        <span class="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Tersedia</span>
-                    @else
-                        <span class="bg-amber-50 text-amber-600 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">Disewa</span>
-                    @endif
                 </div>
 
                 <form id="detail-booking-form" action="{{ route('booking.start') }}" method="GET" class="space-y-4">
@@ -107,18 +123,32 @@
                         </div>
                     </div>
 
+                    <div id="detail-availability-banner" class="mb-1 rounded-2xl border px-4 py-3 hidden">
+                        <div class="flex items-start gap-3">
+                            <div id="detail-availability-dot" class="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0"></div>
+                            <div>
+                                <p id="detail-availability-label" class="text-sm font-bold text-slate-900">Pilih tanggal untuk cek ketersediaan</p>
+                                <p id="detail-availability-message" class="mt-1 text-xs text-slate-600">Status mobil akan menyesuaikan dengan tanggal yang Anda pilih.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Layanan Picker -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilihan Layanan</label>
                         <div class="grid grid-cols-2 gap-3">
                             <button type="button" id="btn-self-drive" onclick="selectService('self_drive')" 
                                 class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->self_drive_available ? 'opacity-40 cursor-not-allowed' : '' }}">
-                                <span class="text-base">🔑</span>
+                                <svg class="w-5 h-5 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m-2-2a2 2 0 00-2 2m2-2a2 2 0 002 2m0 0a2 2 0 01-2 2m0-4a2 2 0 01-2 2m0 0v5a3 3 0 01-3 3H9a3 3 0 01-3-3V9a3 3 0 013-3h6a3 3 0 013 3z" />
+                                </svg>
                                 <span>Lepas Kunci</span>
                             </button>
                             <button type="button" id="btn-with-driver" onclick="selectService('with_driver')" 
                                 class="border bg-gray-50 text-gray-500 rounded-xl py-3 text-xs font-medium flex flex-col items-center justify-center space-y-1 transition-all duration-200 {{ !$car->driver_available ? 'opacity-40 cursor-not-allowed' : '' }}">
-                                <span class="text-base">👤</span>
+                                <svg class="w-5 h-5 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
                                 <span>Dengan Sopir</span>
                             </button>
                         </div>
@@ -155,7 +185,7 @@
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-gray-900">Ulasan Pengguna</h2>
                 @if($car->total_reviews > 0)
-                    <span class="text-xs font-bold text-amber-500">★ {{ $car->average_rating }} <span class="text-gray-400 font-normal">({{ $car->total_reviews }} Ulasan)</span></span>
+                    <span class="text-xs font-bold text-amber-500">{{ $car->has_rating ? '★ ' . $car->rating_display : $car->rating_display }} <span class="text-gray-400 font-normal">({{ $car->total_reviews }} Ulasan)</span></span>
                 @else
                     <span class="text-xs text-gray-400">Belum ada ulasan</span>
                 @endif
@@ -216,7 +246,7 @@
                     <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm p-4 flex flex-col justify-between hover:shadow-md transition">
                         <div>
                             <div class="relative bg-gray-100 rounded-xl overflow-hidden h-40 mb-4">
-                                <img src="{{ $similarCar->image ? asset('storage/' . $similarCar->image) : 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $similarCar->name }}" class="w-full h-full object-cover">
+                                <img src="{{ $similarCar->image_url ?: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=500&q=80' }}" alt="{{ $similarCar->name }}" class="w-full h-full object-cover">
                                 <a href="{{ route('car-detail', ['car' => $similarCar->id]) }}" class="absolute top-3 right-3 w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/10 hover:bg-white hover:text-red-500 transition">🤍</a>
                             </div>
                             <div class="flex justify-between items-start mb-2">
@@ -228,8 +258,19 @@
                             </div>
                         </div>
                         <div class="flex items-center space-x-4 text-[11px] text-gray-500 border-t pt-3 border-gray-50 mt-2">
-                            <span>👥 {{ $similarCar->seat_count }} Kursi</span>
-                            <span>⚙️ {{ $similarCar->transmission->label() }}</span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span>{{ $similarCar->seat_count }} Kursi</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>{{ $similarCar->transmission->label() }}</span>
+                            </span>
                         </div>
                     </div>
                 @empty
@@ -260,6 +301,7 @@
         const dailyRate = {{ $car->daily_rate }};
         const selfDriveAvailable = {{ $car->self_drive_available ? 'true' : 'false' }};
         const driverAvailable = {{ $car->driver_available ? 'true' : 'false' }};
+        const availabilityUrl = "{{ route('booking.availability') }}";
         
         let selectedService = selfDriveAvailable ? 'self_drive' : (driverAvailable ? 'with_driver' : '');
         
@@ -310,6 +352,81 @@
             document.getElementById('display-service-cost').textContent = fmt(serviceCost);
             document.getElementById('display-total-cost').textContent = fmt(totalCost);
         }
+
+        function renderDetailAvailability(state) {
+            const banner = document.getElementById('detail-availability-banner');
+            const dot = document.getElementById('detail-availability-dot');
+            const label = document.getElementById('detail-availability-label');
+            const message = document.getElementById('detail-availability-message');
+            const submitButton = document.querySelector('#detail-booking-form button[type="submit"]');
+
+            if (!banner || !dot || !label || !message || !submitButton) return;
+
+            banner.classList.remove('hidden', 'border-emerald-200', 'bg-emerald-50/70', 'border-amber-200', 'bg-amber-50/70', 'border-rose-200', 'bg-rose-50/70');
+            dot.classList.remove('bg-emerald-500', 'bg-amber-500', 'bg-rose-500');
+
+            const tone = state.tone || 'emerald';
+            if (tone === 'rose') {
+                banner.classList.add('border-rose-200', 'bg-rose-50/70');
+                dot.classList.add('bg-rose-500');
+            } else if (tone === 'amber') {
+                banner.classList.add('border-amber-200', 'bg-amber-50/70');
+                dot.classList.add('bg-amber-500');
+            } else {
+                banner.classList.add('border-emerald-200', 'bg-emerald-50/70');
+                dot.classList.add('bg-emerald-500');
+            }
+
+            label.textContent = state.label;
+            message.textContent = state.message;
+
+            submitButton.disabled = state.available === false;
+            submitButton.classList.toggle('opacity-60', state.available === false);
+            submitButton.classList.toggle('cursor-not-allowed', state.available === false);
+        }
+
+        async function refreshDetailAvailability() {
+            const startEl = document.getElementById('rent_start_date');
+            const endEl = document.getElementById('rent_end_date');
+            if (!startEl?.value || !endEl?.value) return;
+
+            const params = new URLSearchParams({
+                car_id: "{{ $car->id }}",
+                start_date: startEl.value,
+                end_date: endEl.value,
+            });
+
+            try {
+                const response = await fetch(`${availabilityUrl}?${params.toString()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+                const payload = await response.json();
+                renderDetailAvailability(payload);
+            } catch (error) {
+                renderDetailAvailability({
+                    available: false,
+                    tone: 'rose',
+                    label: 'Gagal memeriksa ketersediaan',
+                    message: 'Silakan coba lagi setelah mengubah tanggal sewa.',
+                });
+            }
+        }
+
+        function syncDetailBookingDates() {
+            const startEl = document.getElementById('rent_start_date');
+            const endEl = document.getElementById('rent_end_date');
+            if (!startEl || !endEl || !startEl.value) return;
+
+            endEl.min = startEl.value;
+            if (!endEl.value || endEl.value < startEl.value) {
+                endEl.value = startEl.value;
+            }
+
+            calculatePrice();
+            refreshDetailAvailability();
+        }
         
         // Auth check on form submit
         document.getElementById('detail-booking-form').addEventListener('submit', function(e) {
@@ -340,16 +457,23 @@
             if (startEl) { 
                 startEl.value = qStart || formatDate(tomorrow); 
                 startEl.min = formatDate(tomorrow); 
+                startEl.addEventListener('change', syncDetailBookingDates);
             }
             if (endEl) { 
                 endEl.value = qEnd || formatDate(threeDaysLater); 
                 endEl.min = formatDate(tomorrow); 
+                endEl.addEventListener('change', () => {
+                    calculatePrice();
+                    refreshDetailAvailability();
+                });
             }
             
             if (qService) {
                 selectedService = qService;
             }
+            syncDetailBookingDates();
             selectService(selectedService);
+            refreshDetailAvailability();
         });
     </script>
 </body>

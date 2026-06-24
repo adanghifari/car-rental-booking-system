@@ -15,12 +15,26 @@ class Rental extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::created(function (self $rental): void {
+            if (! blank($rental->booking_code)) {
+                return;
+            }
+
+            $rental->forceFill([
+                'booking_code' => self::makeBookingCode($rental),
+            ])->saveQuietly();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
+        'booking_code',
         'user_id',
         'car_id',
         'start_date',
@@ -35,6 +49,10 @@ class Rental extends Model
         'verification_passed',
         'verified_at',
         'verification_status',
+        'buffer_before_days',
+        'buffer_after_days',
+        'post_buffer_released_at',
+        'post_buffer_released_by',
     ];
 
     /**
@@ -48,12 +66,22 @@ class Rental extends Model
         'returned_at' => 'datetime',
         'prepaid_expires_at' => 'datetime',
         'verified_at' => 'datetime',
+        'post_buffer_released_at' => 'datetime',
         'verification_passed' => 'boolean',
         'total_price' => 'integer',
+        'buffer_before_days' => 'integer',
+        'buffer_after_days' => 'integer',
         'status' => RentalStatus::class,
         'type' => RentalType::class,
         'verification_status' => VerificationStatus::class,
     ];
+
+    public static function makeBookingCode(self $rental): string
+    {
+        $date = ($rental->created_at ?? now())->format('Ymd');
+
+        return sprintf('BOOK-%s-%04d', $date, $rental->id);
+    }
 
     public function user(): BelongsTo
     {
@@ -73,5 +101,10 @@ class Rental extends Model
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    public function postBufferReleasedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'post_buffer_released_by');
     }
 }

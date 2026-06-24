@@ -206,4 +206,34 @@ class CustomerNotificationsTest extends TestCase
         $this->assertNotNull($notification->fresh()->read_at);
         $this->assertEquals(0, $this->customer->fresh()->unreadNotifications()->count());
     }
+
+    public function test_open_notification_redirects_to_contextual_page_and_marks_as_read(): void
+    {
+        $service = app(CustomerNotificationService::class);
+
+        $rental = Rental::create([
+            'user_id' => $this->customer->id,
+            'car_id' => $this->car->id,
+            'start_date' => '2026-09-10',
+            'end_date' => '2026-09-12',
+            'total_price' => 800000,
+            'status' => RentalStatus::CANCELLED,
+            'type' => RentalType::SELF_DRIVE,
+            'verification_status' => VerificationStatus::REJECTED,
+            'verified_at' => now(),
+            'ktp_path' => 'ktp/open.jpg',
+            'selfie_path' => 'selfie/open.jpg',
+        ]);
+
+        $service->notifyRentalCancelled($rental);
+
+        $notification = $this->customer->notifications()->firstOrFail();
+        $this->assertNull($notification->read_at);
+
+        $this->actingAs($this->customer)
+            ->get(route('notifications.open', $notification->id))
+            ->assertRedirect(route('pesanan-saya', ['status' => 'dibatalkan']));
+
+        $this->assertNotNull($notification->fresh()->read_at);
+    }
 }

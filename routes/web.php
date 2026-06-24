@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BackofficeController;
+use App\Http\Controllers\BackofficeNotificationController;
 use App\Http\Controllers\CustomerNotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CustomerAccountController;
@@ -12,53 +13,14 @@ use App\Models\Rental;
 use App\Enums\CarStatus;
 use App\Enums\RentalStatus;
 use App\Enums\VehicleType;
+use App\Support\BookingAvailability;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ViewErrorBag;
+use Barryvdh\DomPDF\Facade\Pdf;
 
-if (! function_exists('booking_active_rental_statuses')) {
-    function booking_active_rental_statuses(): array
-    {
-        return [
-            RentalStatus::PENDING_VERIFICATION,
-            RentalStatus::PREPAID,
-            RentalStatus::ONGOING,
-        ];
-    }
-}
-
-if (! function_exists('booking_rental_has_overlap')) {
-    function booking_rental_has_overlap(int $carId, string $startDate, string $endDate, ?int $ignoreRentalId = null): bool
-    {
-        return Rental::query()
-            ->where('car_id', $carId)
-            ->whereIn('status', booking_active_rental_statuses())
-            ->when($ignoreRentalId, fn ($query) => $query->where('id', '!=', $ignoreRentalId))
-            ->where(function ($query) use ($startDate, $endDate) {
-                $query->whereDate('start_date', '<=', $endDate)
-                    ->whereDate('end_date', '>=', $startDate);
-            })
-            ->exists();
-    }
-}
-
-if (! function_exists('booking_release_identity_files')) {
-    function booking_release_identity_files(Rental $rental): void
-    {
-        if ($rental->ktp_path) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->ktp_path);
-        }
-
-        if ($rental->selfie_path) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->selfie_path);
-        }
-
-        $rental->ktp_path = '';
-        $rental->selfie_path = '';
-    }
-}
 
 Route::get('/', function (Request $request) {
     $user = $request->user();
@@ -71,19 +33,15 @@ Route::get('/', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
-
-    if ($request->filled('start_date')) {
-        $startDate = $request->input('start_date');
-        $query->whereNotExists(function ($q) use ($startDate) {
-            $q->select(DB::raw(1))
-                ->from('rentals')
-                ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-                ->whereDate('rentals.start_date', '<=', $startDate)
-                ->whereDate('rentals.end_date', '>=', $startDate);
-        });
-    }
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
+    $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
         $maxPrice = (int) $request->input('max_price');
@@ -92,11 +50,35 @@ Route::get('/', function (Request $request) {
         }
     }
 
-    $cars = $query->limit(3)->get();
-    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
+    $cars = $query->get()
+        ->when($request->filled('start_date'), fn ($cars) => $cars->filter(
+            fn (Car $car) => booking_car_is_listable_for_date($car, $startDate)
+        ))
+        ->take(3)
+        ->values();
+    $featuredCars = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->withCount([
+            'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
+                ->whereIn('status', booking_active_rental_statuses()),
+        ])
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest()
+        ->limit(3)
+        ->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->latest()
+        ->orderByDesc('rating')
+        ->limit(3)
+        ->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'featuredCars' => $featuredCars,
         'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('home');
@@ -112,19 +94,15 @@ Route::get('/beranda', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
-
-    if ($request->filled('start_date')) {
-        $startDate = $request->input('start_date');
-        $query->whereNotExists(function ($q) use ($startDate) {
-            $q->select(DB::raw(1))
-                ->from('rentals')
-                ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-                ->whereDate('rentals.start_date', '<=', $startDate)
-                ->whereDate('rentals.end_date', '>=', $startDate);
-        });
-    }
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
+    $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
         $maxPrice = (int) $request->input('max_price');
@@ -133,11 +111,35 @@ Route::get('/beranda', function (Request $request) {
         }
     }
 
-    $cars = $query->limit(3)->get();
-    $reviews = \App\Models\Review::with(['user', 'car'])->latest()->limit(3)->get();
+    $cars = $query->get()
+        ->when($request->filled('start_date'), fn ($cars) => $cars->filter(
+            fn (Car $car) => booking_car_is_listable_for_date($car, $startDate)
+        ))
+        ->take(3)
+        ->values();
+    $featuredCars = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->withCount([
+            'rentals as active_rentals_count' => fn ($rentalQuery) => $rentalQuery
+                ->whereIn('status', booking_active_rental_statuses()),
+        ])
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest()
+        ->limit(3)
+        ->get();
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->latest()
+        ->orderByDesc('rating')
+        ->limit(3)
+        ->get();
 
     return view('frontliner.pages.beranda-non-login', [
         'cars' => $cars,
+        'featuredCars' => $featuredCars,
         'reviews' => $reviews,
     ]);
 })->middleware('token.cookie')->name('beranda');
@@ -149,19 +151,15 @@ Route::get('/frontliner', function (Request $request) {
         return redirect()->route('dashboard');
     }
 
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
-
-    if ($request->filled('start_date')) {
-        $startDate = $request->input('start_date');
-        $query->whereNotExists(function ($q) use ($startDate) {
-            $q->select(DB::raw(1))
-                ->from('rentals')
-                ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-                ->whereDate('rentals.start_date', '<=', $startDate)
-                ->whereDate('rentals.end_date', '>=', $startDate);
-        });
-    }
+    $query = Car::query()
+        ->withReviewMetrics()
+        ->withCount('rentals')
+        ->where('status', CarStatus::AVAILABLE)
+        ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+        ->orderByDesc('rating')
+        ->orderByDesc('rentals_count')
+        ->latest();
+    $startDate = $request->input('start_date');
 
     if ($request->filled('max_price')) {
         $maxPrice = (int) $request->input('max_price');
@@ -170,7 +168,12 @@ Route::get('/frontliner', function (Request $request) {
         }
     }
 
-    $cars = $query->limit(3)->get();
+    $cars = $query->get()
+        ->when($request->filled('start_date'), fn ($cars) => $cars->filter(
+            fn (Car $car) => booking_car_is_listable_for_date($car, $startDate)
+        ))
+        ->take(3)
+        ->values();
 
     $rentals = Rental::with(['car'])
         ->where('user_id', $user->id)
@@ -192,12 +195,6 @@ Route::get('/frontliner', function (Request $request) {
 
                             $rental->status = RentalStatus::ONGOING;
                             $rental->save();
-
-                            $car = $rental->car;
-                            if ($car) {
-                                $car->status = CarStatus::UNAVAILABLE;
-                                $car->save();
-                            }
                         });
                         app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
                         $rental->refresh();
@@ -208,12 +205,6 @@ Route::get('/frontliner', function (Request $request) {
 
                             $rental->status = RentalStatus::EXPIRED;
                             $rental->save();
-
-                            $car = $rental->car;
-                            if ($car) {
-                                $car->status = CarStatus::AVAILABLE;
-                                $car->save();
-                            }
                         });
                         app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
                         $rental->refresh();
@@ -224,12 +215,6 @@ Route::get('/frontliner', function (Request $request) {
 
                             $rental->status = RentalStatus::CANCELLED;
                             $rental->save();
-
-                            $car = $rental->car;
-                            if ($car) {
-                                $car->status = CarStatus::AVAILABLE;
-                                $car->save();
-                            }
                         });
                         app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
                         $rental->refresh();
@@ -274,11 +259,26 @@ Route::get('/booking/start', function (Request $request) {
         return redirect()->route('frontliner')->with('error', 'Detail pemesanan tidak lengkap.');
     }
 
+    $validator = Validator::make($request->all(), [
+        'car_id' => 'required|integer|exists:cars,id',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'service_type' => 'required|string',
+    ]);
+
+    if ($validator->fails()) {
+        return redirect()
+            ->route('car-detail', $carId)
+            ->withInput()
+            ->with('error', 'Tanggal sewa tidak valid. Tanggal selesai harus sama atau setelah tanggal mulai.');
+    }
+
     $car = Car::findOrFail($carId);
 
-    if ($car->status !== CarStatus::AVAILABLE || booking_rental_has_overlap($car->id, $startDate, $endDate)) {
+    $availability = booking_car_availability_result($car, $startDate, $endDate);
+    if (! $availability['available']) {
         return redirect()->route('car-detail', $carId)
-            ->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+            ->with('error', booking_unavailability_message($availability['reason'] ?? 'overlap'));
     }
 
     // Calculate dates & price
@@ -318,9 +318,10 @@ Route::post('/booking/identity', function (Request $request) {
     $serviceType = $request->input('service_type');
     $car = Car::findOrFail($carId);
 
-    if ($car->status !== CarStatus::AVAILABLE || booking_rental_has_overlap($car->id, $startDate, $endDate)) {
+    $availability = booking_car_availability_result($car, $startDate, $endDate);
+    if (! $availability['available']) {
         return redirect()->route('car-detail', $carId)
-            ->with('error', 'Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+            ->with('error', booking_unavailability_message($availability['reason'] ?? 'overlap'));
     }
 
     $start = \Carbon\Carbon::parse($startDate);
@@ -345,9 +346,101 @@ Route::post('/booking/identity', function (Request $request) {
     ]);
 })->middleware(['token.cookie', 'auth'])->name('booking.identity');
 
-Route::get('/booking/identity', function () {
+Route::get('/booking/identity', function (Request $request) {
+    if ($request->has(['car_id', 'start_date', 'end_date', 'service_type'])) {
+        $validator = Validator::make($request->all(), [
+            'car_id' => 'required|integer|exists:cars,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'service_type' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->route('frontliner')->with('error', 'Parameter booking tidak valid.');
+        }
+
+        $carId = $request->input('car_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $serviceType = $request->input('service_type');
+        $car = Car::findOrFail($carId);
+
+        $availability = booking_car_availability_result($car, $startDate, $endDate);
+        if (! $availability['available']) {
+            return redirect()->route('car-detail', $carId)
+                ->with('error', booking_unavailability_message($availability['reason'] ?? 'overlap'));
+        }
+
+        $start = \Carbon\Carbon::parse($startDate);
+        $end = \Carbon\Carbon::parse($endDate);
+        $days = max(1, $start->diffInDays($end));
+
+        $rentCost = $car->daily_rate * $days;
+        $driverCost = ($serviceType === 'with_driver') ? 150000 * $days : 0;
+        $serviceCost = 100000 + $driverCost;
+        $totalPrice = $rentCost + $serviceCost;
+
+        return view('frontliner.pages.booking-identity', [
+            'car' => $car,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'service_type' => $serviceType,
+            'days' => $days,
+            'rentCost' => $rentCost,
+            'driverCost' => $driverCost,
+            'serviceCost' => $serviceCost,
+            'totalPrice' => $totalPrice,
+        ]);
+    }
+
     return redirect()->route('frontliner');
 })->middleware(['token.cookie', 'auth']);
+
+Route::get('/booking/availability', function (Request $request) {
+    $validator = Validator::make($request->all(), [
+        'car_id' => 'required|integer|exists:cars,id',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'available' => false,
+            'reason' => 'invalid_dates',
+            'label' => 'Tanggal tidak valid',
+            'message' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
+            'tone' => 'rose',
+        ], 422);
+    }
+
+    $data = $validator->validated();
+    $car = Car::findOrFail($data['car_id']);
+    $availability = BookingAvailability::checkCarAvailability($car, $data['start_date'], $data['end_date']);
+
+    if ($availability['available']) {
+        return response()->json([
+            'available' => true,
+            'reason' => null,
+            'label' => 'Tersedia pada tanggal ini',
+            'message' => 'Mobil siap dipesan untuk rentang tanggal yang dipilih.',
+            'tone' => 'emerald',
+        ]);
+    }
+
+    $reason = $availability['reason'] ?? 'overlap';
+
+    return response()->json([
+        'available' => false,
+        'reason' => $reason,
+        'label' => match ($reason) {
+            'operational_unavailable' => 'Tidak tersedia operasional',
+            'post_buffer' => 'Masih dalam masa buffer',
+            default => 'Tidak tersedia pada tanggal ini',
+        },
+        'message' => booking_unavailability_message($reason),
+        'tone' => $reason === 'operational_unavailable' ? 'amber' : 'rose',
+    ], 409);
+})->middleware('token.cookie')->name('booking.availability');
 
 Route::post('/booking/submit', function (Request $request, \App\Services\FaceVerificationService $faceVerify, \App\Services\MidtransService $midtrans) {
     $startDate = $request->input('start_date');
@@ -376,26 +469,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
         ? \App\Enums\RentalType::WITH_DRIVER
         : \App\Enums\RentalType::SELF_DRIVE;
 
-    $renderIdentityPage = function (array $extraData = [], ?ViewErrorBag $errorBag = null) use ($car, $startDate, $endDate, $serviceType, $days, $rentCost, $driverCost, $serviceCost, $totalPrice) {
-        return response()->view('frontliner.pages.booking-identity', array_merge([
-            'car' => $car,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'service_type' => $serviceType,
-            'days' => $days,
-            'rentCost' => $rentCost,
-            'driverCost' => $driverCost,
-            'serviceCost' => $serviceCost,
-            'totalPrice' => $totalPrice,
-            'errors' => $errorBag ?? new ViewErrorBag(),
-        ], $extraData), 422);
-    };
-
     if ($validator->fails()) {
-        $errorBag = new ViewErrorBag();
-        $errorBag->put('default', $validator->errors());
-
-        return $renderIdentityPage([], $errorBag);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->withErrors($validator)
+            ->withInput();
     }
 
     $autoVerifyPassed = false;
@@ -411,11 +488,16 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $car = Car::query()->lockForUpdate()->findOrFail($carId);
 
             if ($car->status !== CarStatus::AVAILABLE) {
-                throw new \RuntimeException('Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+                throw new \RuntimeException(booking_unavailability_message('operational_unavailable'));
             }
 
-            if (booking_rental_has_overlap($car->id, $start->format('Y-m-d'), $end->format('Y-m-d'))) {
-                throw new \RuntimeException('Maaf, mobil ini sudah tidak tersedia untuk tanggal yang dipilih. Silakan pilih kendaraan atau tanggal lain.');
+            $availability = BookingAvailability::checkCarAvailability(
+                $car,
+                $start->format('Y-m-d'),
+                $end->format('Y-m-d')
+            );
+            if (! $availability['available']) {
+                throw new \RuntimeException(booking_unavailability_message($availability['reason'] ?? 'overlap'));
             }
 
             $ktpPermanentPath = \Illuminate\Support\Facades\Storage::disk('local')->putFile('ktp', $request->file('ktp'));
@@ -435,20 +517,18 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
                 'verification_passed' => false,
                 'verified_at' => null,
                 'verification_status' => \App\Enums\VerificationStatus::PENDING,
+                'buffer_before_days' => BookingAvailability::DEFAULT_BUFFER_BEFORE_DAYS,
+                'buffer_after_days' => BookingAvailability::DEFAULT_BUFFER_AFTER_DAYS,
             ]);
-
-            $car->status = CarStatus::UNAVAILABLE;
-            $car->save();
 
             app(\App\Services\CustomerNotificationService::class)->notifyBookingVerificationStarted($rental);
 
             return $rental;
         });
     } catch (\Throwable $e) {
-        dd($e);
-        return $renderIdentityPage([
-            'error_message' => 'Gagal memproses verifikasi: ' . $e->getMessage(),
-        ]);
+        return redirect()->route('booking.identity', $request->only(['car_id', 'start_date', 'end_date', 'service_type']))
+            ->with('error', 'Gagal memproses verifikasi: ' . $e->getMessage())
+            ->withInput();
     }
 
     app(\App\Services\CustomerNotificationService::class)->notifyVerificationSubmitted($rental);
@@ -459,7 +539,7 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
             $rental->verification_status = \App\Enums\VerificationStatus::VERIFIED;
             $rental->verification_passed = true;
             $rental->verified_at = now();
-            $rental->prepaid_expires_at = now()->addHours(4);
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
         });
 
@@ -498,6 +578,10 @@ Route::post('/booking/submit', function (Request $request, \App\Services\FaceVer
     return redirect()->route('booking.detail', ['rental' => $rental->id]);
 })->middleware(['token.cookie', 'auth'])->name('booking.submit');
 
+Route::get('/booking/submit', function () {
+    return redirect()->route('frontliner');
+})->middleware(['token.cookie', 'auth']);
+
 Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Services\MidtransService $midtrans) {
     $user = auth()->user();
     if (!$user || $rental->user_id !== $user->id) {
@@ -512,19 +596,13 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
         return back()->with('error', 'Status reservasi tidak sesuai.');
     }
 
-    // Check if 4 hours has passed since verified_at
-    if ($rental->verified_at && $rental->verified_at->addHours(4)->isPast()) {
+    // Check if 3 hours has passed since verified_at
+    if ($rental->verified_at && $rental->verified_at->addHours(3)->isPast()) {
         DB::transaction(function () use ($rental) {
             $rental->status = RentalStatus::EXPIRED;
             $rental->prepaid_expires_at = null;
             booking_release_identity_files($rental);
             $rental->save();
-
-            $car = $rental->car;
-            if ($car) {
-                $car->status = CarStatus::AVAILABLE;
-                $car->save();
-            }
         });
         return back()->with('error', 'Batas waktu pembayaran telah habis.');
     }
@@ -535,8 +613,8 @@ Route::post('/booking/detail/{rental}/pay', function (Rental $rental, \App\Servi
 
         DB::transaction(function () use ($rental, $orderId, $midtransResponse) {
             $rental->status = RentalStatus::PREPAID;
-            // Limit countdown to exactly remaining of verified_at + 4 hours
-            $rental->prepaid_expires_at = $rental->verified_at->addHours(4);
+            // Limit countdown to 1 hour 20 minutes (80 minutes) from now
+            $rental->prepaid_expires_at = now()->addMinutes(80);
             $rental->save();
 
             \App\Models\PaymentHistory::create([
@@ -575,12 +653,6 @@ Route::post('/booking/detail/{rental}/cancel', function (Rental $rental) {
         $rental->prepaid_expires_at = null;
         booking_release_identity_files($rental);
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::AVAILABLE;
-            $car->save();
-        }
 
         // Delete uploaded files
         if ($rental->ktp_path) {
@@ -638,12 +710,6 @@ Route::post('/dashboard/reservations/{rental}/verify', function (Request $reques
             booking_release_identity_files($rental);
             $rental->save();
 
-            $car = $rental->car;
-            if ($car) {
-                $car->status = CarStatus::AVAILABLE;
-                $car->save();
-            }
-
             if ($rental->ktp_path) {
                 \Illuminate\Support\Facades\Storage::disk('local')->delete($rental->ktp_path);
             }
@@ -679,19 +745,38 @@ Route::post('/dashboard/reservations/{rental}/return', function (Rental $rental)
     DB::transaction(function () use ($rental) {
         $rental->status = RentalStatus::RETURNED;
         $rental->returned_at = now();
+        $rental->post_buffer_released_at = null;
+        $rental->post_buffer_released_by = null;
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::AVAILABLE;
-            $car->save();
-        }
     });
 
     app(\App\Services\CustomerNotificationService::class)->notifyRentalReturned($rental);
 
     return back()->with('success', 'Mobil berhasil dikembalikan. Pemesanan selesai.');
 })->middleware(['auth', 'admin'])->name('backoffice.reservations.return');
+
+Route::post('/dashboard/reservations/{rental}/release-post-buffer', function (Rental $rental) {
+    $user = auth()->user();
+    if (! $user || $user->role !== User::ROLE_ADMIN) {
+        abort(403);
+    }
+
+    if ($rental->status !== RentalStatus::RETURNED) {
+        return back()->with('error', 'Buffer hanya dapat dilepas untuk rental yang sudah selesai.');
+    }
+
+    if (! BookingAvailability::hasActivePostBuffer($rental)) {
+        return back()->with('warning', 'Masa buffer setelah rental sudah tidak aktif.');
+    }
+
+    DB::transaction(function () use ($rental, $user) {
+        $rental->post_buffer_released_at = now();
+        $rental->post_buffer_released_by = $user->id;
+        $rental->save();
+    });
+
+    return back()->with('success', 'Buffer setelah rental berhasil dilepas.');
+})->middleware(['auth', 'admin'])->name('backoffice.reservations.release-post-buffer');
 
 Route::post('/dashboard/reservations/{rental}/cancel', function (Rental $rental) {
     $user = auth()->user();
@@ -709,12 +794,6 @@ Route::post('/dashboard/reservations/{rental}/cancel', function (Rental $rental)
         $rental->prepaid_expires_at = null;
         booking_release_identity_files($rental);
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::AVAILABLE;
-            $car->save();
-        }
 
         // Delete uploaded files
         if ($rental->ktp_path) {
@@ -760,12 +839,6 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
 
                         $rental->status = RentalStatus::ONGOING;
                         $rental->save();
-
-                        $car = $rental->car;
-                        if ($car) {
-                            $car->status = CarStatus::UNAVAILABLE;
-                            $car->save();
-                        }
                     });
 
                     app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
@@ -782,12 +855,6 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                         $rental->prepaid_expires_at = null;
                         booking_release_identity_files($rental);
                         $rental->save();
-
-                        $car = $rental->car;
-                        if ($car) {
-                            $car->status = CarStatus::AVAILABLE;
-                            $car->save();
-                        }
                     });
 
                     app(\App\Services\CustomerNotificationService::class)->notifyPaymentExpired($rental);
@@ -804,12 +871,6 @@ Route::get('/booking/detail/{rental}', function (Rental $rental, \App\Services\M
                         $rental->prepaid_expires_at = null;
                         booking_release_identity_files($rental);
                         $rental->save();
-
-                        $car = $rental->car;
-                        if ($car) {
-                            $car->status = CarStatus::AVAILABLE;
-                            $car->save();
-                        }
                     });
 
                     app(\App\Services\CustomerNotificationService::class)->notifyPaymentCancelled($rental);
@@ -917,6 +978,10 @@ Route::get('/notifications', [CustomerNotificationController::class, 'index'])
     ->middleware('auth')
     ->name('notifications.index');
 
+Route::get('/notifications/{notification}/open', [CustomerNotificationController::class, 'open'])
+    ->middleware('auth')
+    ->name('notifications.open');
+
 Route::post('/notifications/{notification}/read', [CustomerNotificationController::class, 'markRead'])
     ->middleware('auth')
     ->name('notifications.read');
@@ -924,6 +989,18 @@ Route::post('/notifications/{notification}/read', [CustomerNotificationControlle
 Route::post('/notifications/read-all', [CustomerNotificationController::class, 'markAllRead'])
     ->middleware('auth')
     ->name('notifications.read-all');
+
+Route::get('/dashboard/notifications/{notification}/open', [BackofficeNotificationController::class, 'open'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.open');
+
+Route::post('/dashboard/notifications/{notification}/read', [BackofficeNotificationController::class, 'markRead'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.read');
+
+Route::post('/dashboard/notifications/read-all', [BackofficeNotificationController::class, 'markAllRead'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.notifications.read-all');
 
 Route::get('/booking/simulate-payment', function (Request $request) {
     $rentalId = $request->query('rental_id');
@@ -948,12 +1025,6 @@ Route::post('/booking/simulate-payment', function (Request $request) {
 
         $rental->status = RentalStatus::ONGOING;
         $rental->save();
-
-        $car = $rental->car;
-        if ($car) {
-            $car->status = CarStatus::UNAVAILABLE;
-            $car->save();
-        }
     });
 
     app(\App\Services\CustomerNotificationService::class)->notifyPaymentPaid($rental);
@@ -977,7 +1048,6 @@ Route::delete('/dashboard/users/{user}', [BackofficeController::class, 'deleteUs
     ->middleware(['auth', 'admin'])
     ->name('backoffice.users.destroy');
 
-
 Route::get('/dashboard/cars', [BackofficeController::class, 'cars'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.cars');
@@ -994,9 +1064,25 @@ Route::get('/dashboard/reservations', [BackofficeController::class, 'reservation
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations');
 
+Route::get('/dashboard/reports', [BackofficeController::class, 'reports'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.reports');
+
 Route::post('/dashboard/reservations', [BackofficeController::class, 'storeReservation'])
     ->middleware(['auth', 'admin'])
     ->name('backoffice.reservations.store');
+
+Route::get('/dashboard/settings', [BackofficeController::class, 'settings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.settings');
+
+Route::put('/dashboard/settings/profile', [BackofficeController::class, 'updateProfile'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.profile.update');
+
+Route::put('/dashboard/settings/company', [BackofficeController::class, 'updateCompanySettings'])
+    ->middleware(['auth', 'admin'])
+    ->name('backoffice.company-settings.update');
 
 Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rental, string $type) {
     $user = auth()->user();
@@ -1006,7 +1092,20 @@ Route::get('/dashboard/rentals/{rental}/document/{type}', function (Rental $rent
 
     $path = ($type === 'selfie') ? $rental->selfie_path : $rental->ktp_path;
 
-    if (!$path || !\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+    if (!$path) {
+        abort(404);
+    }
+
+    $cloudinary = app(\App\Services\CloudinaryMediaService::class);
+    if ($cloudinary->isCloudinaryPath($path)) {
+        $url = $cloudinary->url($path);
+        if ($url) {
+            return redirect()->away($url);
+        }
+        abort(404);
+    }
+
+    if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
         abort(404);
     }
 
@@ -1043,6 +1142,7 @@ Route::view('/welcome', 'welcome');
 Route::get('/login', function (Request $request) {
     $user = $request->user();
     $redirect = $request->query('redirect');
+    $cars = Car::count();
 
     if ($user?->role === User::ROLE_ADMIN) {
         return redirect()->route('dashboard');
@@ -1056,12 +1156,13 @@ Route::get('/login', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    return view('frontliner.auth.login');
+    return view('frontliner.auth.login',['cars' => $cars]);
 })->name('login');
 
 Route::get('/register', function (Request $request) {
     $user = $request->user();
     $redirect = $request->query('redirect');
+    $cars = Car::count();
 
     if ($user?->role === User::ROLE_ADMIN) {
         return redirect()->route('dashboard');
@@ -1075,21 +1176,60 @@ Route::get('/register', function (Request $request) {
         return redirect()->route('frontliner');
     }
 
-    return view('frontliner.auth.register');
+    return view('frontliner.auth.register', ['cars' => $cars]);
 })->name('register');
-Route::get('/search-result', function (Request $request) {
-    $query = Car::query()->where('status', CarStatus::AVAILABLE);
 
-    if ($request->filled('start_date')) {
-        $startDate = $request->input('start_date');
-        $query->whereNotExists(function ($q) use ($startDate) {
-            $q->select(DB::raw(1))
-                ->from('rentals')
-                ->whereColumn('rentals.car_id', 'cars.id')
-                ->whereIn('rentals.status', [RentalStatus::PENDING_VERIFICATION, RentalStatus::PREPAID, RentalStatus::ONGOING])
-                ->whereDate('rentals.start_date', '<=', $startDate)
-                ->whereDate('rentals.end_date', '>=', $startDate);
-        });
+Route::get('/forgot-password', function (Request $request) {
+    if ($request->user()) {
+        return redirect()->route('frontliner');
+    }
+    $cars = Car::count();
+    return view('frontliner.auth.forgot-password', ['cars' => $cars]);
+})->name('password.request');
+
+Route::get('/reset-password/{token}', function (Request $request, $token) {
+    if ($request->user()) {
+        return redirect()->route('frontliner');
+    }
+    $cars = Car::count();
+    return view('frontliner.auth.reset-password', [
+        'token' => $token,
+        'email' => $request->query('email'),
+        'cars' => $cars
+    ]);
+})->name('password.reset');
+
+Route::get('/syarat-ketentuan', function () {
+    return view('frontliner.pages.terms');
+})->name('terms.show');
+
+Route::get('/kebijakan-privasi', function () {
+    return view('frontliner.pages.privacy');
+})->name('privacy.show');
+
+Route::get('/search-result', function (Request $request) {
+    $query = Car::query()->withReviewMetrics()->where('status', CarStatus::AVAILABLE);
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+    $hasActiveFilters = $request->filled('start_date')
+        || $request->filled('end_date')
+        || $request->filled('max_price')
+        || $request->filled('types')
+        || $request->filled('capacity')
+        || $request->filled('service_types');
+
+    if ($request->filled('start_date') || $request->filled('end_date')) {
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date|after_or_equal:today',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()
+                ->route('armada')
+                ->withInput()
+                ->with('error', 'Tanggal pencarian tidak valid. Tanggal tidak boleh sebelum hari ini dan tanggal selesai harus sama atau setelah tanggal mulai.');
+        }
     }
 
     if ($request->filled('max_price')) {
@@ -1129,22 +1269,138 @@ Route::get('/search-result', function (Request $request) {
         });
     }
 
-    $cars = $query->get();
+    $cars = $query->get()
+        ->when($request->filled('start_date') && $request->filled('end_date'), fn ($cars) => $cars->filter(
+            fn (Car $car) => booking_car_availability_result($car, $startDate, $endDate)['available']
+        ))
+        ->values();
+
+    $recommendedCars = $hasActiveFilters
+        ? $cars->take(2)->values()
+        : Car::query()
+            ->withReviewMetrics()
+            ->withCount('rentals')
+            ->where('status', CarStatus::AVAILABLE)
+            ->orderByRaw('reviews_avg_rating DESC NULLS LAST')
+            ->orderByDesc('rating')
+            ->orderByDesc('rentals_count')
+            ->orderByDesc('created_at')
+            ->take(2)
+            ->get()
+            ->values();
 
     return view('frontliner.pages.search-result', [
         'cars' => $cars,
+        'recommendedCars' => $recommendedCars,
+        'hasActiveFilters' => $hasActiveFilters,
     ]);
 })->middleware('token.cookie')->name('search-result');
 Route::get('/armada', function (Request $request) {
+    $search = trim($request->string('q')->toString());
+
     $cars = Car::query()
+        ->withReviewMetrics()
+        ->when($search !== '', function ($query) use ($search) {
+
+            $search = strtolower($search);
+
+            $query->where(function ($innerQuery) use ($search) {
+
+                $innerQuery
+                    ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(brand) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(license_plate) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(vehicle_type) LIKE ?', ["%{$search}%"]);
+            });
+        })
         ->orderByDesc('created_at')
-        ->paginate(8)
+        ->paginate(6)
         ->withQueryString();
 
     return view('frontliner.pages.armada', [
         'cars' => $cars,
+        'search' => $search,
     ]);
 })->middleware('token.cookie')->name('armada');
+
+Route::get('/armada/export', function () {
+
+    $cars = Car::query()
+        ->orderBy('brand')
+        ->orderBy('name')
+        ->get()
+        ->map(function ($car) {
+
+            $mainImage = null;
+
+            if (
+                $car->image &&
+                Storage::disk('public')->exists($car->image)
+            ) {
+
+                $path = Storage::disk('public')->path($car->image);
+
+                $mainImage =
+                    'data:image/' .
+                    pathinfo($path, PATHINFO_EXTENSION) .
+                    ';base64,' .
+                    base64_encode(file_get_contents($path));
+            }
+
+            $galleryUrls = [];
+
+            $galleryImages = [];
+
+            if ($car->gallery_images) {
+
+                if (is_array($car->gallery_images)) {
+                    $galleryImages = $car->gallery_images;
+                } else {
+                    $galleryImages = json_decode(
+                        $car->gallery_images,
+                        true
+                    ) ?? [];
+                }
+            }
+
+            foreach ($galleryImages as $image) {
+
+                if (Storage::disk('public')->exists($image)) {
+
+                    $path = Storage::disk('public')->path($image);
+
+                    $galleryUrls[] =
+                        'data:image/' .
+                        pathinfo($path, PATHINFO_EXTENSION) .
+                        ';base64,' .
+                        base64_encode(file_get_contents($path));
+                }
+            }
+
+            return [
+                'name' => $car->name,
+                'brand' => $car->brand,
+                'description' => $car->description,
+                'license_plate' => $car->license_plate,
+                'year' => $car->year,
+                'cc' => $car->cc,
+                'seat_count' => $car->seat_count,
+                'daily_rate' => $car->daily_rate,
+                'transmission' => $car->transmission->label(),
+                'main_image' => $mainImage,
+                'gallery_urls' => $galleryUrls,
+            ];
+        });
+
+    $pdf = Pdf::loadView(
+        'vendor.armada-pdf',
+        compact('cars')
+    )->setPaper('a4', 'portrait');
+
+    return $pdf->download('armada.pdf');
+
+})->middleware('token.cookie')->name('armada.export');
+
 Route::get('/car-detail/{car}', function (Car $car) {
     $similarCars = Car::query()
         ->where('status', CarStatus::AVAILABLE)
@@ -1172,8 +1428,47 @@ Route::get('/car-detail/{car}', function (Car $car) {
 })->middleware('token.cookie')->name('car-detail');
 
 Route::get('/favorite', function (Request $request) {
-    $cars = \App\Models\Car::all();
+    $cars = \App\Models\Car::query()
+        ->withReviewMetrics()
+        ->get();
     return view('frontliner.pages.favorite', [
         'cars' => $cars,
     ]);
 })->middleware(['token.cookie', 'auth'])->name('favorite');
+
+Route::get('/testimoni', function (Request $request) {
+    $sort = $request->string('sort', 'latest')->toString();
+    $selectedVehicleType = $request->string('vehicle_type')->toString();
+    $selectedRating = (int) $request->integer('min_rating', 0);
+
+    $reviews = \App\Models\Review::with(['user', 'car'])
+        ->when($selectedVehicleType !== '', function ($query) use ($selectedVehicleType) {
+            $query->whereHas('car', function ($carQuery) use ($selectedVehicleType) {
+                $carQuery->where('vehicle_type', $selectedVehicleType);
+            });
+        })
+        ->when($selectedRating > 0, function ($query) use ($selectedRating) {
+            $query->where('rating', '>=', $selectedRating)
+                ->where('rating', '<', $selectedRating + 1);
+        })
+        ->when($sort === 'oldest', fn ($query) => $query->oldest())
+        ->when($sort === 'highest_rating', fn ($query) => $query->orderByDesc('rating')->latest())
+        ->when($sort === 'lowest_rating', fn ($query) => $query->orderBy('rating')->latest())
+        ->when(! in_array($sort, ['oldest', 'highest_rating', 'lowest_rating'], true), fn ($query) => $query->latest())
+        ->paginate(6)
+        ->withQueryString();
+
+    return view('frontliner.pages.testimoni', [
+        'reviews' => $reviews,
+        'vehicleTypes' => VehicleType::cases(),
+        'selectedVehicleType' => $selectedVehicleType,
+        'selectedRating' => $selectedRating,
+        'selectedSort' => $sort,
+    ]);
+})->middleware('token.cookie')->name('testimoni');
+
+Route::post('/chatbot/message', [\App\Http\Controllers\ChatbotController::class, 'handle'])
+    ->middleware('token.cookie')
+    ->name('chatbot.message');
+
+    

@@ -18,6 +18,8 @@ class CustomerNotificationService
             'verification',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyReservationSubmitted($rental);
     }
 
     public function notifyVerificationSubmitted(Rental $rental): void
@@ -54,6 +56,8 @@ class CustomerNotificationService
             'verification-needs-review',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyReservationNeedsReview($rental);
     }
 
     public function notifyVerificationRejected(Rental $rental): void
@@ -61,7 +65,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Verifikasi Ditolak',
-            'Verifikasi data penyewa belum dapat disetujui. Booking dibatalkan dan mobil kembali tersedia.',
+            'Verifikasi data penyewa belum dapat disetujui. Booking dibatalkan.',
             'CANCELLATION',
             'verification-rejected',
             route('booking.detail', ['rental' => $rental->id])
@@ -90,6 +94,8 @@ class CustomerNotificationService
             'payment-paid',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentPaid($rental);
     }
 
     public function notifyPaymentCancelled(Rental $rental): void
@@ -97,11 +103,13 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Pembayaran Dibatalkan',
-            'Pembayaran belum berhasil atau dibatalkan. Booking Anda telah dibatalkan dan mobil kembali tersedia.',
+            'Pembayaran belum berhasil atau dibatalkan. Booking Anda telah dibatalkan.',
             'PAYMENT',
             'payment-cancelled',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentFailed($rental, \App\Enums\PaymentStatus::CANCELLED);
     }
 
     public function notifyPaymentExpired(Rental $rental): void
@@ -109,11 +117,13 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Waktu Pembayaran Habis',
-            'Batas waktu pembayaran telah habis. Booking dibatalkan dan mobil kembali tersedia.',
+            'Batas waktu pembayaran telah habis. Booking dibatalkan.',
             'CANCELLATION',
             'payment-expired',
             route('booking.detail', ['rental' => $rental->id])
         );
+
+        app(AdminNotificationService::class)->notifyPaymentFailed($rental, \App\Enums\PaymentStatus::EXPIRED);
     }
 
     public function notifyRentalCancelled(Rental $rental): void
@@ -121,7 +131,7 @@ class CustomerNotificationService
         $this->send(
             $rental,
             'Booking Dibatalkan',
-            'Booking Anda telah dibatalkan. Mobil kembali tersedia dan data verifikasi dihapus sesuai kebijakan sistem.',
+            'Booking Anda telah dibatalkan dan data verifikasi dihapus sesuai kebijakan sistem.',
             'CANCELLATION',
             'booking-cancelled',
             route('booking.detail', ['rental' => $rental->id])
@@ -137,6 +147,18 @@ class CustomerNotificationService
             'RENTAL',
             'rental-returned',
             route('booking.detail', ['rental' => $rental->id])
+        );
+    }
+
+    public function notifyReviewRequest(Rental $rental): void
+    {
+        $this->send(
+            $rental,
+            'Berikan Review Rental Anda',
+            'Bagikan pengalaman Anda dengan menyediakan review untuk '.$rental->car?->name.'. Bantuan Anda sangat berharga bagi kami.',
+            'REVIEW_REQUEST',
+            'review-request',
+            route('booking.review', ['rental' => $rental->id])
         );
     }
 
@@ -157,6 +179,7 @@ class CustomerNotificationService
             'message' => $message,
             'type' => $type,
             'rental_id' => $rental->id,
+            'booking_code' => $rental->booking_code,
             'url' => $url,
             'dedupe_key' => $dedupeKey,
         ]));

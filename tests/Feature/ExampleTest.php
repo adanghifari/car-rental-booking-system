@@ -44,7 +44,7 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Avanza Murah');
         $response->assertSee('Fortuner Mahal');
-        $response->assertSee('Brio Tidak Tersedia');
+        $response->assertDontSee('Brio Tidak Tersedia');
 
         // 3. Visit home page with max_price filter
         $response = $this->get('/?max_price=400000');

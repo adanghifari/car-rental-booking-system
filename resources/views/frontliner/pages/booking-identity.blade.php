@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verifikasi Data Penyewa - MD CAR RENTAL</title>
@@ -8,47 +9,58 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        @keyframes scanEffect {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        .scanner-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, 
+                rgba(59, 130, 246, 0) 0%, 
+                rgba(6, 182, 212, 0.8) 20%, 
+                rgba(6, 182, 212, 1) 50%, 
+                rgba(6, 182, 212, 0.8) 80%, 
+                rgba(59, 130, 246, 0) 100%
+            );
+            box-shadow: 
+                0 0 10px 3px rgba(6, 182, 212, 0.7),
+                0 0 20px 6px rgba(6, 182, 212, 0.4);
+            animation: scanEffect 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 8px 8px;
+            background-color: rgba(6, 182, 212, 0.03);
+            z-index: 10;
+            pointer-events: none;
+            backdrop-filter: saturate(1.3) contrast(1.1);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { border-color: rgba(226, 232, 240, 1); box-shadow: 0 0 0 rgba(6, 182, 212, 0); }
+            50% { border-color: rgba(6, 182, 212, 0.8); box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        }
+        .scanning-container-active {
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-[#F8F9FC] text-[#1E293B] antialiased min-h-screen flex flex-col justify-between">
 
     <!-- Header / Navbar -->
-    <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <!-- Logo with Back Button -->
-            <div class="flex items-center gap-3">
-                <a href="{{ route('booking.start') }}?car_id={{ $car->id }}&start_date={{ $start_date }}&end_date={{ $end_date }}&service_type={{ $service_type }}"
-                    class="group flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 hover:bg-[#0B3C9B] transition-all duration-300 hover:shadow-md hover:shadow-blue-200"
-                    title="Kembali ke Detail Pemesanan">
-                    <svg class="w-5 h-5 text-gray-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
-                    </svg>
-                </a>
-                <div class="w-px h-6 bg-gray-200"></div>
-                <span class="text-2xl font-bold text-blue-600">MD CAR RENTAL</span>
-            </div>
-
-            <!-- Navigation - Hidden on mobile -->
-            <nav class="hidden lg:flex items-center gap-8">
-                <a href="{{ route('frontliner') }}" class="text-gray-700 hover:text-blue-600 transition">Beranda</a>
-                <a href="{{ route('armada') }}" class="text-[#0B3C9B] border-b-2 border-[#0B3C9B] pb-1 font-semibold">Armada</a>
-                <a href="{{ route('frontliner') }}#pesanan-saya" class="text-gray-700 hover:text-blue-600 transition">Pesanan Saya</a>
-            </nav>
-
-            <!-- User Profile -->
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3 border-l border-gray-200 pl-4">
-                    <div class="text-right border-r pr-4 border-gray-100 mr-2">
-                        <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? 'User' }}</p>
-                        <p class="text-xs text-gray-500">Member</p>
-                    </div>
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {{ substr(auth()->user()->name ?? 'U', 0, 1) }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<x-frontliner.navbar />
 
     <!-- Main Content -->
     <main class="flex-grow max-w-7xl mx-auto px-4 lg:px-8 py-8 w-full">
@@ -110,21 +122,32 @@
             <div class="lg:col-span-3 space-y-6">
                 
                 @if (session('error'))
-                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
-                        ⚠️ {{ session('error') }}
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>{{ session('error') }}</span>
                     </div>
                 @endif
 
                 @if (!empty($error_message))
-                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
-                        ⚠️ {{ $error_message }}
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>{{ $error_message }}</span>
                     </div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm space-y-1">
-                        <p>⚠️ Terdapat kesalahan pada data yang diunggah:</p>
-                        <ul class="list-disc list-inside font-medium">
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm space-y-2">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <p>Terdapat kesalahan pada data yang diunggah:</p>
+                        </div>
+                        <ul class="list-disc list-inside font-medium ml-5">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -142,8 +165,10 @@
                     <!-- Dokumen Identitas KTP -->
                     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-                                🪪
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <svg class="w-5.5 h-5.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm-1.25 6.125c0-1.38-1.12-2.5-2.5-2.5s-2.5 1.12-2.5 2.5v1.25h5V15.5z" />
+                                </svg>
                             </div>
                             <h2 class="text-base font-bold text-gray-900">Dokumen Identitas (KTP)</h2>
                         </div>
@@ -155,8 +180,10 @@
                             <input type="file" name="ktp" id="ktp-input" accept="image/*" class="hidden" onchange="handleKtpSelected(this)">
                             
                             <div id="ktp-placeholder" class="space-y-3">
-                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
-                                    📤
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                    </svg>
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">Klik untuk unggah KTP</p>
@@ -166,7 +193,7 @@
 
                             <!-- Uploaded Preview -->
                             <div id="ktp-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white relative scanner-target">
                                     <img id="ktp-preview-image" src="" alt="Pratinjau KTP" class="w-full object-contain max-h-24">
                                 </div>
                                 <div>
@@ -194,8 +221,10 @@
                     <!-- Foto Selfie (Verifikasi Wajah) -->
                     <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
-                                📸
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <svg class="w-5.5 h-5.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                                </svg>
                             </div>
                             <h2 class="text-base font-bold text-gray-900">Verifikasi Wajah (Selfie)</h2>
                         </div>
@@ -207,8 +236,10 @@
                             <input type="file" name="selfie" id="selfie-input" accept="image/*" class="hidden" onchange="handleSelfieSelected(this)">
                             
                             <div id="selfie-placeholder" class="space-y-3">
-                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-xl">
-                                    🤳
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-6 15h9M12 18.75h.008v.008H12v-.008zM12 6a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+                                    </svg>
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-gray-800">Klik untuk unggah Selfie</p>
@@ -218,7 +249,7 @@
 
                             <!-- Uploaded Preview -->
                             <div id="selfie-preview-container" class="hidden space-y-3 w-full">
-                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <div class="max-w-[160px] mx-auto rounded-lg overflow-hidden border border-gray-200 bg-white relative scanner-target">
                                     <img id="selfie-preview-image" src="" alt="Pratinjau Selfie" class="w-full object-contain max-h-24">
                                 </div>
                                 <div>
@@ -231,14 +262,20 @@
 
                     <!-- Submit Button -->
                     <div class="space-y-4">
-                        <div id="client-validation-error" class="hidden p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm">
-                            ⚠️ Mohon unggah KTP dan selfie terlebih dahulu sebelum mengirim verifikasi.
+                        <div id="client-validation-error" class="hidden p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-xl text-xs font-semibold shadow-sm flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>Mohon unggah KTP dan selfie terlebih dahulu sebelum mengirim verifikasi.</span>
                         </div>
                         <button id="submit-verification-button" type="button" class="w-full bg-[#0B3C9B] hover:bg-[#082D76] active:scale-[0.99] text-white font-bold py-4 rounded-2xl text-sm transition-all duration-200 shadow-xl shadow-blue-200 flex items-center justify-center gap-2">
                             Kirim Verifikasi
                         </button>
-                        <p class="text-[11px] text-[#475569] leading-relaxed bg-[#F1F5F9] p-3 rounded-xl border border-gray-200">
-                            ℹ️ <strong>Informasi Privasi:</strong> KTP dan selfie hanya digunakan untuk proses verifikasi identitas penyewa. Jika pengajuan ditolak atau dibatalkan, data verifikasi akan dihapus sesuai kebijakan sistem.
+                        <p class="text-[11px] text-[#475569] leading-relaxed bg-[#F1F5F9] p-3 rounded-xl border border-gray-200 flex items-start gap-1.5">
+                            <svg class="w-4 h-4 text-slate-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75 0 111.063.852l-.708 2.836a.75 0 001.063.852l.041-.028M12 9h.008v.008H12V9zm9 3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span><strong>Informasi Privasi:</strong> KTP dan selfie hanya digunakan untuk proses verifikasi identitas penyewa. Jika pengajuan ditolak atau dibatalkan, data verifikasi akan dihapus sesuai kebijakan sistem.</span>
                         </p>
                     </div>
                 </form>
@@ -254,7 +291,7 @@
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-md p-6 space-y-6 lg:sticky lg:top-24">
                     <!-- Image -->
                     <div class="rounded-2xl overflow-hidden h-48 bg-gray-50 relative">
-                        <img src="{{ $car->image ? asset('storage/' . $car->image) : 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}"
+                        <img src="{{ $car->image_url ?: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=1000&q=80' }}"
                              alt="{{ $car->name }}" class="w-full h-full object-cover">
                         <span class="absolute top-4 left-4 bg-emerald-500 text-white text-[9px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
                             Premium Tier
@@ -265,7 +302,10 @@
                     <div>
                         <h2 class="text-xl font-extrabold text-gray-900">{{ $car->brand }} {{ $car->name }}</h2>
                         <p class="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
-                            ⚡ Full Electric Performance & Premium Comfort
+                            <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                            <span>Full Electric Performance & Premium Comfort</span>
                         </p>
                     </div>
 
@@ -329,6 +369,27 @@
             clientValidationError.classList.add('hidden');
             submitButton.disabled = true;
             submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+            submitButton.innerHTML = `
+                <svg class="animate-spin h-5 w-5 text-white inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sedang Memproses Verifikasi...
+            `;
+
+            // Append scan line and active classes to image targets
+            document.querySelectorAll('.scanner-target').forEach(target => {
+                target.classList.add('scanning-container-active');
+                if (!target.querySelector('.scanner-line')) {
+                    const line = document.createElement('div');
+                    line.className = 'scanner-line';
+                    const overlay = document.createElement('div');
+                    overlay.className = 'scanning-overlay';
+                    target.appendChild(line);
+                    target.appendChild(overlay);
+                }
+            });
+
             bookingForm.submit();
         }
 

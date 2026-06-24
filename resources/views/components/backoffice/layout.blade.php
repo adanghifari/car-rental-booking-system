@@ -5,12 +5,52 @@
     'searchPlaceholder' => 'Cari data, reservasi, atau mobil...',
 ])
 
+@php
+    $adminNotificationItems = collect();
+    $adminNotificationSummary = [
+        'reservations' => 0,
+        'reviews' => 0,
+        'payments' => 0,
+        'failed' => 0,
+    ];
+    $adminNotificationCount = 0;
+
+    if ($admin && $admin->hasNotificationsTable()) {
+        $adminNotificationItems = $admin->notifications()
+            ->latest()
+            ->take(24)
+            ->get()
+            ->filter(function ($notification) {
+                return ($notification->data['audience'] ?? null) === 'admin';
+            })
+            ->take(8)
+            ->values();
+
+        $adminUnreadNotifications = $admin->unreadNotifications()
+            ->get()
+            ->filter(function ($notification) {
+                return ($notification->data['audience'] ?? null) === 'admin';
+            })
+            ->values();
+
+        $adminNotificationSummary = [
+            'reservations' => $adminUnreadNotifications->where('data.category', 'reservations')->count(),
+            'reviews' => $adminUnreadNotifications->where('data.category', 'reviews')->count(),
+            'payments' => $adminUnreadNotifications->where('data.category', 'payments')->count(),
+            'failed' => $adminUnreadNotifications->where('data.category', 'failed')->count(),
+        ];
+
+        $adminNotificationCount = $adminUnreadNotifications->count();
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&family=space-grotesk:500,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -66,6 +106,11 @@
             box-shadow: 24px 0 60px rgba(15, 29, 51, 0.16);
         }
 
+        .sidebar.dashboard-animated {
+            transform: translateX(-100%);
+            animation: backofficeSidebarIn 1400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
         .brand {
             margin-bottom: 30px;
         }
@@ -98,6 +143,12 @@
             color: #afbdd7;
             text-decoration: none;
             font-size: 14px;
+            transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease, color 220ms ease, box-shadow 220ms ease;
+        }
+
+        .nav-item.dashboard-animated {
+            animation: backofficeNavItemIn 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: var(--nav-delay, 0ms);
         }
 
         .nav-item.active {
@@ -106,15 +157,145 @@
             box-shadow: inset 3px 0 0 #4f74ff;
         }
 
+        .nav-item:hover {
+            transform: translateX(4px);
+        }
+
         .nav-icon {
             width: 18px;
             height: 18px;
             opacity: 0.9;
         }
 
-        .logout {
+        .sidebar-profile {
             margin-top: auto;
-            padding-top: 28px;
+            padding-top: 40px;
+            padding-bottom: 16px;
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        .sidebar-profile .profile {
+            border-left: none;
+            padding-left: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            transition: background 0.2s;
+        }
+
+        .sidebar-profile .profile.dashboard-animated {
+            animation: backofficeNavItemIn 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: 420ms;
+        }
+
+        .sidebar-profile .profile:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-profile .profile.logout-trigger {
+            width: 100%;
+            border: 0;
+            background: rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            text-align: left;
+            justify-content: space-between;
+            box-shadow: 0 14px 30px rgba(15, 29, 51, 0.12);
+        }
+
+        .sidebar-profile .profile.logout-trigger:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-profile .profile.logout-trigger .profile-role {
+            color: rgba(240, 244, 255, 0.68);
+        }
+
+        .logout-icon {
+            width: 18px;
+            height: 18px;
+            color: rgba(240, 244, 255, 0.8);
+            flex-shrink: 0;
+            transition: transform 220ms ease;
+        }
+
+        .sidebar-profile .profile.logout-trigger[aria-expanded="true"] .logout-icon {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-logout-popover {
+            margin-bottom: 12px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid rgba(219, 227, 239, 0.95);
+            box-shadow: 0 16px 36px rgba(15, 29, 51, 0.16);
+            padding: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: opacity 220ms ease, transform 220ms ease;
+        }
+
+        .sidebar-logout-popover.is-open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .sidebar-logout-action {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .sidebar-logout-action:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .sidebar-logout-action .nav-icon {
+            color: #ef4444;
+        }
+
+        .sidebar-profile .profile > div:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-profile .profile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f6f8fc;
+        }
+
+        .sidebar-profile .profile-role {
+            font-size: 11px;
+            color: rgba(240, 244, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-profile .avatar {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+
+        .logout {
+            margin-top: 0;
+            padding-top: 0;
         }
 
         .logout-form {
@@ -133,8 +314,34 @@
             color: #ef4444;
         }
 
+        .logout-form .nav-item.dashboard-animated {
+            animation-delay: 520ms;
+        }
+
         .main {
             padding: 20px 28px 28px;
+        }
+
+        @keyframes backofficeSidebarIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes backofficeNavItemIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-14px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .topbar {
@@ -180,6 +387,271 @@
             place-items: center;
             background: rgba(255, 255, 255, 0.72);
             border: 1px solid rgba(219, 227, 239, 0.9);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .icon-button:hover {
+            border-color: rgba(164, 177, 202, 0.95);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            padding: 0 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #2563eb;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+            border: 2px solid #f7f9fc;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+        }
+
+        .notification-shell {
+            position: relative;
+        }
+
+        .notification-menu {
+            position: absolute;
+            top: calc(100% + 14px);
+            right: 0;
+            width: min(420px, calc(100vw - 48px));
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1px solid rgba(203, 213, 225, 0.95);
+            background: #cbd5e1;
+            box-shadow: 0 28px 70px rgba(15, 29, 51, 0.18);
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 35;
+        }
+
+        .notification-menu.is-open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .notification-menu-head {
+            position: relative;
+            overflow: hidden;
+            padding: 18px 18px 16px;
+            background: linear-gradient(135deg, #123c7a 0%, #1e4e9a 55%, #2c6dd5 100%);
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .notification-menu-head::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(191, 219, 254, 0.18), transparent 36%);
+            pointer-events: none;
+        }
+
+        .notification-menu-head > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification-menu-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .notification-menu-subtitle {
+            margin: 4px 0 0;
+            color: rgba(236, 244, 255, 0.86);
+            font-size: 12px;
+        }
+
+        .notification-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .notification-summary-item {
+            border-radius: 16px;
+            padding: 12px 13px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .notification-summary-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(219, 234, 254, 0.92);
+        }
+
+        .notification-summary-value {
+            margin-top: 4px;
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .notification-list {
+            padding: 10px;
+            background: #cbd5e1;
+            max-height: 460px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: block;
+            text-decoration: none;
+            margin-bottom: 10px;
+            padding: 14px;
+            border-radius: 22px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 10px 24px rgba(15, 29, 51, 0.05);
+            color: inherit;
+        }
+
+        .notification-item.is-unread {
+            border-color: rgba(147, 197, 253, 0.95);
+            background: #ffffff;
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.10);
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .notification-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .notification-chip.blue {
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+        }
+
+        .notification-chip.amber {
+            background: rgba(245, 158, 11, 0.14);
+            color: #b96e00;
+        }
+
+        .notification-chip.green {
+            background: rgba(29, 187, 132, 0.14);
+            color: #0f8f63;
+        }
+
+        .notification-chip.red {
+            background: rgba(239, 68, 68, 0.14);
+            color: #d03a3a;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .notification-item-title {
+            margin: 10px 0 0;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.35;
+        }
+
+        .notification-item-message {
+            margin: 6px 0 0;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #475569;
+        }
+
+        .notification-item-meta {
+            margin-top: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .notification-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .notification-link-button,
+        .notification-read-button {
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .notification-link-button {
+            background: #123c7a;
+            color: #fff;
+        }
+
+        .notification-read-button {
+            border: 1px solid rgba(203, 213, 225, 0.95);
+            background: #fff;
+            color: #334155;
+        }
+
+        .notification-read-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .notification-empty {
+            padding: 22px 18px;
+            border-radius: 22px;
+            border: 1px dashed rgba(148, 163, 184, 0.9);
+            background: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            color: #475569;
+        }
+
+        .notification-empty strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #0f172a;
         }
 
         .profile {
@@ -1670,6 +2142,11 @@
             .topbar-right {
                 justify-content: space-between;
             }
+
+            .notification-menu {
+                width: min(100vw - 32px, 420px);
+                right: 0;
+            }
         }
 
         @media (max-width: 560px) {
@@ -1737,20 +2214,20 @@
     $initial = strtoupper(substr($admin->name ?? 'A', 0, 1));
 @endphp
 <div class="backoffice-shell">
-    <aside class="sidebar">
+    <aside class="sidebar {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}">
         <div class="brand">
             <h1 class="brand-title">MD CAR RENTAL</h1>
             <div class="brand-subtitle">Fleet Management</div>
         </div>
 
         <nav class="nav-list">
-            <a href="{{ route('dashboard') }}" class="nav-item {{ $active === 'dashboard' ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="nav-item {{ $active === 'dashboard' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 90ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7Zm0-16v5h7V4h-7ZM4 20h7v-5H4v5Z"/>
                 </svg>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ route('backoffice.users') }}" class="nav-item {{ $active === 'users' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.users') }}" class="nav-item {{ $active === 'users' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 150ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
@@ -1759,28 +2236,28 @@
                 </svg>
                 <span>Manajemen User</span>
             </a>
-            <a href="{{ route('backoffice.cars') }}" class="nav-item {{ $active === 'cars' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.cars') }}" class="nav-item {{ $active === 'cars' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 210ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M14 16H9m10 0h2m-7 0h1m-9 0h1m0 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0m8 0a2 2 0 1 0 4 0m-4 0a2 2 0 1 1 4 0M3 12l2-5h13l3 5"/>
                     <path d="M5 12v4m14-4v4M7 7V5h10v2"/>
                 </svg>
                 <span>Manajemen Mobil</span>
             </a>
-            <a href="{{ route('backoffice.reservations') }}" class="nav-item {{ $active === 'reservations' ? 'active' : '' }}">
+            <a href="{{ route('backoffice.reservations') }}" class="nav-item {{ $active === 'reservations' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 270ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M8 2v4m8-4v4M3 10h18"/>
                     <rect x="3" y="4" width="18" height="18" rx="2"/>
                 </svg>
                 <span>Reservasi</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="{{ route('backoffice.reports') }}" class="nav-item {{ $active === 'reports' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 330ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <path d="M3 3v18h18"/>
                     <path d="M7 14l4-4 3 3 5-7"/>
                 </svg>
                 <span>Laporan</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="{{ route('backoffice.settings') }}" class="nav-item {{ $active === 'settings' ? 'active' : '' }} {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" style="--nav-delay: 390ms">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8.91 4.6H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .67.39 1.28 1 1.51.16.06.33.09.5.09H21a2 2 0 1 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z"/>
@@ -1789,25 +2266,37 @@
             </a>
         </nav>
 
-        <div class="logout">
-            <form method="POST" action="{{ route('logout') }}" class="logout-form">
-                @csrf
-                <button type="submit">
-                    <span class="nav-item">
+        <div class="sidebar-profile">
+            <div class="sidebar-logout-popover" id="sidebar-logout-popover">
+                <form method="POST" action="{{ route('logout') }}" class="logout-form">
+                    @csrf
+                    <button type="submit" class="sidebar-logout-action">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <path d="m16 17 5-5-5-5"/>
                             <path d="M21 12H9"/>
                         </svg>
                         <span>Logout</span>
-                    </span>
-                </button>
-            </form>
+                    </button>
+                </form>
+            </div>
+            <button type="button" id="sidebar-profile-toggle" class="profile logout-trigger {{ $active === 'dashboard' ? 'dashboard-animated' : '' }}" aria-expanded="false" aria-controls="sidebar-logout-popover">
+                <div>
+                    <div class="profile-name">{{ $admin->name }}</div>
+                    <div class="profile-role">{{ strtoupper($admin->role) }}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar">{{ $initial }}</div>
+                    <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </div>
+            </button>
         </div>
     </aside>
 
     <main class="main">
-        <div class="topbar">
+        <div class="topbar {{ $active === 'reports' ? 'page-top-reveal opacity-0 -translate-y-4 transition-all duration-700 ease-out' : '' }}">
             <form method="GET" action="" style="margin: 0; display: block; flex: 1; max-width: min(100%, 520px);">
                 @foreach (request()->except('search', 'page') as $key => $value)
                     @if (is_array($value))
@@ -1828,23 +2317,100 @@
             </form>
 
             <div class="topbar-right">
-                <div class="icon-button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
-                        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/>
-                        <path d="M10 21a2 2 0 0 0 4 0"/>
-                    </svg>
-                </div>
-                <div class="icon-button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
-                        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
-                    </svg>
-                </div>
-                <div class="profile">
-                    <div>
-                        <div class="profile-name">{{ $admin->name }}</div>
-                        <div class="profile-role">{{ strtoupper($admin->role) }}</div>
+                <div class="notification-shell">
+                    <button type="button" class="icon-button" id="backoffice-notification-button" aria-label="Notifikasi admin" aria-expanded="false">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f5d74" stroke-width="1.8">
+                            <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/>
+                            <path d="M10 21a2 2 0 0 0 4 0"/>
+                        </svg>
+                        @if ($adminNotificationCount > 0)
+                            <span class="notification-badge">{{ $adminNotificationCount > 99 ? '99+' : $adminNotificationCount }}</span>
+                        @endif
+                    </button>
+
+                    <div class="notification-menu" id="backoffice-notification-menu">
+                        <div class="notification-menu-head">
+                            <p class="notification-menu-title">Notifikasi Operasional</p>
+                            <p class="notification-menu-subtitle">Reservasi masuk, butuh review, pembayaran masuk, dan pembayaran gagal.</p>
+
+                            @if ($adminNotificationCount > 0)
+                                <form method="POST" action="{{ route('backoffice.notifications.read-all') }}" style="margin-top: 12px;">
+                                    @csrf
+                                    <button type="submit" class="notification-read-button" style="border-color: rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.92); color: #0f172a;">
+                                        Tandai semua dibaca
+                                    </button>
+                                </form>
+                            @endif
+
+                            <div class="notification-summary-grid">
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Reservasi Masuk</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['reservations'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Butuh Review</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['reviews'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Pembayaran Masuk</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['payments'] }}</div>
+                                </div>
+                                <div class="notification-summary-item">
+                                    <div class="notification-summary-label">Gagal</div>
+                                    <div class="notification-summary-value">{{ $adminNotificationSummary['failed'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="notification-list">
+                            @forelse ($adminNotificationItems as $item)
+                                @php
+                                    $data = $item->data ?? [];
+                                    $category = (string) ($data['category'] ?? 'reservations');
+                                    $isUnread = is_null($item->read_at);
+                                    $tone = match ($category) {
+                                        'reviews' => 'amber',
+                                        'payments' => 'green',
+                                        'failed' => 'red',
+                                        default => 'blue',
+                                    };
+                                    $label = match ($category) {
+                                        'reviews' => 'Review',
+                                        'payments' => 'Pembayaran',
+                                        'failed' => 'Gagal',
+                                        default => 'Reservasi',
+                                    };
+                                @endphp
+                                <div class="notification-item {{ $isUnread ? 'is-unread' : '' }}">
+                                    <div class="notification-item-top">
+                                        <span class="notification-chip {{ $tone }}">{{ $label }}</span>
+                                        <span class="notification-time">{{ $item->created_at?->locale('id')->diffForHumans() ?? '' }}</span>
+                                    </div>
+                                    <div class="notification-item-title">{{ $data['title'] ?? 'Notifikasi Admin' }}</div>
+                                    <p class="notification-item-message">{{ $data['message'] ?? '' }}</p>
+                                    <div class="notification-item-meta">{{ $data['meta'] ?? ('Booking #'.($data['rental_id'] ?? '-')) }}</div>
+                                    <div class="notification-actions">
+                                        <a href="{{ route('backoffice.notifications.open', $item->id) }}" class="notification-link-button">
+                                            Buka
+                                        </a>
+                                        @if ($isUnread)
+                                            <form method="POST" action="{{ route('backoffice.notifications.read', $item->id) }}">
+                                                @csrf
+                                                <button type="submit" class="notification-read-button">Tandai dibaca</button>
+                                            </form>
+                                        @else
+                                            <span class="notification-read-label">Sudah dibaca</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="notification-empty">
+                                    <strong>Belum ada update operasional</strong>
+                                    Semua aktivitas reservasi dan pembayaran penting akan tampil di sini.
+                                </div>
+                            @endforelse
+                        </div>
                     </div>
-                    <div class="avatar">{{ $initial }}</div>
                 </div>
             </div>
         </div>
@@ -1852,6 +2418,153 @@
         {{ $slot }}
     </main>
 </div>
+
+<!-- Custom Confirmation Modal (Global) -->
+<div class="modal-overlay" id="confirm-modal-overlay"
+    style="z-index: 1000; display: none; background: rgba(10, 15, 26, 0.4);" hidden>
+    <div class="modal-panel"
+        style="width: min(450px, 100%); border-radius: 20px; padding: 24px; text-align: center; transform: scale(0.95); transition: transform 0.2s ease;">
+        <div
+            style="width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: rgba(245, 158, 11, 0.12); color: var(--amber); margin: 0 auto 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 9v4" />
+                <path d="m12 17h.01" />
+                <path
+                    d="m10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            </svg>
+        </div>
+        <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 18px; font-weight: 700; color: var(--text);">
+            Konfirmasi Tindakan</h3>
+        <p id="confirm-modal-message"
+            style="margin-top: 0; margin-bottom: 24px; font-size: 14px; color: var(--muted); line-height: 1.5;"></p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button type="button" class="secondary-button" id="confirm-modal-cancel-btn"
+                style="padding: 10px 20px; border-radius: 12px;">Batal</button>
+            <button type="button" class="primary-button" id="confirm-modal-ok-btn"
+                style="padding: 10px 20px; border-radius: 12px; background: var(--blue);">Lanjutkan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        window.showCustomConfirm = function(message, onConfirm) {
+            const overlay = document.getElementById('confirm-modal-overlay');
+            const msgEl = document.getElementById('confirm-modal-message');
+            const okBtn = document.getElementById('confirm-modal-ok-btn');
+            const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
+
+            if (!overlay || !msgEl || !okBtn || !cancelBtn) return;
+
+            msgEl.textContent = message;
+            overlay.style.display = 'grid';
+            overlay.removeAttribute('hidden');
+
+            // Force reflow
+            overlay.offsetHeight;
+            overlay.classList.add('is-open');
+            overlay.firstElementChild.style.transform = 'scale(1)';
+
+            const cleanup = () => {
+                overlay.classList.remove('is-open');
+                overlay.firstElementChild.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    overlay.setAttribute('hidden', '');
+                }, 200);
+            };
+
+            // Remove old listeners
+            const newOkBtn = okBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.addEventListener('click', () => {
+                cleanup();
+                onConfirm();
+            });
+
+            newCancelBtn.addEventListener('click', cleanup);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) cleanup();
+            });
+        };
+
+        const notificationButton = document.getElementById('backoffice-notification-button');
+        const notificationMenu = document.getElementById('backoffice-notification-menu');
+        const sidebarProfileToggle = document.getElementById('sidebar-profile-toggle');
+        const sidebarLogoutPopover = document.getElementById('sidebar-logout-popover');
+
+        if (!notificationButton || !notificationMenu) {
+            return;
+        }
+
+        function closeNotificationMenu() {
+            notificationMenu.classList.remove('is-open');
+            notificationButton.setAttribute('aria-expanded', 'false');
+        }
+
+        notificationButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const isOpen = notificationMenu.classList.contains('is-open');
+            if (isOpen) {
+                closeNotificationMenu();
+                return;
+            }
+
+            notificationMenu.classList.add('is-open');
+            notificationButton.setAttribute('aria-expanded', 'true');
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!notificationButton.contains(event.target) && !notificationMenu.contains(event.target)) {
+                closeNotificationMenu();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeNotificationMenu();
+            }
+        });
+
+        if (sidebarProfileToggle && sidebarLogoutPopover) {
+            function closeSidebarLogoutPopover() {
+                sidebarLogoutPopover.classList.remove('is-open');
+                sidebarProfileToggle.setAttribute('aria-expanded', 'false');
+            }
+
+            sidebarProfileToggle.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const isOpen = sidebarLogoutPopover.classList.contains('is-open');
+                if (isOpen) {
+                    closeSidebarLogoutPopover();
+                    return;
+                }
+
+                sidebarLogoutPopover.classList.add('is-open');
+                sidebarProfileToggle.setAttribute('aria-expanded', 'true');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!sidebarProfileToggle.contains(event.target) && !sidebarLogoutPopover.contains(event.target)) {
+                    closeSidebarLogoutPopover();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeSidebarLogoutPopover();
+                }
+            });
+        }
+    })();
+</script>
 @stack('scripts')
 </body>
 </html>
